@@ -174,6 +174,88 @@ def feed_orbits(prev):
 GDACS_TYPES = {"EQ", "TC", "FL", "VO", "DR", "WF"}
 
 
+GDACS_NS = {"gdacs": "http://www.gdacs.org", "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#"}
+
+
+def why(e):
+    """A short reason for the log, with the start of the server's answer when there is one."""
+    if isinstance(e, urllib.error.HTTPError):
+        try:
+            body = e.read()[:160].decode("utf-8", "replace").replace("\n", " ").strip()
+        except Exception:
+            body = ""
+        return "HTTP %s%s" % (e.code, (": " + body) if body else "")
+    return str(e)[:160]
+
+
+def gdacs_from_features(gd, since):
+    alerts, seen = [], set()
+    for f in (gd or {}).get("features", []):
+        p, c = f.get("properties") or {}, (f.get("geometry") or {}).get("coordinates") or []
+        t, lvl = str(p.get("eventtype", "")).upper(), str(p.get("alertlevel", "")).lower()
+        if t not in GDACS_TYPES or lvl not in ("orange", "red") or len(c) < 2 or not isinstance(c[0], (int, float)):
+            continue
+        if str(p.get("todate") or p.get("fromdate") or "")[:10] < since or (t, p.get("eventid")) in seen:
+            continue
+        seen.add((t, p.get("eventid")))
+        sev = p.get("severitydata") or {}
+        url = (p.get("url") or {}).get("report") if isinstance(p.get("url"), dict) else p.get("url")
+        alerts.append({"id": "%s%s" % (t, p.get("eventid")), "type": t, "lat": round(c[1], 4), "lng": round(c[0], 4),
+                       "from": p.get("fromdate"), "to": p.get("todate"), "name": p.get("name") or p.get("eventname") or "",
+                       "country": p.get("country") or "", "level": lvl, "severity": sev.get("severitytext") or "",
+                       "url": url if isinstance(url, str) and url.startswith("https://") else None})
+    return alerts
+
+
+def gdacs_from_rss(xml_bytes, since):
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime
+    def when(txt):
+        try:
+            return parsedate_to_datetime(txt).astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        except Exception:
+            return None
+    alerts, seen = [], set()
+    for it in ET.fromstring(xml_bytes).iter("item"):
+        g = lambda tag: (it.findtext(tag, default="", namespaces=GDACS_NS) or "").strip()
+        t, lvl, eid = g("gdacs:eventtype").upper(), g("gdacs:alertlevel").lower(), g("gdacs:eventid")
+        try:
+            lat, lng = float(g("geo:Point/geo:lat")), float(g("geo:Point/geo:long"))
+        except ValueError:
+            continue
+        frm, to = when(g("gdacs:fromdate")), when(g("gdacs:todate"))
+        if t not in GDACS_TYPES or lvl not in ("orange", "red") or (t, eid) in seen or str(to or frm or "")[:10] < since:
+            continue
+        seen.add((t, eid))
+        link = (it.findtext("link") or "").strip()
+        alerts.append({"id": "%s%s" % (t, eid), "type": t, "lat": round(lat, 4), "lng": round(lng, 4), "from": frm, "to": to,
+                       "name": g("gdacs:eventname") or (it.findtext("title") or "").strip(), "country": g("gdacs:country"),
+                       "level": lvl, "severity": g("gdacs:severity"), "url": link if link.startswith("https://") else None})
+    return alerts
+
+
+def gdacs_alerts(since):
+    """Tries GDACS's addresses in turn; returns (alerts, which one answered)."""
+    q = "eventlist=EQ;TC;FL;VO;DR;WF&fromdate=%s&todate=%s&alertlevel=orange;red" % (since, TODAY.isoformat())
+    tries = [
+        ("search", "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?" + q),
+        ("search2", "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?" + q.replace(";", "%3B")),
+        ("app", "https://www.gdacs.org/gdacsapi/api/events/geteventlist/events4app"),
+    ]
+    errors = []
+    for name, url in tries:
+        try:
+            raw = http(url, headers={"Accept": "application/json"}, timeout=90).decode("utf-8", "replace").strip()
+            return gdacs_from_features(json.loads(raw) if raw else {"features": []}, since), name
+        except Exception as e:
+            errors.append("%s %s" % (name, why(e)))
+    try:
+        return gdacs_from_rss(http("https://www.gdacs.org/xml/rss.xml", timeout=90), since), "rss"
+    except Exception as e:
+        errors.append("rss " + why(e))
+    raise RuntimeError("; ".join(errors))
+
+
 def feed_hazards(prev):
     prev = prev or {}
     g = jget("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson")
@@ -190,31 +272,12 @@ def feed_hazards(prev):
     out.update({"fetchedAt": iso(), "quakes": quakes[:150], "sources": ["USGS", "GDACS"]})
     note = "ok (%d quakes M5+)" % len(quakes)
     try:
-        # the official GDACS search: orange and red alerts of the last 10 days (semicolons must stay as they are)
-        since = (TODAY - dt.timedelta(days=10)).isoformat()
-        raw = http("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF"
-                   "&fromdate=%s&todate=%s&alertlevel=orange;red" % (since, TODAY.isoformat()), timeout=90).decode("utf-8", "replace").strip()
-        gd = json.loads(raw) if raw else {"features": []}   # an empty answer means no orange or red alerts
-        alerts, seen = [], set()
-        for f in gd.get("features", []):
-            p, c = f.get("properties") or {}, (f.get("geometry") or {}).get("coordinates") or []
-            t, lvl = str(p.get("eventtype", "")).upper(), str(p.get("alertlevel", "")).lower()
-            if t not in GDACS_TYPES or lvl not in ("orange", "red") or len(c) < 2 or not isinstance(c[0], (int, float)):
-                continue
-            if str(p.get("todate") or p.get("fromdate") or "")[:10] < since or (t, p.get("eventid")) in seen:
-                continue
-            seen.add((t, p.get("eventid")))
-            sev = p.get("severitydata") or {}
-            url = (p.get("url") or {}).get("report") if isinstance(p.get("url"), dict) else p.get("url")
-            alerts.append({"id": "%s%s" % (t, p.get("eventid")), "type": t, "lat": round(c[1], 4), "lng": round(c[0], 4),
-                           "from": p.get("fromdate"), "to": p.get("todate"), "name": p.get("name") or p.get("eventname") or "",
-                           "country": p.get("country") or "", "level": lvl, "severity": sev.get("severitytext") or "",
-                           "url": url if isinstance(url, str) and url.startswith("https://") else None})
+        alerts, how = gdacs_alerts((TODAY - dt.timedelta(days=10)).isoformat())
         out["alerts"] = alerts
         out["gdacsAt"] = iso()
-        note += ", %d GDACS alerts" % len(alerts)
+        note += ", %d GDACS alerts (%s)" % (len(alerts), how)
     except Exception as e:
-        note += ", GDACS kept from last run (%s)" % str(e)[:60]
+        note += ", GDACS kept from last run (%s)" % str(e)[:400]
     return out, note
 
 
@@ -523,7 +586,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.2 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
