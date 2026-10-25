@@ -941,12 +941,44 @@ def feed_trade(prev):
 SO2_SITES = ["ganzhou", "imip", "kokkola", "norilsk", "panzhihua", "xikuangshan"]
 
 
-SO2_FALLBACK = ["OMPS_NOAA20_SO2_Planetary_Boundary_Layer", "OMI_SO2_Planetary_Boundary_Layer", "OMPS_NOAA20_SO2_Lower_Troposphere"]
+SO2_FALLBACK = ["OMPS_NOAA20_SO2_Planetary_Boundary_Layer", "OMPS_SO2_Planetary_Boundary_Layer", "OMI_SO2_Planetary_Boundary_Layer", "OMPS_NOAA20_SO2_Lower_Troposphere"]
 SO2_LABEL = {
     "OMPS_NOAA20_SO2_Planetary_Boundary_Layer": "NOAA-20 OMPS sulphur dioxide, planetary boundary layer (NASA GIBS imagery)",
     "OMI_SO2_Planetary_Boundary_Layer": "Aura OMI sulphur dioxide, planetary boundary layer (NASA GIBS imagery)",
     "OMPS_NOAA20_SO2_Lower_Troposphere": "NOAA-20 OMPS sulphur dioxide, lower troposphere (NASA GIBS imagery)",
+    "OMPS_SO2_Planetary_Boundary_Layer": "Suomi NPP OMPS sulphur dioxide, planetary boundary layer (NASA GIBS imagery)",
 }
+
+
+COLORMAP_INDEX = {}
+
+
+def colormap_index(ver):
+    """File names in one of NASA GIBS's public colour-scale folders (v1.3, v1.2, v1.0)."""
+    import re
+    if ver not in COLORMAP_INDEX:
+        try:
+            html = http("https://gibs.earthdata.nasa.gov/colormaps/%s/" % ver, timeout=60).decode("utf-8", "replace")
+            COLORMAP_INDEX[ver] = sorted(set(re.findall(r'href="(?:[^"]*/)?([A-Za-z0-9_.\-]+\.xml)"', html)))
+        except Exception as e:
+            log("  colour-scale folder %s: %s" % (ver, why(e)))
+            COLORMAP_INDEX[ver] = []
+    return COLORMAP_INDEX[ver]
+
+
+def colormap_candidates(lid):
+    """Colour-scale files whose names best match a layer: same instrument, a sulphur dioxide product, most words in common."""
+    norm = lambda x: set(x.upper().replace("SULFUR_DIOXIDE", "SO2").replace("SULPHUR_DIOXIDE", "SO2").split("_"))
+    toks, inst, out = norm(lid), lid.split("_")[0].upper(), []
+    for ver in ("v1.3", "v1.2", "v1.0"):
+        for f in colormap_index(ver):
+            stem = f[:-4]
+            ft = norm(stem)
+            if stem.split("_")[0].upper() != inst or "SO2" not in ft:
+                continue
+            score = len(toks & ft) - 0.1 * len(ft - toks) + (5 if stem == lid else 0) + (0.3 if ver == "v1.3" else 0)
+            out.append((score, "https://gibs.earthdata.nasa.gov/colormaps/%s/%s" % (ver, f)))
+    return [u for _, u in sorted(out, reverse=True)]
 
 
 def so2_layers():
@@ -964,7 +996,12 @@ def so2_layers():
         block = re.search(r"<Layer>(?:(?!</Layer>).)*?<ows:Identifier>%s</ows:Identifier>(?:(?!</Layer>).)*?</Layer>" % re.escape(lid), cap, re.S)
         maps = re.findall(r'xlink:href="([^"]*colormaps[^"]*\.xml)"', block.group(0)) if block else []
         maps.sort(key=lambda u: ("v1.3" in u, "v1.2" in u), reverse=True)
-        out.append((lid, maps + ["https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid]))
+        seen, urls = set(), []
+        for u in maps + colormap_candidates(lid) + ["https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid]:
+            if u not in seen:
+                seen.add(u)
+                urls.append(u)
+        out.append((lid, urls))
     if not out:
         raise RuntimeError("no daily SO2 layer found; GIBS lists: " + ", ".join(ids))
     return out
@@ -1031,13 +1068,14 @@ def feed_so2(prev):
     Image, _ = need_pillow()
     sites_cfg = {s["id"]: s for s in CFG["sites"]}
     want = [sid for sid in (list((prev.get("sites") or {}).keys()) or SO2_SITES) if sid in sites_cfg]
-    lid, colours, tried_layers = None, None, []
+    lid, colours, tried_layers, cmap_used = None, None, [], ""
     for cand, cmaps in so2_layers():
         try:
             colours = None
             for u in cmaps:
                 try:
                     colours = so2_colours(http(u, timeout=60))
+                    cmap_used = u.rsplit("/", 2)[-2] + "/" + u.rsplit("/", 1)[-1]
                     break
                 except Exception as e:
                     tried_layers.append("%s colour scale %s" % (cand, why(e)))
@@ -1086,7 +1124,8 @@ def feed_so2(prev):
     out.update({"days": 60, "fetchedAt": iso(), "radiusKm": 50, "sites": sites, "layer": lid, "unit": "DU",
                 "source": SO2_LABEL.get(lid, "Copernicus Sentinel-5P TROPOMI sulphur dioxide, total column (NASA GIBS imagery)"), "url": "https://worldview.earthdata.nasa.gov",
                 "note": "Values are read back from the published colour scale of the %s layer, in Dobson units (DU)." % lid})
-    return out, "ok (layer %s, %d pictures read, %d sites)" % (lid, fetched, len(want))
+    out["colourScale"] = cmap_used
+    return out, "ok (layer %s, colour scale %s, %d pictures read, %d sites)" % (lid, cmap_used, fetched, len(want))
 
 # ---------------------------------------------------------------- run
 
@@ -1095,7 +1134,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v1.7 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.8 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
