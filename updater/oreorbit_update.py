@@ -580,13 +580,218 @@ def feed_ships(prev):
     return out, "ok (%d vessels)" % len(ships)
 
 
+
+# ---------------------------------------------------------------- part two: clouds, conflict, tenders
+
+def need_pillow():
+    """The robot installs its picture tool itself, so the workflow file does not have to change."""
+    try:
+        from PIL import Image  # noqa: F401
+    except ImportError:
+        import subprocess
+        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "pillow"], check=True)
+    from PIL import Image, ImageChops
+    return Image, ImageChops
+
+
+GIBS_LAYERS = [("NOAA20", "VIIRS_NOAA20_CorrectedReflectance_TrueColor"), ("NOAA21", "VIIRS_NOAA21_CorrectedReflectance_TrueColor"),
+               ("SNPP", "VIIRS_SNPP_CorrectedReflectance_TrueColor")]
+
+
+def cloud_mask(img, Image, ImageChops):
+    """White, colourless pixels become cloud (255); everything else, including the black gaps between passes, 0."""
+    r, g, b = img.convert("RGB").split()
+    lo = ImageChops.darker(ImageChops.darker(r, g), b)
+    hi = ImageChops.lighter(ImageChops.lighter(r, g), b)
+    sat = ImageChops.subtract(hi, lo)
+    bright = lo.point(lambda v: 0 if v < 120 else 255 if v > 215 else int((v - 120) * 255 / 95))
+    grey = sat.point(lambda v: 255 if v < 18 else 0 if v > 60 else int((60 - v) * 255 / 42))
+    return ImageChops.multiply(bright, grey)
+
+
+def data_url(img, quality=82):
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=quality, optimize=True)
+    import base64
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def feed_clouds(prev):
+    """Yesterday's cloud cover from NASA GIBS: clouds.json (1024 x 512) and cloudshi0-3.json (2048 x 1024 in four strips)."""
+    day = (TODAY - dt.timedelta(days=1)).isoformat()
+    if (prev or {}).get("date") == day and not FORCE:
+        return None, "skipped: already has yesterday"
+    Image, ImageChops = need_pillow()
+    W, H = 2048, 1024
+    mask, used, errors = None, [], []
+    for name, layer in GIBS_LAYERS:
+        url = ("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0"
+               "&LAYERS=%s&STYLES=&CRS=EPSG:4326&BBOX=-90,-180,90,180&WIDTH=%d&HEIGHT=%d&FORMAT=image/jpeg&TIME=%s" % (layer, W, H, day))
+        try:
+            raw = http(url, timeout=180)
+            img = Image.open(io.BytesIO(raw))
+            img.load()
+            if img.size != (W, H):
+                img = img.resize((W, H))
+            m = cloud_mask(img, Image, ImageChops)
+            mask = m if mask is None else ImageChops.lighter(mask, m)
+            used.append(name)
+        except Exception as e:
+            errors.append("%s %s" % (name, why(e)))
+    if mask is None:
+        raise RuntimeError("; ".join(errors) or "no picture")
+    files = {}
+    base = {"date": day, "fetchedAt": iso()}
+    lo = mask.resize((1024, 512), Image.LANCZOS)
+    files["live-data/live/clouds.json"] = dict(base, **{
+        "h": 512, "hi": 4, "image": data_url(lo), "w": 1024, "satellites": used,
+        "note": "Bright white ground in that day's pictures: clouds, but also snow, ice and salt flats.",
+        "source": "NASA GIBS: VIIRS corrected reflectance (true colour) from " + ", ".join(used), "url": "https://worldview.earthdata.nasa.gov"})
+    for i in range(4):
+        strip = mask.crop((i * 512, 0, (i + 1) * 512, H))
+        files["live-data/live/cloudshi%d.json" % i] = dict(base, **{"H": H, "W": W, "h": H, "image": data_url(strip), "of": 4, "part": i, "w": 512, "x": i * 512})
+    note = "ok (%s from %s)" % (day, ", ".join(used)) + ("; missing " + "; ".join(errors) if errors else "")
+    return files, note
+
+
+# conflict: the areas the atlas watches, as (centre points, radius in km)
+def conflict_areas():
+    areas = {s["id"]: ([(s["lat"], s["lng"])], 100) for s in CFG["sites"]}
+    areas["choke:suez"] = ([(12.58, 43.33)], 400)
+    areas["choke:malacca"] = ([(2.5, 101.4), (4.2, 99.6), (1.3, 103.8)], 150)
+    areas["route:lobito"] = ([(-12.36, 13.54), (-12.77, 15.73), (-12.38, 16.93), (-11.78, 19.92), (-10.71, 22.22)], 100)
+    areas["route:lobito-cd"] = ([(-10.70, 22.33), (-10.72, 25.47), (-10.98, 26.73), (-9.2, 25.85)], 120)
+    return areas
+
+
+def ucdp_files():
+    """This year's UCDP candidate files: the newest January-to-month file, then any newer monthly files."""
+    yy = TODAY.year % 100
+    base = "https://ucdp.uu.se/downloads/candidateged/"
+    got, upto = [], 0
+    for mm in range(min(12, TODAY.month), 0, -1):
+        name = "GEDEvent_v%02d_01_%02d_%02d.csv" % (yy, yy, mm)
+        try:
+            got.append((name, http(base + name, timeout=180)))
+            upto = mm
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+    for mm in range(upto + 1, min(12, TODAY.month) + 1):
+        name = "GEDEvent_v%02d_0_%d.csv" % (yy, mm)
+        try:
+            got.append((name, http(base + name, timeout=180)))
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+    if not got:
+        raise RuntimeError("no UCDP candidate file found for %d at %s" % (TODAY.year, base))
+    return got
+
+
+def feed_conflict(prev):
+    areas, rows, files = conflict_areas(), {}, []
+    for name, raw in ucdp_files():
+        files.append(name)
+        for r in csv.DictReader(io.StringIO(raw.decode("utf-8-sig", "replace"))):
+            rows[r.get("id") or r.get("relid") or str(len(rows))] = r
+    out_areas, clusters, recent = {}, {}, []
+    for r in rows.values():
+        try:
+            la, lo, d = float(r["latitude"]), float(r["longitude"]), str(r.get("date_start", ""))[:10]
+            deaths, typ = int(float(r.get("best") or 0)), str(r.get("type_of_violence") or "")
+        except (KeyError, ValueError):
+            continue
+        best_w, best_km = None, None
+        for w, (pts, rad) in areas.items():
+            k = min(km(la, lo, a, b) for a, b in pts)
+            if k <= rad and (best_km is None or k < best_km):
+                best_w, best_km = w, k
+        if not best_w:
+            continue
+        a = out_areas.setdefault(best_w, {"byMonth": {}, "deaths": 0, "first": d, "last": d, "n": 0, "types": {}})
+        a["n"] += 1
+        a["deaths"] += deaths
+        a["byMonth"][d[:7]] = a["byMonth"].get(d[:7], 0) + 1
+        a["types"][typ] = a["types"].get(typ, 0) + 1
+        a["first"], a["last"] = min(a["first"], d), max(a["last"], d)
+        where = (r.get("where_coordinates") or r.get("adm_1") or "").strip()
+        c = clusters.setdefault((best_w, where), {"country": r.get("country", ""), "deaths": 0, "last": d, "lat": round(la, 3), "lng": round(lo, 3), "n": 0, "w": best_w, "where": where})
+        c["n"] += 1
+        c["deaths"] += deaths
+        c["last"] = max(c["last"], d)
+        recent.append({"a": r.get("side_a", ""), "b": r.get("side_b", ""), "country": r.get("country", ""), "d": d, "deaths": deaths,
+                       "km": round(best_km), "lat": round(la, 3), "lng": round(lo, 3), "type": int(typ) if typ.isdigit() else None, "w": best_w, "where": where})
+    if not rows:
+        raise RuntimeError("the UCDP files were empty")
+    for a in out_areas.values():
+        a["byMonth"] = dict(sorted(a["byMonth"].items()))
+        a["types"] = dict(sorted(a["types"].items()))
+    recent.sort(key=lambda x: (x["d"], x["deaths"]), reverse=True)
+    dates = [str(r.get("date_start", ""))[:10] for r in rows.values() if r.get("date_start")]
+    out = dict(prev or {})
+    out.update({"areas": out_areas, "clusters": sorted(clusters.values(), key=lambda c: (-c["n"], c["where"]))[:80],
+                "fetchedAt": iso(), "files": files, "from": "%d-01-01" % TODAY.year, "to": max(dates) if dates else None,
+                "recent": recent[:30], "source": "UCDP Candidate Events Dataset (Uppsala Conflict Data Program)", "url": "https://ucdp.uu.se/downloads/",
+                "note": "Candidate events are preliminary and can change when UCDP finalises them. Type 1 = state-based, 2 = non-state, 3 = one-sided violence."})
+    return out, "ok (%d events in the year, %d near the supply chain, files %s)" % (len(rows), sum(a["n"] for a in out_areas.values()), ", ".join(files))
+
+
+TED_CPV = {
+    "weapons": "35300000 35310000 35311000 35312000 35320000 35321000 35322000 35340000",
+    "ammunition": "35330000 35331000 35332000 35333000 35334000 35335000",
+    "explosives": "24610000 24611000 24612000 24613000",
+}
+
+
+def ted_count(codes, d0, d1):
+    """How many notices TED published with these CPV codes between d0 and d1 (inclusive, YYYYMMDD)."""
+    queries = ["classification-cpv IN (%s) AND publication-date>=%s AND publication-date<=%s" % (codes, d0, d1),
+               "classification-cpv IN (%s) AND publication-date IN (%s <> %s)" % (codes, d0, d1)]
+    errors = []
+    for q in queries:
+        body = {"query": q, "fields": ["publication-number"], "page": 1, "limit": 1, "scope": "ALL", "paginationMode": "PAGE_NUMBER"}
+        try:
+            j = jget("https://api.ted.europa.eu/v3/notices/search", data=body, timeout=90)
+            for k in ("totalNoticeCount", "total", "totalCount"):
+                if isinstance(j.get(k), int):
+                    return j[k]
+            raise RuntimeError("no count in the answer: " + str(list(j.keys()))[:120])
+        except Exception as e:
+            errors.append(why(e))
+    raise RuntimeError(" | ".join(errors))
+
+
+def feed_tenders(prev):
+    first = dt.date(TODAY.year, TODAY.month, 1)
+    months = []
+    for i in range(29, -1, -1):
+        y, m = first.year, first.month - i
+        while m <= 0:
+            y, m = y - 1, m + 12
+        months.append(dt.date(y, m, 1))
+    series = {k: [] for k in TED_CPV}
+    for d in months:
+        nxt = dt.date(d.year + (d.month == 12), d.month % 12 + 1, 1)
+        last = min(nxt - dt.timedelta(days=1), TODAY)
+        for k, codes in TED_CPV.items():
+            series[k].append(ted_count(codes, d.strftime("%Y%m%d"), last.strftime("%Y%m%d")))
+            time.sleep(0.4)
+    out = dict(prev or {})
+    out.update({"fetchedAt": iso(), "months": [d.strftime("%Y-%m") for d in months], "series": series,
+                "source": "TED, Tenders Electronic Daily (EU Publications Office)", "unit": "notices published (calls for tender and awards) per month",
+                "url": "https://ted.europa.eu"})
+    return out, "ok (%d months, last month: %s)" % (len(months), ", ".join("%s %d" % (k, v[-2]) for k, v in series.items()))
+
 # ---------------------------------------------------------------- run
 
-INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144}
+INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
+              "clouds": 2.5, "conflict": 144, "tenders": 144}
 
 
 def main():
-    log("OreOrbit updater v1.2 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.3 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -603,9 +808,13 @@ def main():
         return not ok or (NOW - ok).total_seconds() >= INTERVAL_H[name] * 3600
 
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
-                     ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic)]:
+                     ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
+                     ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
+        if ONLY and name not in ONLY:
+            log("%-9s not in this run" % name)
+            continue
         if not due(name):
             st["status"] = "skipped: refreshed less than %s ago" % (("%d hours" % INTERVAL_H[name]) if INTERVAL_H[name] < 48 else "%d days" % (INTERVAL_H[name] // 24))
             status[name] = st
@@ -621,6 +830,12 @@ def main():
                 obj, note = fn(prev)
             if obj is None:
                 st["status"] = note
+            elif name == "clouds":
+                res = [upload(p, o) for p, o in obj.items()]
+                st.update({"ok": iso(), "fails": 0, "status": note})
+                for i in range(4):
+                    status["cloudshi%d" % i] = {"checked": iso(), "fails": 0, "ok": iso(), "status": "ok"}
+                note = note + " · " + ", ".join(sorted(set(res)))
             else:
                 res = upload(path, obj)
                 st.update({"ok": iso(), "fails": 0, "status": note})
