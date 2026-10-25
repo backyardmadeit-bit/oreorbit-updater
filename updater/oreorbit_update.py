@@ -1127,14 +1127,227 @@ def feed_so2(prev):
     out["colourScale"] = cmap_used
     return out, "ok (layer %s, colour scale %s, %d pictures read, %d sites)" % (lid, cmap_used, fetched, len(want))
 
+
+# ---------------------------------------------------------------- part four: mine pictures and radar (Microsoft Planetary Computer)
+
+PC_STAC = "https://planetarycomputer.microsoft.com/api/stac/v1/search"
+PC_DATA = "https://planetarycomputer.microsoft.com/api/data/v1"
+PC_FORM = []          # which crop address form this server answers, found on the first picture
+CLEAR_SCL = {2, 4, 5, 6, 7}   # Sentinel-2 scene classes counted as clear ground or water
+
+
+def upload_bytes(path, body):
+    if DRY:
+        out = os.path.join(os.getcwd(), "out", path)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        open(out, "wb").write(body)
+        return "dry run"
+    if REMOTE.get(path, {}).get("md5") == hashlib.md5(body).hexdigest():
+        return "unchanged"
+    ctype = "image/png" if path.endswith(".png") else "image/jpeg"
+    r = json.loads(http(BASE + "update.php?f=" + urllib.parse.quote(path, safe="/"), data=body,
+                        headers={"X-Atlas-Key": KEY, "Content-Type": ctype}, method="POST", timeout=120).decode("utf-8"))
+    if not r.get("ok"):
+        raise RuntimeError("update.php: " + str(r))
+    return "uploaded"
+
+
+def box(lat, lng, span_km):
+    h = span_km / 2
+    dlat, dlng = h / 111.32, h / (111.32 * max(0.2, math.cos(lat * math.pi / 180)))
+    return (lng - dlng, lat - dlat, lng + dlng, lat + dlat)
+
+
+def pc_search(collection, lat, lng, start, end, query=None, limit=40):
+    body = {"collections": [collection], "intersects": {"type": "Point", "coordinates": [lng, lat]},
+            "datetime": "%sT00:00:00Z/%sT23:59:59Z" % (start, end), "limit": limit,
+            "sortby": [{"field": "properties.datetime", "direction": "desc"}]}
+    if query:
+        body["query"] = query
+    feats = jget(PC_STAC, data=body, timeout=90).get("features", [])
+    feats.sort(key=lambda f: (f.get("properties") or {}).get("datetime", ""), reverse=True)
+    return feats
+
+
+def pc_crop(collection, item, bbox, w, h, fmt, params):
+    """A picture of one scene cut to a box. Tries the known address forms once, then keeps the one that works."""
+    qs = urllib.parse.urlencode(dict(params, collection=collection, item=item), doseq=True)
+    b = "%.6f,%.6f,%.6f,%.6f" % bbox
+    forms = ["%s/item/bbox/%s/%dx%d.%s?%s" % (PC_DATA, b, w, h, fmt, qs), "%s/item/crop/%s/%dx%d.%s?%s" % (PC_DATA, b, w, h, fmt, qs),
+             "%s/item/bbox/%s.%s?%s&width=%d&height=%d" % (PC_DATA, b, fmt, qs, w, h), "%s/item/crop/%s.%s?%s&width=%d&height=%d" % (PC_DATA, b, fmt, qs, w, h)]
+    order = PC_FORM + [i for i in range(len(forms)) if i not in PC_FORM]
+    errors = []
+    for i in order:
+        try:
+            data = http(forms[i], timeout=150)
+            if not PC_FORM:
+                PC_FORM.append(i)
+            return data
+        except urllib.error.HTTPError as e:
+            errors.append("form %d %s" % (i, why(e)))
+            if PC_FORM or e.code not in (404, 405):
+                break
+    raise RuntimeError("; ".join(errors))
+
+
+def grey(img, Image):
+    """(values 0-255, alpha) lists from a picture the server returned (grey or grey+alpha)."""
+    img = img.convert("LA")
+    return list(img.getchannel(0).getdata()), list(img.getchannel(1).getdata())
+
+
+def scl_values(item_id, bbox, size, Image):
+    raw = pc_crop("sentinel-2-l2a", item_id, bbox, size, size, "png", {"assets": "SCL", "rescale": "0,255"})
+    return grey(Image.open(io.BytesIO(raw)), Image)
+
+
+def ndvi_values(item_id, bbox, size, Image):
+    raw = pc_crop("sentinel-2-l2a", item_id, bbox, size, size, "png",
+                  {"expression": "(B08-B04)/(B08+B04)", "asset_as_band": "True", "rescale": "-1,1"})
+    v, a = grey(Image.open(io.BytesIO(raw)), Image)
+    return [x / 127.5 - 1 for x in v], a
+
+
+def s2_clear_scene(site, rec, Image):
+    """The newest Sentinel-2 scene whose 7 km box is at least 90% clear, in the months the site allows."""
+    months = set(rec.get("months") or range(1, 13))
+    feats = pc_search("sentinel-2-l2a", site["lat"], site["lng"], (TODAY - dt.timedelta(days=150)).isoformat(), TODAY.isoformat(),
+                      query={"eo:cloud_cover": {"lt": 40}})
+    bbox = box(site["lat"], site["lng"], rec.get("spanKm") or 7.0)
+    checked = 0
+    for f in feats:
+        d = (f.get("properties") or {}).get("datetime", "")[:10]
+        if not d or int(d[5:7]) not in months:
+            continue
+        if checked >= 6:
+            break
+        checked += 1
+        v, a = scl_values(f["id"], bbox, 120, Image)
+        seen = [x for x, al in zip(v, a) if al > 0]
+        if len(seen) > 0.8 * len(v) and sum(1 for x in seen if x in CLEAR_SCL) >= 0.9 * len(seen):
+            return f, d, bbox
+    return None, None, bbox
+
+
+def feed_imagery(prev):
+    """Fresh Sentinel-2 pictures of each mine and the map of ground cleared since the 2018 picture."""
+    Image, _ = need_pillow()
+    prev = prev or {}
+    sites = {k: dict(v) for k, v in (prev.get("sites") or {}).items()}
+    cfg = {s["id"]: s for s in CFG["sites"]}
+    if not sites:
+        raise RuntimeError("could not read data/imagery.json from the website, so nothing was changed")
+    files, fresh, same, failed = {}, 0, 0, []
+    for sid, rec in sites.items():
+        site = dict(cfg.get(sid) or {}, lat=rec.get("lat", (cfg.get(sid) or {}).get("lat")), lng=rec.get("lng", (cfg.get(sid) or {}).get("lng")))
+        if site.get("lat") is None:
+            continue
+        try:
+            f, d, bbox = s2_clear_scene(site, rec, Image)
+            if not f:
+                continue
+            if rec.get("nowScene") == f["id"]:
+                same += 1
+                continue
+            size, ymd = 700, d.replace("-", "")
+            jpg = pc_crop("sentinel-2-l2a", f["id"], bbox, size, size, "jpg", {"assets": "visual", "asset_bidx": "visual|1,2,3", "nodata": "0"})
+            now_path = "img/%s-now-%s.jpg" % (sid, ymd)
+            files[now_path] = jpg
+            new = {"now": now_path, "nowDate": d, "nowScene": f["id"]}
+            # the change map against the 2018 picture, when the 2018 scene can be found again
+            if rec.get("thenDate") and not rec.get("noThen"):
+                then = [g for g in pc_search("sentinel-2-l2a", site["lat"], site["lng"], rec["thenDate"], rec["thenDate"], limit=10)]
+                if then:
+                    n0, a0 = ndvi_values(then[0]["id"], bbox, size, Image)
+                    n1, a1 = ndvi_values(f["id"], bbox, size, Image)
+                    s0, sa0 = scl_values(then[0]["id"], bbox, size, Image)
+                    s1, sa1 = scl_values(f["id"], bbox, size, Image)
+                    valid = veg = lost = 0
+                    over = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+                    px = over.load()
+                    for i in range(size * size):
+                        if not (a0[i] and a1[i] and sa0[i] and sa1[i] and s0[i] in CLEAR_SCL and s1[i] in CLEAR_SCL):
+                            continue
+                        valid += 1
+                        if n0[i] >= 0.25:
+                            veg += 1
+                            if n1[i] < 0.15 and n0[i] - n1[i] >= 0.18:
+                                lost += 1
+                                px[i % size, i // size] = (255, 61, 127, 215)
+                    buf = io.BytesIO()
+                    over.save(buf, "PNG", optimize=True)
+                    chg_path = "img/%s-change-%s.png" % (sid, ymd)
+                    files[chg_path] = buf.getvalue()
+                    m = (rec.get("spanKm") or 7.0) * 1000 / size
+                    new["change"] = {"lostHa": round(lost * m * m / 10000), "validPct": round(100 * valid / (size * size)),
+                                     "method": "NDVI fell by at least 0.18, from vegetated (>= 0.25) to bare ground or water (< 0.15)",
+                                     "file": chg_path, "from": rec["thenDate"], "to": d, "vegPct": round(100 * veg / valid) if valid else 0}
+            rec.update(new)
+            sites[sid] = rec
+            fresh += 1
+        except Exception as e:
+            failed.append("%s: %s" % (sid, str(e)[:140]))
+            log("  imagery %s: %s" % (sid, str(e)[:200]))
+    if failed and not fresh and not same:
+        raise RuntimeError("; ".join(failed[:3]))
+    out = dict(prev)
+    out.update({"sites": sites, "generated": TODAY.isoformat(),
+                "source": "Copernicus Sentinel-2 L2A via Microsoft Planetary Computer; elevation: Copernicus DEM GLO-30 (ESA, from TanDEM-X data acquired 2011-2015)"})
+    files["data/imagery.json"] = out
+    return files, "ok (%d new pictures, %d unchanged, %d failed)" % (fresh, same, len(failed))
+
+
+def feed_radar(prev):
+    """The newest Sentinel-1 radar picture of each site (radar sees through cloud)."""
+    Image, _ = need_pillow()
+    prev = prev or {}
+    sites = {k: dict(v) for k, v in (prev.get("sites") or {}).items()}
+    img = current("data/imagery.json") or {}
+    cfg = {s["id"]: s for s in CFG["sites"]}
+    if not sites:
+        raise RuntimeError("could not read data/orbit-extras.json from the website, so nothing was changed")
+    files, fresh, same, failed = {}, 0, 0, []
+    for sid in list(sites.keys()):
+        rec, irec = dict(sites[sid]), (img.get("sites") or {}).get(sid) or {}
+        lat, lng = irec.get("lat", (cfg.get(sid) or {}).get("lat")), irec.get("lng", (cfg.get(sid) or {}).get("lng"))
+        if lat is None:
+            continue
+        try:
+            feats = pc_search("sentinel-1-rtc", lat, lng, (TODAY - dt.timedelta(days=24)).isoformat(), TODAY.isoformat(), limit=10)
+            if not feats:
+                continue
+            f = feats[0]
+            p = f.get("properties") or {}
+            if (rec.get("radar") or {}).get("scene") == f["id"]:
+                same += 1
+                continue
+            d = p.get("datetime", "")[:10]
+            jpg = pc_crop("sentinel-1-rtc", f["id"], box(lat, lng, irec.get("spanKm") or 7.0), 512, 512, "jpg", {"assets": "vv", "rescale": "0,0.35"})
+            path = "img/%s-radar-%s.jpg" % (sid, d.replace("-", ""))
+            files[path] = jpg
+            rec["radar"] = {"file": path, "date": d, "scene": f["id"], "orbit": p.get("sat:orbit_state"), "platform": p.get("platform")}
+            sites[sid] = rec
+            fresh += 1
+        except Exception as e:
+            failed.append("%s: %s" % (sid, str(e)[:140]))
+            log("  radar %s: %s" % (sid, str(e)[:200]))
+    if failed and not fresh and not same:
+        raise RuntimeError("; ".join(failed[:3]))
+    out = dict(prev)
+    srcs = dict(out.get("sources") or {})
+    srcs["radar"] = "Copernicus Sentinel-1 RTC (Microsoft Planetary Computer)"
+    out.update({"sites": sites, "generated": TODAY.isoformat(), "sources": srcs})
+    files["data/orbit-extras.json"] = out
+    return files, "ok (%d new pictures, %d unchanged, %d failed)" % (fresh, same, len(failed))
+
 # ---------------------------------------------------------------- run
 
 INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
-              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144}
+              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144}
 
 
 def main():
-    log("OreOrbit updater v1.8 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.9 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1153,7 +1366,7 @@ def main():
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
                      ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
                      ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders),
-                     ("trade", feed_trade), ("so2", feed_so2)]:
+                     ("trade", feed_trade), ("so2", feed_so2), ("imagery", feed_imagery), ("radar", feed_radar)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
         if ONLY and name not in ONLY:
@@ -1164,7 +1377,7 @@ def main():
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
             continue
-        path = "live-data/live/%s.json" % name
+        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json"}.get(name, "live-data/live/%s.json" % name)
         try:
             prev = current(path)
             if name == "hotspots":
@@ -1174,6 +1387,13 @@ def main():
                 obj, note = fn(prev)
             if obj is None:
                 st["status"] = note
+            elif name in ("imagery", "radar"):
+                pics = [p for p in obj if p.startswith("img/")]
+                for p in pics:
+                    upload_bytes(p, obj[p])
+                res = upload(path, obj[path])
+                st.update({"ok": iso(), "fails": 0, "status": note})
+                note = note + " · %d pictures sent · %s" % (len(pics), res)
             elif name == "clouds":
                 res = [upload(p, o) for p, o in obj.items()]
                 st.update({"ok": iso(), "fails": 0, "status": note})
