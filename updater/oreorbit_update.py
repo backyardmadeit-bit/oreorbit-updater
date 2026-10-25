@@ -190,13 +190,20 @@ def feed_hazards(prev):
     out.update({"fetchedAt": iso(), "quakes": quakes[:150], "sources": ["USGS", "GDACS"]})
     note = "ok (%d quakes M5+)" % len(quakes)
     try:
-        gd = jget("https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP")
-        alerts = []
+        # the official GDACS search: orange and red alerts of the last 10 days (semicolons must stay as they are)
+        since = (TODAY - dt.timedelta(days=10)).isoformat()
+        raw = http("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF"
+                   "&fromdate=%s&todate=%s&alertlevel=orange;red" % (since, TODAY.isoformat()), timeout=90).decode("utf-8", "replace").strip()
+        gd = json.loads(raw) if raw else {"features": []}   # an empty answer means no orange or red alerts
+        alerts, seen = [], set()
         for f in gd.get("features", []):
             p, c = f.get("properties") or {}, (f.get("geometry") or {}).get("coordinates") or []
             t, lvl = str(p.get("eventtype", "")).upper(), str(p.get("alertlevel", "")).lower()
             if t not in GDACS_TYPES or lvl not in ("orange", "red") or len(c) < 2 or not isinstance(c[0], (int, float)):
                 continue
+            if str(p.get("todate") or p.get("fromdate") or "")[:10] < since or (t, p.get("eventid")) in seen:
+                continue
+            seen.add((t, p.get("eventid")))
             sev = p.get("severitydata") or {}
             url = (p.get("url") or {}).get("report") if isinstance(p.get("url"), dict) else p.get("url")
             alerts.append({"id": "%s%s" % (t, p.get("eventid")), "type": t, "lat": round(c[1], 4), "lng": round(c[0], 4),
