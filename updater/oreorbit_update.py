@@ -941,23 +941,33 @@ def feed_trade(prev):
 SO2_SITES = ["ganzhou", "imip", "kokkola", "norilsk", "panzhihua", "xikuangshan"]
 
 
+SO2_FALLBACK = ["OMPS_NOAA20_SO2_Planetary_Boundary_Layer", "OMI_SO2_Planetary_Boundary_Layer", "OMPS_NOAA20_SO2_Lower_Troposphere"]
+SO2_LABEL = {
+    "OMPS_NOAA20_SO2_Planetary_Boundary_Layer": "NOAA-20 OMPS sulphur dioxide, planetary boundary layer (NASA GIBS imagery)",
+    "OMI_SO2_Planetary_Boundary_Layer": "Aura OMI sulphur dioxide, planetary boundary layer (NASA GIBS imagery)",
+    "OMPS_NOAA20_SO2_Lower_Troposphere": "NOAA-20 OMPS sulphur dioxide, lower troposphere (NASA GIBS imagery)",
+}
+
+
 def so2_layer():
-    """Finds the Sentinel-5P sulphur dioxide layer and its colour scale in NASA GIBS's own list."""
+    """Finds a daily sulphur dioxide layer and its colour scale in NASA GIBS's own list:
+    Sentinel-5P if GIBS has one, otherwise the NOAA-20 OMPS planetary-boundary-layer product."""
     import re
-    if CFG.get("so2Layer"):
-        lid = CFG["so2Layer"]
-        return lid, "https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid
-    cap = http("https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml", timeout=180).decode("utf-8", "replace")
-    ids = sorted(set(re.findall(r"<ows:Identifier>([^<]*SO2[^<]*)</ows:Identifier>", cap)))
-    def score(i):
-        u = i.upper()
-        return (("TROPOMI" in u or "S5P" in u or "SENTINEL" in u) * 4 + ("TOTAL" in u) * 2 - ("PBL" in u or "LOWER" in u or "MIDDLE" in u or "UPPER" in u or "LAYER" in u) * 3)
-    good = [i for i in ids if score(i) >= 4]
-    if not good:
-        raise RuntimeError("no Sentinel-5P SO2 layer in GIBS; SO2 layers seen: " + ", ".join(ids[:12]))
-    lid = max(good, key=score)
-    maps = re.findall(r'xlink:href="(https://gibs\.earthdata\.nasa\.gov/colormaps/v1\.3/[^"]+\.xml)"', cap)
-    cmap = next((u for u in maps if u.rsplit("/", 1)[-1].startswith(lid)), "https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid)
+    cap = None
+    lid = CFG.get("so2Layer")
+    if not lid:
+        cap = http("https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml", timeout=180).decode("utf-8", "replace")
+        ids = sorted(set(re.findall(r"<ows:Identifier>([^<]*(?:SO2|[Ss]ulfur|[Ss]ulphur|SULFUR)[^<]*)</ows:Identifier>", cap)))
+        s5p = [i for i in ids if any(w in i.upper() for w in ("TROPOMI", "S5P", "SENTINEL"))]
+        s5p.sort(key=lambda i: (("TOTAL" in i.upper()) or ("PLANETARY" in i.upper())), reverse=True)
+        lid = (s5p or [f for f in SO2_FALLBACK if f in ids] or [None])[0]
+        if not lid:
+            raise RuntimeError("no daily SO2 layer found; GIBS lists: " + ", ".join(ids))
+        log("  SO2 layers in GIBS: " + ", ".join(ids))
+    cmap = "https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid
+    if cap:
+        maps = re.findall(r'xlink:href="(https://gibs\.earthdata\.nasa\.gov/colormaps/v1\.3/[^"]+\.xml)"', cap)
+        cmap = next((u for u in maps if u.rsplit("/", 1)[-1][:-4] == lid), cmap)
     return lid, cmap
 
 
@@ -985,29 +995,33 @@ def so2_colours(xml_bytes):
 
 
 def so2_day(lid, colours, site, day, Image):
-    """DU near the site (max and mean within the radius) and in a ring around it, or None when there is no data."""
-    lat, lng, half, px = site["lat"], site["lng"], 2.0, 200
-    bbox = "%.4f,%.4f,%.4f,%.4f" % (lat - half, lng - half, lat + half, lng + half)
+    """DU near the site (max and mean within 50 km) and the mean in a ring 150-270 km out, as the atlas describes it;
+    None when there is no usable picture."""
+    lat, lng = site["lat"], site["lng"]
+    hlat = 2.6
+    hlng = min(8.0, hlat / max(0.15, math.cos(lat * math.pi / 180)))
+    h, w = 200, max(200, min(600, round(200 * hlng / hlat)))
+    bbox = "%.4f,%.4f,%.4f,%.4f" % (lat - hlat, lng - hlng, lat + hlat, lng + hlng)
     url = ("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=%s&STYLES="
-           "&CRS=EPSG:4326&BBOX=%s&WIDTH=%d&HEIGHT=%d&FORMAT=image/png&TRANSPARENT=true&TIME=%s" % (lid, bbox, px, px, day))
+           "&CRS=EPSG:4326&BBOX=%s&WIDTH=%d&HEIGHT=%d&FORMAT=image/png&TRANSPARENT=true&TIME=%s" % (lid, bbox, w, h, day))
     img = Image.open(io.BytesIO(http(url, timeout=90))).convert("RGBA")
+    if img.size != (w, h):
+        img = img.resize((w, h), Image.NEAREST)
     data, cache = img.load(), {}
     near, ring = [], []
-    step = 2 * half / px
-    for yy in range(px):
-        la = lat + half - (yy + 0.5) * step
-        for xx in range(px):
+    for yy in range(h):
+        la = lat + hlat - (yy + 0.5) * 2 * hlat / h
+        for xx in range(w):
             r, g, b, a = data[xx, yy]
             if a < 128:
                 continue
-            lo = lng - half + (xx + 0.5) * step
-            k = km(lat, lng, la, lo)
-            if k > 150:
+            k = km(lat, lng, la, lng - hlng + (xx + 0.5) * 2 * hlng / w)
+            if k > 270 or 50 < k < 150:
                 continue
             key = (r, g, b)
             if key not in cache:
                 cache[key] = min(colours, key=lambda c: (c[0] - r) ** 2 + (c[1] - g) ** 2 + (c[2] - b) ** 2)[3]
-            (near if k <= 50 else ring if k >= 80 else []).append(cache[key])
+            (near if k <= 50 else ring).append(cache[key])
     if not near:
         return None
     return {"d": day, "near": round(max(near), 2), "nearMean": round(sum(near) / len(near), 2), "ring": round(sum(ring) / len(ring), 2) if ring else None}
@@ -1021,7 +1035,10 @@ def feed_so2(prev):
     sites_cfg = {s["id"]: s for s in CFG["sites"]}
     want = [sid for sid in (list((prev.get("sites") or {}).keys()) or SO2_SITES) if sid in sites_cfg]
     days = [(TODAY - dt.timedelta(days=i)).isoformat() for i in range(60, 1, -1)]   # up to two days ago
-    sites, fetched = dict(prev.get("sites") or {}), 0
+    same = prev.get("layer") == lid or (not prev.get("layer") and any(w in lid.upper() for w in ("TROPOMI", "S5P", "SENTINEL")))
+    sites, fetched = (dict(prev.get("sites") or {}) if same else {}), 0
+    if not same:
+        log("  SO2: new layer %s, starting a fresh 60-day history" % lid)
     for sid in want:
         rec = dict(sites.get(sid) or {})
         tried, series = set(rec.get("tried") or []), {x["d"]: x for x in (rec.get("series") or []) if isinstance(x, dict) and x.get("d")}
@@ -1046,8 +1063,8 @@ def feed_so2(prev):
         raise RuntimeError("no SO2 picture could be read")
     out = dict(prev)
     out.update({"days": 60, "fetchedAt": iso(), "radiusKm": 50, "sites": sites, "layer": lid, "unit": "DU",
-                "source": "Copernicus Sentinel-5P TROPOMI sulphur dioxide, total column (NASA GIBS imagery)", "url": "https://worldview.earthdata.nasa.gov",
-                "note": prev.get("note") or "Values are read back from the published colour scale in steps of 0.15 DU; the lowest step is everything below 2 DU."})
+                "source": SO2_LABEL.get(lid, "Copernicus Sentinel-5P TROPOMI sulphur dioxide (NASA GIBS imagery)"), "url": "https://worldview.earthdata.nasa.gov",
+                "note": "Values are read back from the published colour scale of the %s layer, in Dobson units (DU)." % lid})
     return out, "ok (layer %s, %d pictures read, %d sites)" % (lid, fetched, len(want))
 
 # ---------------------------------------------------------------- run
@@ -1057,7 +1074,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v1.5 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.6 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
