@@ -796,14 +796,268 @@ def feed_tenders(prev):
     dropped = (" · codes TED does not know, left out: " + ", ".join(sorted(TED_DROPPED))) if TED_DROPPED else ""
     return out, "ok (%d months, last month: %s)%s" % (len(months), ", ".join("%s %d" % (k, v[-2]) for k, v in series.items()), dropped)
 
+
+# ---------------------------------------------------------------- part three: EU imports (Comext) and sulphur dioxide
+
+COMEXT = "https://ec.europa.eu/eurostat/api/comext/dissemination/statistics/1.0/data/DS-045409?"
+EU27 = set("AT BE BG CY CZ DE DK EE ES FI FR GR EL HR HU IE IT LT LU LV MT NL PL PT RO SE SI SK".split())
+TRADE_CODES = {
+    "co": [("810520", "Cobalt mattes and unwrought cobalt"), ("282200", "Cobalt oxides and hydroxides")],
+    "ga": [("81129289", "Unwrought gallium")], "ge": [("81129295", "Unwrought germanium")],
+    "gr": [("380110", "Artificial graphite"), ("250410", "Natural flake graphite")],
+    "li": [("283691", "Lithium carbonate"), ("282520", "Lithium oxide and hydroxide")],
+    "ni": [("750210", "Unwrought nickel"), ("750110", "Nickel mattes")],
+    "ree": [("850511", "Permanent magnets of metal"), ("284690", "Rare-earth compounds"), ("280530", "Rare-earth metals")],
+    "sb": [("811010", "Unwrought antimony"), ("282580", "Antimony oxides")],
+    "ti": [("810820", "Unwrought titanium (sponge)"), ("261400", "Titanium ores")],
+    "w": [("810194", "Unwrought tungsten"), ("261100", "Tungsten ores")],
+}
+
+
+def jsonstat_rows(j):
+    """Rows of a JSON-stat answer as ({dimension: code}, value)."""
+    ids, sizes = j["id"], j["size"]
+    cats = []
+    for d in ids:
+        idx = j["dimension"][d]["category"]["index"]
+        if isinstance(idx, list):
+            cats.append(idx)
+        else:
+            codes = [None] * len(idx)
+            for c, pos in idx.items():
+                codes[pos] = c
+            cats.append(codes)
+    vals = j.get("value") or {}
+    for flat, v in (vals.items() if isinstance(vals, dict) else enumerate(vals)):
+        if v is None:
+            continue
+        flat, coords = int(flat), []
+        for size in reversed(sizes):
+            coords.append(flat % size)
+            flat //= size
+        coords.reverse()
+        yield {d: cats[i][coords[i]] for i, d in enumerate(ids)}, v
+
+
+REPORTER = []
+
+
+def comext(params):
+    """One Comext question. Tries the EU reporter codes in turn, waits when Comext answers 'later'."""
+    errors = []
+    for rep in (REPORTER or ["EU27_2020", "EU"]):
+        q = dict(params, format="JSON", lang="EN", reporter=rep, flow="1")
+        url = COMEXT + urllib.parse.urlencode(q, doseq=True)
+        for attempt in range(4):
+            try:
+                j = jget(url, timeout=180)
+            except Exception as e:
+                errors.append("%s %s" % (rep, why(e)))
+                break
+            if "value" in j and "id" in j:
+                if not REPORTER:
+                    REPORTER.append(rep)
+                return j
+            time.sleep(30)   # Comext prepares big answers in the background
+        else:
+            errors.append("%s: no data after waiting" % rep)
+    raise RuntimeError(" | ".join(errors))
+
+
+def is_ext(p):
+    return isinstance(p, str) and len(p) == 2 and p not in EU27 and not (p.startswith("Q") and p != "QA")
+
+
+def trade_one(code):
+    y = TODAY.year
+    tdim = lambda r: r.get("time") or r.get("TIME_PERIOD")
+    # monthly, every partner, since January last year
+    m = comext({"freq": "M", "product": code, "indicators": "VALUE_IN_EUROS", "sinceTimePeriod": "%d-01" % (y - 1)})
+    cn, ext = {}, {}
+    for r, v in jsonstat_rows(m):
+        t, p = tdim(r), r.get("partner")
+        if p == "CN":
+            cn[t] = cn.get(t, 0) + v
+        if is_ext(p):
+            ext[t] = ext.get(t, 0) + v
+    months = sorted(set(cn) | set(ext))
+    if not months:
+        raise RuntimeError("no monthly data for %s" % code)
+    start, last = dt.date(y - 1, 1, 1), months[-1]
+    seq, d = [], start
+    while d.strftime("%Y-%m") <= last:
+        seq.append(d.strftime("%Y-%m"))
+        d = dt.date(d.year + (d.month == 12), d.month % 12 + 1, 1)
+    monthly = {"cn": [round(cn.get(k, 0)) for k in seq], "ext": [round(ext.get(k, 0)) for k in seq], "from": seq[0]}
+    # the last two full years, every partner, value and quantity
+    a = comext({"freq": "A", "product": code, "indicators": ["VALUE_IN_EUROS", "QUANTITY_IN_100KG"],
+                "sinceTimePeriod": str(y - 2), "untilTimePeriod": str(y - 1)})
+    years = {}
+    for r, v in jsonstat_rows(a):
+        t, p, ind = str(tdim(r)), r.get("partner"), r.get("indicators")
+        if not is_ext(p):
+            continue
+        yr = years.setdefault(t, {"cn": 0, "eur": 0, "t": 0, "_by": {}})
+        if ind == "VALUE_IN_EUROS":
+            yr["eur"] += v
+            yr["_by"][p] = yr["_by"].get(p, 0) + v
+            if p == "CN":
+                yr["cn"] += v
+        elif ind == "QUANTITY_IN_100KG":
+            yr["t"] += v / 10
+    for yr in years.values():
+        yr["top"] = [[p, round(v)] for p, v in sorted(yr.pop("_by").items(), key=lambda x: -x[1])[:6]]
+        yr["cn"], yr["eur"], yr["t"] = round(yr["cn"]), round(yr["eur"]), round(yr["t"], 1)
+    return monthly, dict(sorted(years.items()))
+
+
+def feed_trade(prev):
+    prev = prev or {}
+    mats = {k: list(v) for k, v in (prev.get("materials") or {}).items()}
+    ok, errors = 0, []
+    for m, codes in TRADE_CODES.items():
+        rows = []
+        for code, label in codes:
+            old = next((r for r in mats.get(m, []) if r.get("code") == code), None)
+            try:
+                monthly, years = trade_one(code)
+                rows.append({"code": code, "label": label, "monthly": monthly, "years": years})
+                ok += 1
+            except Exception as e:
+                errors.append("%s %s" % (code, str(e)[:120]))
+                if old:
+                    rows.append(old)
+            time.sleep(1)
+        if rows:
+            mats[m] = rows
+    if not ok:
+        raise RuntimeError("; ".join(errors[:3]))
+    out = dict(prev)
+    out.update({"fetchedAt": iso(), "materials": mats, "source": "Eurostat Comext, EU trade by CN8 (DS-045409)", "unit": "EUR; tonnes",
+                "url": "https://ec.europa.eu/eurostat/comext/newxtweb/"})
+    return out, "ok (%d of %d products%s)" % (ok, sum(len(v) for v in TRADE_CODES.values()), ("; failed: " + "; ".join(errors[:3])) if errors else "")
+
+
+SO2_SITES = ["ganzhou", "imip", "kokkola", "norilsk", "panzhihua", "xikuangshan"]
+
+
+def so2_layer():
+    """Finds the Sentinel-5P sulphur dioxide layer and its colour scale in NASA GIBS's own list."""
+    import re
+    if CFG.get("so2Layer"):
+        lid = CFG["so2Layer"]
+        return lid, "https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid
+    cap = http("https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml", timeout=180).decode("utf-8", "replace")
+    ids = sorted(set(re.findall(r"<ows:Identifier>([^<]*SO2[^<]*)</ows:Identifier>", cap)))
+    def score(i):
+        u = i.upper()
+        return (("TROPOMI" in u or "S5P" in u or "SENTINEL" in u) * 4 + ("TOTAL" in u) * 2 - ("PBL" in u or "LOWER" in u or "MIDDLE" in u or "UPPER" in u or "LAYER" in u) * 3)
+    good = [i for i in ids if score(i) >= 4]
+    if not good:
+        raise RuntimeError("no Sentinel-5P SO2 layer in GIBS; SO2 layers seen: " + ", ".join(ids[:12]))
+    lid = max(good, key=score)
+    maps = re.findall(r'xlink:href="(https://gibs\.earthdata\.nasa\.gov/colormaps/v1\.3/[^"]+\.xml)"', cap)
+    cmap = next((u for u in maps if u.rsplit("/", 1)[-1].startswith(lid)), "https://gibs.earthdata.nasa.gov/colormaps/v1.3/%s.xml" % lid)
+    return lid, cmap
+
+
+def so2_colours(xml_bytes):
+    """[(r, g, b, DU)] from a GIBS colour map; the open lowest step counts as 1 DU, like the earlier data."""
+    import re
+    out = []
+    for m in re.finditer(r'<ColorMapEntry\b([^>]*)/?>', xml_bytes.decode("utf-8", "replace")):
+        a = dict(re.findall(r'(\w+)="([^"]*)"', m.group(1)))
+        if a.get("transparent", "false").lower() == "true" or "rgb" not in a:
+            continue
+        nums = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?(?:[eE]-?\d+)?", a.get("value", ""))]
+        txt = a.get("value", "")
+        if len(nums) >= 2:
+            du = (nums[0] + nums[1]) / 2
+        elif len(nums) == 1:
+            du = 1.0 if "-INF" in txt.upper() or txt.strip().startswith("(") and nums[0] <= 2.01 else nums[0]
+        else:
+            continue
+        r, g, b = [int(x) for x in a["rgb"].split(",")[:3]]
+        out.append((r, g, b, round(du, 2)))
+    if len(out) < 5:
+        raise RuntimeError("could not read the SO2 colour scale")
+    return out
+
+
+def so2_day(lid, colours, site, day, Image):
+    """DU near the site (max and mean within the radius) and in a ring around it, or None when there is no data."""
+    lat, lng, half, px = site["lat"], site["lng"], 2.0, 200
+    bbox = "%.4f,%.4f,%.4f,%.4f" % (lat - half, lng - half, lat + half, lng + half)
+    url = ("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=%s&STYLES="
+           "&CRS=EPSG:4326&BBOX=%s&WIDTH=%d&HEIGHT=%d&FORMAT=image/png&TRANSPARENT=true&TIME=%s" % (lid, bbox, px, px, day))
+    img = Image.open(io.BytesIO(http(url, timeout=90))).convert("RGBA")
+    data, cache = img.load(), {}
+    near, ring = [], []
+    step = 2 * half / px
+    for yy in range(px):
+        la = lat + half - (yy + 0.5) * step
+        for xx in range(px):
+            r, g, b, a = data[xx, yy]
+            if a < 128:
+                continue
+            lo = lng - half + (xx + 0.5) * step
+            k = km(lat, lng, la, lo)
+            if k > 150:
+                continue
+            key = (r, g, b)
+            if key not in cache:
+                cache[key] = min(colours, key=lambda c: (c[0] - r) ** 2 + (c[1] - g) ** 2 + (c[2] - b) ** 2)[3]
+            (near if k <= 50 else ring if k >= 80 else []).append(cache[key])
+    if not near:
+        return None
+    return {"d": day, "near": round(max(near), 2), "nearMean": round(sum(near) / len(near), 2), "ring": round(sum(ring) / len(ring), 2) if ring else None}
+
+
+def feed_so2(prev):
+    prev = prev or {}
+    Image, _ = need_pillow()
+    lid, cmap_url = so2_layer()
+    colours = so2_colours(http(cmap_url, timeout=60))
+    sites_cfg = {s["id"]: s for s in CFG["sites"]}
+    want = [sid for sid in (list((prev.get("sites") or {}).keys()) or SO2_SITES) if sid in sites_cfg]
+    days = [(TODAY - dt.timedelta(days=i)).isoformat() for i in range(60, 1, -1)]   # up to two days ago
+    sites, fetched = dict(prev.get("sites") or {}), 0
+    for sid in want:
+        rec = dict(sites.get(sid) or {})
+        tried, series = set(rec.get("tried") or []), {x["d"]: x for x in (rec.get("series") or []) if isinstance(x, dict) and x.get("d")}
+        for day in days:
+            if day in tried and day < (TODAY - dt.timedelta(days=5)).isoformat():
+                continue
+            try:
+                v = so2_day(lid, colours, sites_cfg[sid], day, Image)
+                fetched += 1
+                tried.add(day)
+                if v:
+                    series[day] = v
+            except Exception as e:
+                log("  SO2 %s %s: %s" % (sid, day, why(e)))
+            time.sleep(0.2)
+        keep = set(days)
+        ser = [series[d] for d in sorted(series) if d in keep]
+        rec.update({"daysAbove2": sum(1 for x in ser if x["near"] >= 2), "daysSeen": len(ser), "maxDU": max([x["near"] for x in ser], default=0),
+                    "series": ser, "tried": sorted(d for d in tried if d in keep)})
+        sites[sid] = rec
+    if not fetched:
+        raise RuntimeError("no SO2 picture could be read")
+    out = dict(prev)
+    out.update({"days": 60, "fetchedAt": iso(), "radiusKm": 50, "sites": sites, "layer": lid, "unit": "DU",
+                "source": "Copernicus Sentinel-5P TROPOMI sulphur dioxide, total column (NASA GIBS imagery)", "url": "https://worldview.earthdata.nasa.gov",
+                "note": prev.get("note") or "Values are read back from the published colour scale in steps of 0.15 DU; the lowest step is everything below 2 DU."})
+    return out, "ok (layer %s, %d pictures read, %d sites)" % (lid, fetched, len(want))
+
 # ---------------------------------------------------------------- run
 
 INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
-              "clouds": 2.5, "conflict": 144, "tenders": 144}
+              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144}
 
 
 def main():
-    log("OreOrbit updater v1.4 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.5 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -821,7 +1075,8 @@ def main():
 
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
                      ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
-                     ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders)]:
+                     ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders),
+                     ("trade", feed_trade), ("so2", feed_so2)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
         if ONLY and name not in ONLY:
