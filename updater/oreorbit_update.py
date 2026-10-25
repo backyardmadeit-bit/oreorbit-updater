@@ -745,22 +745,33 @@ TED_CPV = {
 }
 
 
+TED_DROPPED = set()
+
+
 def ted_count(codes, d0, d1):
-    """How many notices TED published with these CPV codes between d0 and d1 (inclusive, YYYYMMDD)."""
-    queries = ["classification-cpv IN (%s) AND publication-date>=%s AND publication-date<=%s" % (codes, d0, d1),
-               "classification-cpv IN (%s) AND publication-date IN (%s <> %s)" % (codes, d0, d1)]
-    errors = []
-    for q in queries:
+    """How many notices TED published with these CPV codes between d0 and d1 (inclusive, YYYYMMDD).
+    A code TED does not know is dropped (and remembered for the rest of the run), then the question is asked again."""
+    import re
+    for _ in range(12):
+        use = [c for c in codes.split() if c not in TED_DROPPED]
+        if not use:
+            raise RuntimeError("TED accepted none of the codes")
+        q = "classification-cpv IN (%s) AND publication-date>=%s AND publication-date<=%s" % (" ".join(use), d0, d1)
         body = {"query": q, "fields": ["publication-number"], "page": 1, "limit": 1, "scope": "ALL", "paginationMode": "PAGE_NUMBER"}
         try:
             j = jget("https://api.ted.europa.eu/v3/notices/search", data=body, timeout=90)
-            for k in ("totalNoticeCount", "total", "totalCount"):
-                if isinstance(j.get(k), int):
-                    return j[k]
-            raise RuntimeError("no count in the answer: " + str(list(j.keys()))[:120])
-        except Exception as e:
-            errors.append(why(e))
-    raise RuntimeError(" | ".join(errors))
+        except urllib.error.HTTPError as e:
+            msg = why(e)
+            m = re.search(r"Value '(\d+)' is not supported for search field 'classification-cpv'", msg)
+            if e.code == 400 and m:
+                TED_DROPPED.add(m.group(1))
+                continue
+            raise RuntimeError(msg)
+        for k in ("totalNoticeCount", "total", "totalCount"):
+            if isinstance(j.get(k), int):
+                return j[k]
+        raise RuntimeError("no count in the answer: " + str(list(j.keys()))[:120])
+    raise RuntimeError("TED kept refusing codes: " + ", ".join(sorted(TED_DROPPED)))
 
 
 def feed_tenders(prev):
@@ -782,7 +793,8 @@ def feed_tenders(prev):
     out.update({"fetchedAt": iso(), "months": [d.strftime("%Y-%m") for d in months], "series": series,
                 "source": "TED, Tenders Electronic Daily (EU Publications Office)", "unit": "notices published (calls for tender and awards) per month",
                 "url": "https://ted.europa.eu"})
-    return out, "ok (%d months, last month: %s)" % (len(months), ", ".join("%s %d" % (k, v[-2]) for k, v in series.items()))
+    dropped = (" · codes TED does not know, left out: " + ", ".join(sorted(TED_DROPPED))) if TED_DROPPED else ""
+    return out, "ok (%d months, last month: %s)%s" % (len(months), ", ".join("%s %d" % (k, v[-2]) for k, v in series.items()), dropped)
 
 # ---------------------------------------------------------------- run
 
@@ -791,7 +803,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v1.3 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v1.4 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
