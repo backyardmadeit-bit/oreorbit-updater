@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OreOrbit update key</title>
+<style>
+body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;max-width:760px;margin:40px auto;padding:0 20px;color:#111}
+h1{font-size:26px;margin:0 0 6px}h2{font-size:17px;margin:28px 0 8px}
+code,textarea,input{font:14px ui-monospace,Menlo,Consolas,monospace}
+textarea,input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;background:#fafafa}
+button{font:600 14px system-ui;padding:9px 16px;border-radius:999px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+.box{border:1px solid #ddd;border-radius:12px;padding:16px 18px;margin:12px 0}.muted{color:#555;font-size:14px}
+</style></head><body>
+<h1>OreOrbit update key</h1>
+<p class="muted">Runs only in this browser window. Nothing is sent anywhere.</p>
+
+<h2>A. Make a new key</h2>
+<div class="box">
+  <button id="make">Make a new key</button>
+  <p><b>1. The key</b> goes into GitHub as the secret <code>ATLAS_KEY</code>. Keep it private.</p>
+  <textarea id="key" rows="2" readonly></textarea>
+  <p><b>2. The fingerprint</b> goes on your website: in WebFTP, open <code>atlas/update-config.php</code>, click Edit, replace the whole file with this one line and save.</p>
+  <textarea id="php" rows="2" readonly></textarea>
+</div>
+
+<h2>B. Or check a key you already have</h2>
+<div class="box">
+  <p class="muted">Paste the key from your old scheduled task. If the fingerprint matches the one in <code>update-config.php</code>, you can use that key as <code>ATLAS_KEY</code> and change nothing on the website.</p>
+  <input id="old" placeholder="paste the existing key">
+  <p><button id="check">Show its fingerprint</button></p>
+  <textarea id="oldhash" rows="1" readonly></textarea>
+</div>
+
+<script>
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+async function sha(t) { return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t))); }
+function noCrypto() { alert("This browser blocks the crypto tools on local files. Open this file in Chrome, Edge or Firefox."); }
+document.getElementById("make").onclick = async () => {
+  if (!window.crypto || !crypto.subtle) return noCrypto();
+  const key = hex(crypto.getRandomValues(new Uint8Array(32)));
+  document.getElementById("key").value = key;
+  document.getElementById("php").value = "<?php return ['key_sha256' => '" + await sha(key) + "'];";
+};
+document.getElementById("check").onclick = async () => {
+  if (!window.crypto || !crypto.subtle) return noCrypto();
+  const k = document.getElementById("old").value.trim();
+  document.getElementById("oldhash").value = k ? await sha(k) : "";
+};
+</script>
+</body></html>

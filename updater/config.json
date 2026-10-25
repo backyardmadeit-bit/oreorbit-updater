@@ -1,0 +1,577 @@
+{
+ "sites": [
+  {
+   "id": "bayan-obo",
+   "name": "Bayan Obo",
+   "country": "China",
+   "lat": 41.8028,
+   "lng": 109.9736,
+   "m": "ree",
+   "stage": "Mine"
+  },
+  {
+   "id": "mountain-pass",
+   "name": "Mountain Pass",
+   "country": "United States",
+   "lat": 35.47861,
+   "lng": -115.5325,
+   "m": "ree",
+   "stage": "Mine"
+  },
+  {
+   "id": "mount-weld",
+   "name": "Mount Weld",
+   "country": "Australia",
+   "lat": -28.86,
+   "lng": 122.54778,
+   "m": "ree",
+   "stage": "Mine"
+  },
+  {
+   "id": "lynas-kuantan",
+   "name": "Lynas Advanced Materials Plant",
+   "country": "Malaysia",
+   "lat": 3.97,
+   "lng": 103.38,
+   "m": "ree",
+   "stage": "Processing"
+  },
+  {
+   "id": "sillamae",
+   "name": "Sillamäe separation plant",
+   "country": "Estonia",
+   "lat": 59.39306,
+   "lng": 27.77417,
+   "m": "ree",
+   "stage": "Processing"
+  },
+  {
+   "id": "narva",
+   "name": "Narva magnet plant",
+   "country": "Estonia",
+   "lat": 59.37583,
+   "lng": 28.19611,
+   "m": "ree",
+   "stage": "Magnets"
+  },
+  {
+   "id": "panzhihua",
+   "name": "Panzhihua",
+   "country": "China",
+   "lat": 26.623,
+   "lng": 101.7546,
+   "m": "ti",
+   "stage": "Mine"
+  },
+  {
+   "id": "tellnes",
+   "name": "Tellnes",
+   "country": "Norway",
+   "lat": 58.33444,
+   "lng": 6.42278,
+   "m": "ti",
+   "stage": "Mine"
+  },
+  {
+   "id": "irshansk",
+   "name": "Irshansk",
+   "country": "Ukraine",
+   "lat": 50.75139,
+   "lng": 28.72111,
+   "m": "ti",
+   "stage": "Mine"
+  },
+  {
+   "id": "vilnohirsk",
+   "name": "Vilnohirsk",
+   "country": "Ukraine",
+   "lat": 48.47806,
+   "lng": 34.02806,
+   "m": "ti",
+   "stage": "Mine"
+  },
+  {
+   "id": "richards-bay",
+   "name": "Richards Bay Minerals",
+   "country": "South Africa",
+   "lat": -28.7,
+   "lng": 32.05,
+   "m": "ti",
+   "stage": "Mine"
+  },
+  {
+   "id": "mittersill",
+   "name": "Mittersill",
+   "country": "Austria",
+   "lat": 47.22598,
+   "lng": 12.48871,
+   "m": "w",
+   "stage": "Mine"
+  },
+  {
+   "id": "panasqueira",
+   "name": "Panasqueira",
+   "country": "Portugal",
+   "lat": 40.17,
+   "lng": -7.75,
+   "m": "w",
+   "stage": "Mine"
+  },
+  {
+   "id": "ganzhou",
+   "name": "Ganzhou tungsten district",
+   "country": "China",
+   "lat": 25.83,
+   "lng": 114.93,
+   "m": "w",
+   "stage": "Mine"
+  },
+  {
+   "id": "xikuangshan",
+   "name": "Xikuangshan",
+   "country": "China",
+   "lat": 27.7698,
+   "lng": 111.494,
+   "m": "sb",
+   "stage": "Mine"
+  },
+  {
+   "id": "stibnite",
+   "name": "Stibnite Gold Project",
+   "country": "United States",
+   "lat": 44.91,
+   "lng": -115.33,
+   "m": "sb",
+   "stage": "Planned"
+  },
+  {
+   "id": "metlen-gallium",
+   "name": "Metlen gallium project",
+   "country": "Greece",
+   "lat": 38.366,
+   "lng": 22.687,
+   "m": "ga",
+   "stage": "Planned"
+  },
+  {
+   "id": "umicore-olen",
+   "name": "Umicore Olen",
+   "country": "Belgium",
+   "lat": 51.17,
+   "lng": 4.9,
+   "m": "ge",
+   "stage": "Processing"
+  },
+  {
+   "id": "kipushi",
+   "name": "Kipushi",
+   "country": "DR Congo",
+   "lat": -11.76722,
+   "lng": 27.23694,
+   "m": "ge",
+   "stage": "Mine"
+  },
+  {
+   "id": "greenbushes",
+   "name": "Greenbushes",
+   "country": "Australia",
+   "lat": -33.86,
+   "lng": 116.06,
+   "m": "li",
+   "stage": "Mine"
+  },
+  {
+   "id": "atacama",
+   "name": "Salar de Atacama",
+   "country": "Chile",
+   "lat": -23.474,
+   "lng": -68.3526,
+   "m": "li",
+   "stage": "Mine"
+  },
+  {
+   "id": "cinovec",
+   "name": "Cínovec",
+   "country": "Czechia",
+   "lat": 50.735,
+   "lng": 13.795,
+   "m": "li",
+   "stage": "Planned"
+  },
+  {
+   "id": "jadar",
+   "name": "Jadar",
+   "country": "Serbia",
+   "lat": 44.53,
+   "lng": 19.22,
+   "m": "li",
+   "stage": "Planned"
+  },
+  {
+   "id": "tenke",
+   "name": "Tenke Fungurume",
+   "country": "DR Congo",
+   "lat": -10.568411,
+   "lng": 26.195633,
+   "m": "co",
+   "stage": "Mine"
+  },
+  {
+   "id": "mutanda",
+   "name": "Mutanda",
+   "country": "DR Congo",
+   "lat": -10.79,
+   "lng": 25.8,
+   "m": "co",
+   "stage": "Mine"
+  },
+  {
+   "id": "kokkola",
+   "name": "Kokkola cobalt refinery",
+   "country": "Finland",
+   "lat": 63.85,
+   "lng": 23.03,
+   "m": "co",
+   "stage": "Processing"
+  },
+  {
+   "id": "norilsk",
+   "name": "Norilsk",
+   "country": "Russia",
+   "lat": 69.333,
+   "lng": 88.217,
+   "m": "ni",
+   "stage": "Mine"
+  },
+  {
+   "id": "imip",
+   "name": "IMIP Morowali",
+   "country": "Indonesia",
+   "lat": -2.83,
+   "lng": 122.16,
+   "m": "ni",
+   "stage": "Processing"
+  },
+  {
+   "id": "terrafame",
+   "name": "Terrafame",
+   "country": "Finland",
+   "lat": 63.98,
+   "lng": 28.02,
+   "m": "ni",
+   "stage": "Mine"
+  },
+  {
+   "id": "balama",
+   "name": "Balama",
+   "country": "Mozambique",
+   "lat": -13.313,
+   "lng": 38.652,
+   "m": "gr",
+   "stage": "Mine"
+  },
+  {
+   "id": "vittangi",
+   "name": "Vittangi",
+   "country": "Sweden",
+   "lat": 67.68,
+   "lng": 21.63,
+   "m": "gr",
+   "stage": "Planned"
+  }
+ ],
+ "sats": [
+  {
+   "id": "l8",
+   "name": "LANDSAT 8",
+   "norad": 39084
+  },
+  {
+   "id": "s2a",
+   "name": "SENTINEL-2A",
+   "norad": 40697
+  },
+  {
+   "id": "s2b",
+   "name": "SENTINEL-2B",
+   "norad": 42063
+  },
+  {
+   "id": "l9",
+   "name": "LANDSAT 9",
+   "norad": 49260
+  },
+  {
+   "id": "s2c",
+   "name": "SENTINEL-2C",
+   "norad": 60989
+  },
+  {
+   "id": "iss",
+   "name": "ISS (ZARYA)",
+   "norad": 25544
+  },
+  {
+   "id": "enmap",
+   "name": "ENMAP",
+   "norad": 52159
+  }
+ ],
+ "shipBoxes": [
+  {
+   "bbox": [
+    [
+     1.05,
+     103.6
+    ],
+    [
+     1.45,
+     104.5
+    ]
+   ],
+   "id": "sing",
+   "name": "Singapore Strait"
+  },
+  {
+   "bbox": [
+    [
+     1,
+     99.5
+    ],
+    [
+     6,
+     104
+    ]
+   ],
+   "id": "mal",
+   "name": "Strait of Malacca"
+  },
+  {
+   "bbox": [
+    [
+     11.8,
+     42.6
+    ],
+    [
+     13.2,
+     44
+    ]
+   ],
+   "id": "bab",
+   "name": "Bab-el-Mandeb"
+  },
+  {
+   "bbox": [
+    [
+     31.2,
+     32.15
+    ],
+    [
+     31.6,
+     32.6
+    ]
+   ],
+   "id": "psd",
+   "name": "Port Said"
+  },
+  {
+   "bbox": [
+    [
+     29.8,
+     32.2
+    ],
+    [
+     31.2,
+     32.7
+    ]
+   ],
+   "id": "suez",
+   "name": "Suez Canal"
+  },
+  {
+   "bbox": [
+    [
+     -36.5,
+     16.5
+    ],
+    [
+     -33.5,
+     21.5
+    ]
+   ],
+   "id": "cape",
+   "name": "Cape of Good Hope"
+  },
+  {
+   "bbox": [
+    [
+     -29.95,
+     30.95
+    ],
+    [
+     -29.75,
+     31.2
+    ]
+   ],
+   "id": "dur",
+   "name": "Port of Durban"
+  },
+  {
+   "bbox": [
+    [
+     35.75,
+     -6.1
+    ],
+    [
+     36.25,
+     -5.2
+    ]
+   ],
+   "id": "gib",
+   "name": "Strait of Gibraltar"
+  },
+  {
+   "bbox": [
+    [
+     50.8,
+     1
+    ],
+    [
+     51.3,
+     1.9
+    ]
+   ],
+   "id": "dov",
+   "name": "Dover Strait"
+  },
+  {
+   "bbox": [
+    [
+     -9,
+     115.5
+    ],
+    [
+     -8.3,
+     116
+    ]
+   ],
+   "id": "lom",
+   "name": "Lombok Strait"
+  },
+  {
+   "bbox": [
+    [
+     -12.45,
+     13.4
+    ],
+    [
+     -12.25,
+     13.65
+    ]
+   ],
+   "id": "lob",
+   "name": "Port of Lobito"
+  },
+  {
+   "bbox": [
+    [
+     -33.4,
+     115.5
+    ],
+    [
+     -33.2,
+     115.7
+    ]
+   ],
+   "id": "bun",
+   "name": "Port of Bunbury"
+  },
+  {
+   "bbox": [
+    [
+     -2.95,
+     122
+    ],
+    [
+     -2.7,
+     122.3
+    ]
+   ],
+   "id": "imip",
+   "name": "Morowali (IMIP)"
+  },
+  {
+   "bbox": [
+    [
+     51.85,
+     3.6
+    ],
+    [
+     52.05,
+     4.3
+    ]
+   ],
+   "id": "rot",
+   "name": "Rotterdam approaches"
+  }
+ ],
+ "fred": {
+  "ni": {
+   "series": "PNICKUSDM",
+   "unit": "USD/t",
+   "freq": "monthly",
+   "source": "IMF via FRED"
+  }
+ },
+ "portwatch": {
+  "chokepoints": {
+   "babelmandeb": "chokepoint4",
+   "cape": "chokepoint7",
+   "malacca": "chokepoint5",
+   "suez": "chokepoint1"
+  },
+  "ports": {
+   "antofagasta": {
+    "id": "port56",
+    "name": "Antofagasta"
+   },
+   "bunbury": {
+    "id": "port190",
+    "name": "Bunbury"
+   },
+   "esperance": {
+    "id": "port331",
+    "name": "Esperance"
+   },
+   "imip": {
+    "id": "port496",
+    "name": "Indonesia Morowali Industrial Park"
+   },
+   "kuantan": {
+    "id": "port603",
+    "name": "Kuantan"
+   },
+   "lobito": {
+    "id": "port656",
+    "name": "Lobito"
+   },
+   "mejillones": {
+    "id": "port728",
+    "name": "Mejillones"
+   },
+   "nacala": {
+    "id": "port784",
+    "name": "Nacala"
+   },
+   "richards-bay": {
+    "id": "port1099",
+    "name": "Richards Bay"
+   },
+   "rotterdam": {
+    "id": "port1114",
+    "name": "Rotterdam"
+   }
+  }
+ },
+ "hotspotRadiusKm": 6
+}
