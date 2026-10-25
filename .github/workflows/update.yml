@@ -1,0 +1,56 @@
+name: OreOrbit data
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # every three hours, at 17 past
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Refresh every feed now"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oreorbit-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install "websockets>=12,<16"
+
+      - name: Fetch the feeds and send them to the website
+        env:
+          ATLAS_BASE: ${{ vars.ATLAS_BASE || 'https://bohemiadefense.com/atlas/' }}
+          ATLAS_KEY: ${{ secrets.ATLAS_KEY }}
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
+          FORCE: ${{ inputs.force && '1' || '' }}
+        run: python updater/oreorbit_update.py
+
+      # GitHub pauses scheduled runs in a repository with no activity for 60 days.
+      # Saving today's date once a day keeps the schedule alive.
+      - name: Keep the schedule alive
+        if: always()
+        run: |
+          mkdir -p .github
+          date -u +%Y-%m-%d > .github/last-run.txt
+          if ! git diff --quiet -- .github/last-run.txt 2>/dev/null || ! git ls-files --error-unmatch .github/last-run.txt >/dev/null 2>&1; then
+            git config user.name "oreorbit-updater"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/last-run.txt
+            git commit -m "Daily heartbeat" && git push || true
+          fi
