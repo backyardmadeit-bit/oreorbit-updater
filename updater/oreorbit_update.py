@@ -1155,7 +1155,7 @@ def upload_bytes(path, body):
         return "dry run"
     if REMOTE.get(path, {}).get("md5") == hashlib.md5(body).hexdigest():
         return "unchanged"
-    ctype = "image/png" if path.endswith(".png") else "image/jpeg"
+    ctype = {"png": "image/png", "jpg": "image/jpeg", "html": "text/html; charset=utf-8", "xml": "application/xml"}[path.rsplit(".", 1)[-1]]
     r = json.loads(http(BASE + "update.php?f=" + urllib.parse.quote(path, safe="/"), data=body,
                         headers={"X-Atlas-Key": KEY, "Content-Type": ctype}, method="POST", timeout=120).decode("utf-8"))
     if not r.get("ok"):
@@ -1658,9 +1658,13 @@ def day_txt(d, cs):
 def deadlines_from_page():
     """The atlas's own list of upcoming deadlines, read from the page itself."""
     import re
-    try:
-        page = http(BASE + "index.html?u=%d" % time.time(), timeout=60).decode("utf-8", "replace")
-    except Exception:
+    page = ""
+    for f in ("index.html", "atlas-main.js"):      # the deadline list moved into atlas-main.js in v15.3
+        try:
+            page += http(BASE + f + "?u=%d" % time.time(), timeout=60).decode("utf-8", "replace") + "\n"
+        except Exception:
+            pass
+    if not page:
         return []
     out = []
     for m in re.finditer(r'\{ date: "(\d{4}-\d{2}-\d{2})", materials: \[([^\]]*)\], title: "((?:[^"\\]|\\.)*)", title_cs: "((?:[^"\\]|\\.)*)"(?:, source: "((?:[^"\\]|\\.)*)")?(?:, url: "([^"]*)")?', page):
@@ -1841,14 +1845,38 @@ def feed_memory(prev):
     mem.sort(key=lambda x: str(x.get("date", "")), reverse=True)
     return mem[:12], "ok (snapshot of %s, %d materials, %d weeks kept)" % (snap.get("date"), len(snap["mats"]), len(mem[:12]))
 
+
+# ---------------------------------------------------------------- part six: the readable pages (library, About, Legal, sitemap)
+
+def feed_pages(prev):
+    """Rebuilds the readable, citable pages from the same data as the atlas (see oreorbit_pages.py)."""
+    import re
+    import oreorbit_pages as P
+    ref = current("data/reference.json")
+    if not isinstance(ref, dict) or not ref.get("materials") or not ref.get("sites"):
+        raise RuntimeError("could not read data/reference.json from the website")
+    get = lambda path: current(path) or {}
+    live = {"trade": get("live-data/live/trade.json"), "imagery": get("data/imagery.json"), "extras": get("data/orbit-extras.json"),
+            "hotspots": get("live-data/live/hotspots.json"), "so2": get("live-data/live/so2.json"), "conflict": get("live-data/live/conflict.json"),
+            "news": current("live-data/news.json") or []}
+    cfg = {}
+    try:
+        txt = http(BASE + "config.js?u=%d" % time.time(), timeout=30).decode("utf-8", "replace")
+        cfg = {k: v for k, v in re.findall(r'(\w+)\s*:\s*"([^"]*)"', txt) if v}
+    except Exception:
+        pass
+    return P.build(ref, live, cfg, TODAY.isoformat()), "ok"
+
+
+
 # ---------------------------------------------------------------- run
 
 INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
-              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160}
+              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160, "pages": 20}
 
 
 def main():
-    log("OreOrbit updater v2.9 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.0 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1867,7 +1895,7 @@ def main():
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
                      ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
                      ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders),
-                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory)]:
+                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory), ("pages", feed_pages)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
         if ONLY and name not in ONLY:
@@ -1883,7 +1911,7 @@ def main():
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
             continue
-        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "memory": "live-data/memory.json"}.get(name, "live-data/live/%s.json" % name)
+        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "memory": "live-data/memory.json", "pages": "p/index.html"}.get(name, "live-data/live/%s.json" % name)
         t0 = time.time()
         try:
             prev = current(path)
@@ -1906,6 +1934,11 @@ def main():
                 else:
                     st.update({"ok": iso(), "fails": 0, "status": note})
                 note = note + " · %d pictures sent · %s" % (len(pics), res)
+            elif name == "pages":
+                res = [upload_bytes(p, h.encode("utf-8")) for p, h in obj.items()]
+                sent = sum(1 for r in res if r != "unchanged")
+                st.update({"ok": iso(), "fails": 0, "status": "ok (%d pages)" % len(obj)})
+                note = "ok (%d pages and the sitemap, %d changed)" % (len(obj) - 1, sent)
             elif name == "clouds":
                 res = [upload(p, o) for p, o in obj.items()]
                 st.update({"ok": iso(), "fails": 0, "status": note})
