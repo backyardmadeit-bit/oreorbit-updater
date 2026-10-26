@@ -1547,16 +1547,17 @@ NEWS_BLOCK = ("openpr.", "einpresswire.", "globenewswire.", "prnewswire.", "digi
               "benzinga.", "fool.com", "zacks.", "marketbeat.", "tipranks.", "investorsobserver.", "stocktitan.")
 
 
-NEWS_GROUPS = [
-    '("lithium mine" OR "lithium supply" OR "lithium price" OR "lithium refinery" OR "lithium export" OR "nickel mine" OR "nickel smelter" OR '
-    '"nickel ore" OR "nickel price" OR "cobalt export" OR "cobalt supply" OR "cobalt price" OR "cobalt mine" OR graphite)',
-    '("rare earth" OR "rare earths" OR neodymium OR dysprosium OR tungsten OR antimony OR gallium OR germanium OR "titanium sponge" OR "titanium supply")',
+NEWS_GROUPS = [   # GDELT refuses long questions: about five terms each
+    '("rare earth" OR "rare earths" OR neodymium OR dysprosium OR tungsten)',
+    '(antimony OR gallium OR germanium OR "titanium sponge" OR graphite)',
+    '("lithium mine" OR "lithium supply" OR "lithium price" OR "lithium refinery" OR "lithium export")',
+    '("nickel mine" OR "nickel smelter" OR "nickel price" OR "cobalt price" OR "cobalt export")',
 ]
 
 
 def gdelt(q, span="3d"):
-    """One GDELT question. GDELT allows one request every 5 seconds from an address, and GitHub's machines are shared,
-    so a 'slow down' answer gets one wait of 25 seconds and one more try, never more."""
+    """One GDELT question. GDELT allows one request every 5 seconds from an address, and GitHub's machines share
+    addresses with many other users, so a 'slow down' answer gets one wait of 30 seconds and one more try."""
     url = "https://api.gdeltproject.org/api/v2/doc/doc?" + urllib.parse.urlencode(
         {"query": q + " sourcelang:english", "mode": "ArtList", "format": "json", "maxrecords": 250, "sort": "DateDesc", "timespan": span})
     for attempt in range(2):
@@ -1564,13 +1565,13 @@ def gdelt(q, span="3d"):
             raw = http(url, timeout=45, tries=1).decode("utf-8", "replace").strip()
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt == 0:
-                time.sleep(25)
+                time.sleep(30)
                 continue
             raise
         if raw.startswith("{"):
             return json.loads(raw).get("articles") or []
         if "limit requests" in raw.lower() and attempt == 0:
-            time.sleep(25)
+            time.sleep(30)
             continue
         raise RuntimeError("GDELT: " + raw[:120])
     return []
@@ -1584,15 +1585,22 @@ def feed_news(prev):
     have_url = {x.get("url") for x in items}
     norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
     have_title = {norm(x["title"]) for x in items}
-    per_mat, added, errors, answered = {}, 0, [], 0
-    for gi, q in enumerate(NEWS_GROUPS):
-        if gi:
-            time.sleep(8)
+    per_mat, added, errors, answered, throttled = {}, 0, [], 0, 0
+    first = int(time.time() // 3600) % len(NEWS_GROUPS)          # a different first question each run
+    for k in range(len(NEWS_GROUPS)):
+        gi = (first + k) % len(NEWS_GROUPS)
+        q = NEWS_GROUPS[gi]
+        if k:
+            time.sleep(20)
         try:
             arts = gdelt(q)
             answered += 1
         except Exception as e:
-            errors.append("group %d %s" % (gi + 1, why(e)))
+            msg = why(e)
+            if "429" in msg or "limit requests" in msg.lower():
+                throttled += 1
+                msg = "busy"
+            errors.append("question %d %s" % (gi + 1, msg))
             continue
         for a in arts:
             title, url, dom = H.unescape(str(a.get("title") or "")).strip(), str(a.get("url") or ""), str(a.get("domain") or "").lower()
@@ -1612,7 +1620,10 @@ def feed_news(prev):
             per_mat[mats[0]] = per_mat.get(mats[0], 0) + 1
             added += 1
     if not answered:
-        raise RuntimeError("; ".join(errors[:2]))
+        last = parse_iso((current("live-data/meta/status.json") or {}).get("lastRun"))
+        if throttled == len(NEWS_GROUPS) and last and (NOW - last).total_seconds() < 48 * 3600:
+            return None, "skipped: GDELT asked to slow down; the next run tries again"
+        raise RuntimeError("; ".join(errors[:4]))
     items.sort(key=lambda x: (str(x.get("date", "")), 0 if x.get("auto") else 1), reverse=True)
     cut = (TODAY - dt.timedelta(days=45)).isoformat()
     keep = [x for x in items if str(x.get("date", "")) >= cut]
@@ -1776,7 +1787,7 @@ def feed_memory(prev):
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "playwright"], check=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "playwright"], check=True, capture_output=True)
         from playwright.sync_api import sync_playwright
     exe = os.environ.get("CHROMIUM_PATH") or None
     def snapshot():
@@ -1794,7 +1805,9 @@ def feed_memory(prev):
     except Exception as e:
         if exe or "Executable doesn't exist" not in str(e) and "playwright install" not in str(e):
             raise
-        subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], check=True)
+        r = subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], capture_output=True, text=True)
+        if r.returncode:
+            raise RuntimeError("could not install the browser: " + (r.stderr or r.stdout)[-300:])
         snap = snapshot()
     if not isinstance(snap, dict) or not isinstance(snap.get("mats"), dict) or len(snap["mats"]) < 5:
         raise RuntimeError("the page gave no usable snapshot")
@@ -1810,7 +1823,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.6 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.7 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
