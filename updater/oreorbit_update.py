@@ -73,7 +73,7 @@ def log(*a):
 
 # ---------------------------------------------------------------- HTTP
 
-def http(url, data=None, headers=None, timeout=60, method=None):
+def http(url, data=None, headers=None, timeout=60, method=None, tries=3):
     h = {"User-Agent": UA, "Accept": "*/*"}
     h.update(headers or {})
     if isinstance(data, (dict, list)):
@@ -81,19 +81,19 @@ def http(url, data=None, headers=None, timeout=60, method=None):
         h.setdefault("Content-Type", "application/json")
     req = urllib.request.Request(url, data=data, headers=h, method=method)
     last = None
-    for attempt in range(3):
+    for attempt in range(tries):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read()
         except urllib.error.HTTPError as e:
             last = e
-            if e.code in (429, 500, 502, 503, 504) and attempt < 2:
+            if e.code in (429, 500, 502, 503, 504) and attempt < tries - 1:
                 time.sleep(6 * (attempt + 1))
                 continue
             raise
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             last = e
-            if attempt < 2:
+            if attempt < tries - 1:
                 time.sleep(6 * (attempt + 1))
                 continue
             raise
@@ -1547,49 +1547,72 @@ NEWS_BLOCK = ("openpr.", "einpresswire.", "globenewswire.", "prnewswire.", "digi
               "benzinga.", "fool.com", "zacks.", "marketbeat.", "tipranks.", "investorsobserver.", "stocktitan.")
 
 
+NEWS_GROUPS = [
+    '("lithium mine" OR "lithium supply" OR "lithium price" OR "lithium refinery" OR "lithium export" OR "nickel mine" OR "nickel smelter" OR '
+    '"nickel ore" OR "nickel price" OR "cobalt export" OR "cobalt supply" OR "cobalt price" OR "cobalt mine" OR graphite)',
+    '("rare earth" OR "rare earths" OR neodymium OR dysprosium OR tungsten OR antimony OR gallium OR germanium OR "titanium sponge" OR "titanium supply")',
+]
+
+
 def gdelt(q, span="3d"):
+    """One GDELT question. GDELT allows one request every 5 seconds from an address, and GitHub's machines are shared,
+    so a 'slow down' answer gets one wait of 25 seconds and one more try, never more."""
     url = "https://api.gdeltproject.org/api/v2/doc/doc?" + urllib.parse.urlencode(
-        {"query": q + " sourcelang:english", "mode": "ArtList", "format": "json", "maxrecords": 40, "sort": "DateDesc", "timespan": span})
-    raw = http(url, timeout=60).decode("utf-8", "replace").strip()
-    if not raw.startswith("{"):
+        {"query": q + " sourcelang:english", "mode": "ArtList", "format": "json", "maxrecords": 250, "sort": "DateDesc", "timespan": span})
+    for attempt in range(2):
+        try:
+            raw = http(url, timeout=45, tries=1).decode("utf-8", "replace").strip()
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt == 0:
+                time.sleep(25)
+                continue
+            raise
+        if raw.startswith("{"):
+            return json.loads(raw).get("articles") or []
+        if "limit requests" in raw.lower() and attempt == 0:
+            time.sleep(25)
+            continue
         raise RuntimeError("GDELT: " + raw[:120])
-    return json.loads(raw).get("articles") or []
+    return []
 
 
 def feed_news(prev):
-    """Recent English headlines for the ten materials from GDELT, marked as found automatically and not checked."""
+    """Recent English headlines for the ten materials from GDELT (two grouped questions), each sorted to its material(s)
+    by the words in its title and marked as found automatically and not checked."""
     import re, html as H
     items = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("title")]
     have_url = {x.get("url") for x in items}
     norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
     have_title = {norm(x["title"]) for x in items}
-    added, errors = 0, []
-    for m, q in NEWS_Q.items():
+    per_mat, added, errors, answered = {}, 0, [], 0
+    for gi, q in enumerate(NEWS_GROUPS):
+        if gi:
+            time.sleep(8)
         try:
             arts = gdelt(q)
+            answered += 1
         except Exception as e:
-            errors.append("%s %s" % (m, why(e)))
-            time.sleep(6)
+            errors.append("group %d %s" % (gi + 1, why(e)))
             continue
-        n = 0
         for a in arts:
             title, url, dom = H.unescape(str(a.get("title") or "")).strip(), str(a.get("url") or ""), str(a.get("domain") or "").lower()
-            if n >= 3 or not title or not url.startswith("https://") or url in have_url or norm(title) in have_title:
+            if not title or not url.startswith("https://") or url in have_url or norm(title) in have_title:
                 continue
-            if not re.search(NEWS_KW[m], title, re.I) or re.search(NEWS_SPAM, title, re.I) or any(b in dom for b in NEWS_BLOCK):
+            if re.search(NEWS_SPAM, title, re.I) or any(b in dom for b in NEWS_BLOCK):
+                continue
+            mats = [k for k, kw in NEWS_KW.items() if re.search(kw, title, re.I)]
+            if not mats or per_mat.get(mats[0], 0) >= 3:
                 continue
             sd = str(a.get("seendate") or "")
             day = "%s-%s-%s" % (sd[0:4], sd[4:6], sd[6:8]) if len(sd) >= 8 else TODAY.isoformat()
-            mats = [k for k, kw in NEWS_KW.items() if re.search(kw, title, re.I)]
             items.append({"id": "%s-auto-%s" % (day, hashlib.md5(url.encode()).hexdigest()[:8]), "date": day, "title": title[:220], "url": url,
-                          "source": dom[4:] if dom.startswith("www.") else dom, "materials": mats or [m], "lang": "en", "auto": True, "foundAt": TODAY.isoformat()})
+                          "source": dom[4:] if dom.startswith("www.") else dom, "materials": mats, "lang": "en", "auto": True, "foundAt": TODAY.isoformat()})
             have_url.add(url)
             have_title.add(norm(title))
-            n += 1
+            per_mat[mats[0]] = per_mat.get(mats[0], 0) + 1
             added += 1
-        time.sleep(6)          # GDELT asks for one request every five seconds
-    if len(errors) == len(NEWS_Q):
-        raise RuntimeError("; ".join(errors[:3]))
+    if not answered:
+        raise RuntimeError("; ".join(errors[:2]))
     items.sort(key=lambda x: (str(x.get("date", "")), 0 if x.get("auto") else 1), reverse=True)
     cut = (TODAY - dt.timedelta(days=45)).isoformat()
     keep = [x for x in items if str(x.get("date", "")) >= cut]
@@ -1598,7 +1621,8 @@ def feed_news(prev):
     meta = current("live-data/meta/status.json") or {}
     meta = dict(meta, lastRun=iso(), news="GDELT, automatic")
     upload("live-data/meta/status.json", meta)
-    return keep[:160], "ok (%d new stories, %d kept%s)" % (added, len(keep[:160]), ("; " + "; ".join(errors[:2])) if errors else "")
+    return keep[:160], "ok (%d new stories: %s%s)" % (added, ", ".join("%s %d" % (k, v) for k, v in sorted(per_mat.items())) or "none",
+                                                       ("; " + "; ".join(errors[:2])) if errors else "")
 
 
 MON_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -1786,7 +1810,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.5 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.6 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
