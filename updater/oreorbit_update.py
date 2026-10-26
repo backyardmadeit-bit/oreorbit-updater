@@ -672,34 +672,38 @@ def conflict_areas():
 
 
 def ucdp_files():
-    """This year's UCDP candidate files: the newest January-to-month file, then any newer monthly files."""
-    yy = TODAY.year % 100
+    """The newest UCDP candidate files: this year's January-to-month file and any newer monthly files.
+    Early in a year, before UCDP has published anything for it, last year's files are used instead.
+    Returns (year used, [(file name, bytes)])."""
     base = "https://ucdp.uu.se/downloads/candidateged/"
-    got, upto = [], 0
-    for mm in range(min(12, TODAY.month), 0, -1):
-        name = "GEDEvent_v%02d_01_%02d_%02d.csv" % (yy, yy, mm)
-        try:
-            got.append((name, http(base + name, timeout=180)))
-            upto = mm
-            break
-        except urllib.error.HTTPError as e:
-            if e.code != 404:
-                raise
-    for mm in range(upto + 1, min(12, TODAY.month) + 1):
-        name = "GEDEvent_v%02d_0_%d.csv" % (yy, mm)
-        try:
-            got.append((name, http(base + name, timeout=180)))
-        except urllib.error.HTTPError as e:
-            if e.code != 404:
-                raise
-    if not got:
-        raise RuntimeError("no UCDP candidate file found for %d at %s" % (TODAY.year, base))
-    return got
+    for year in (TODAY.year, TODAY.year - 1):
+        yy, last_month = year % 100, (TODAY.month if year == TODAY.year else 12)
+        got, upto = [], 0
+        for mm in range(last_month, 0, -1):
+            name = "GEDEvent_v%02d_01_%02d_%02d.csv" % (yy, yy, mm)
+            try:
+                got.append((name, http(base + name, timeout=180)))
+                upto = mm
+                break
+            except urllib.error.HTTPError as e:
+                if e.code != 404:
+                    raise
+        for mm in range(upto + 1, last_month + 1):
+            name = "GEDEvent_v%02d_0_%d.csv" % (yy, mm)
+            try:
+                got.append((name, http(base + name, timeout=180)))
+            except urllib.error.HTTPError as e:
+                if e.code != 404:
+                    raise
+        if got:
+            return year, got
+    raise RuntimeError("no UCDP candidate file found for %d or %d at %s" % (TODAY.year, TODAY.year - 1, base))
 
 
 def feed_conflict(prev):
     areas, rows, files = conflict_areas(), {}, []
-    for name, raw in ucdp_files():
+    year, got = ucdp_files()
+    for name, raw in got:
         files.append(name)
         for r in csv.DictReader(io.StringIO(raw.decode("utf-8-sig", "replace"))):
             rows[r.get("id") or r.get("relid") or str(len(rows))] = r
@@ -739,7 +743,7 @@ def feed_conflict(prev):
     dates = [str(r.get("date_start", ""))[:10] for r in rows.values() if r.get("date_start")]
     out = dict(prev or {})
     out.update({"areas": out_areas, "clusters": sorted(clusters.values(), key=lambda c: (-c["n"], c["where"]))[:80],
-                "fetchedAt": iso(), "files": files, "from": "%d-01-01" % TODAY.year, "to": max(dates) if dates else None,
+                "fetchedAt": iso(), "files": files, "from": "%d-01-01" % year, "to": max(dates) if dates else None,
                 "recent": recent[:30], "source": "UCDP Candidate Events Dataset (Uppsala Conflict Data Program)", "url": "https://ucdp.uu.se/downloads/",
                 "note": "Candidate events are preliminary and can change when UCDP finalises them. Type 1 = state-based, 2 = non-state, 3 = one-sided violence."})
     return out, "ok (%d events in the year, %d near the supply chain, files %s)" % (len(rows), sum(a["n"] for a in out_areas.values()), ", ".join(files))
@@ -1844,7 +1848,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.8 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.9 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
