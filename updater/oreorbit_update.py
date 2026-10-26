@@ -47,7 +47,7 @@ ONLY = {x.strip() for x in os.environ.get("ONLY", "").split(",") if x.strip()}
 UA = "OreOrbit-updater/1.0 (+https://bohemiadefense.com/atlas)"
 START = time.time()
 BUDGET = float(os.environ.get("TIME_BUDGET_MIN") or "22") * 60   # GitHub stops a run at 30 minutes
-HEAVY = {"tenders", "clouds", "so2", "imagery", "radar"}
+HEAVY = {"tenders", "clouds", "so2", "imagery", "radar", "memory"}
 
 
 def time_left():
@@ -1260,7 +1260,8 @@ def feed_imagery(prev):
             f, d, bbox = s2_clear_scene(site, rec, Image)
             if not f:
                 continue
-            if rec.get("nowScene") == f["id"] and (rec.get("change") or {}).get("method", "").endswith("isolated pixels removed"):
+            restyle = bool(rec.get("thenDate")) and not rec.get("noThen") and not (rec.get("change") or {}).get("method", "").endswith("isolated pixels removed")
+            if rec.get("nowScene") == f["id"] and not restyle:
                 same += 1
                 continue
             size, ymd = 700, d.replace("-", "")
@@ -1397,7 +1398,7 @@ def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False, terrain=None):
         if (rec_heat or {}).get("scene") == f["id"] and not restyle:
             return None, None          # the newest usable scene is the one already shown
         raw = pc_crop("landsat-c2-l2", f["id"], bbox, size, size, "png",
-                      {"expression": "lwir11*0.00341802+149.0-273.15", "asset_as_band": "True", "rescale": "-40,80", "nodata": "0"})
+                      {"expression": "lwir11*0.00341802+149.0-273.15", "asset_as_band": "True", "rescale": "-40,80", "nodata": "0", "resampling": "bilinear"})
         v, a = grey(Image.open(io.BytesIO(raw)), Image)
         T = [x * 120 / 255 - 40 if al else None for x, al in zip(v, a)]
         temps = sorted(t for t in T if t is not None)
@@ -1498,11 +1499,11 @@ def feed_radar(prev):
                 changed = True
             try:
                 terrain = current(irec["terrain"]) if irec.get("terrain") else None
-                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 4, terrain=terrain)
+                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 5, terrain=terrain)
                 if hrec:
-                    path = "img/%s-heat-%s-4.png" % (sid, hrec["date"].replace("-", ""))   # a new name, so browsers cannot show an old copy
+                    path = "img/%s-heat-%s-5.png" % (sid, hrec["date"].replace("-", ""))   # a new name, so browsers cannot show an old copy
                     files[path] = png
-                    rec["heat"] = dict(hrec, file=path, style=4)
+                    rec["heat"] = dict(hrec, file=path, style=5)
                     heat_new[0] += 1
                     changed = True
             except Exception as e:
@@ -1527,14 +1528,265 @@ def feed_radar(prev):
     files["data/orbit-extras.json"] = out
     return files, "ok (%d sites with new pictures, %d unchanged, %d failed; heat maps: %d new, %d failed)" % (fresh, same, len(failed), heat_new[0], heat_new[1])
 
+
+# ---------------------------------------------------------------- part five: automatic news (GDELT) and the weekly summary
+
+MAT_NAME = {"ree": ("Rare earths", "Vzácné zeminy"), "ti": ("Titanium", "Titan"), "w": ("Tungsten", "Wolfram"), "sb": ("Antimony", "Antimon"),
+            "ga": ("Gallium", "Galium"), "ge": ("Germanium", "Germanium"), "li": ("Lithium", "Lithium"), "co": ("Cobalt", "Kobalt"),
+            "ni": ("Nickel", "Nikl"), "gr": ("Graphite", "Grafit")}
+NEWS_Q = {"ree": '("rare earth" OR "rare earths" OR neodymium OR dysprosium)', "ti": '("titanium sponge" OR "titanium supply" OR "titanium mine" OR "titanium export")',
+          "w": "tungsten", "sb": "antimony", "ga": "gallium", "ge": "germanium",
+          "li": '("lithium mine" OR "lithium supply" OR "lithium refinery" OR "lithium price" OR "lithium export")',
+          "co": '("cobalt export" OR "cobalt supply" OR "cobalt mine" OR "cobalt price" OR "cobalt quota")',
+          "ni": '("nickel mine" OR "nickel smelter" OR "nickel ore" OR "nickel price" OR "nickel supply")', "gr": "graphite"}
+NEWS_KW = {"ree": r"rare[ -]?earth|neodymium|dysprosium|terbium|praseodymium", "ti": r"titanium", "w": r"tungsten", "sb": r"antimony",
+           "ga": r"gallium", "ge": r"germanium", "li": r"lithium", "co": r"cobalt", "ni": r"nickel", "gr": r"graphite"}
+NEWS_SPAM = (r"market (size|share|report|research|analysis|outlook|growth|trends|insights)|\bCAGR\b|forecast (to|till|period)|\b20\d\d\s*[-–]\s*20\d\d\b|"
+             r"press release|sponsored|price target|stock (price|forecast|analysis)|shares? (rise|fall|jump|drop|surge|slump|soar|plunge)|\bETF\b|dividend|horoscope")
+NEWS_BLOCK = ("openpr.", "einpresswire.", "globenewswire.", "prnewswire.", "digitaljournal.", "marketsandmarkets.", "taiwannews.", "newstrail.", "whatech.",
+              "benzinga.", "fool.com", "zacks.", "marketbeat.", "tipranks.", "investorsobserver.", "stocktitan.")
+
+
+def gdelt(q, span="3d"):
+    url = "https://api.gdeltproject.org/api/v2/doc/doc?" + urllib.parse.urlencode(
+        {"query": q + " sourcelang:english", "mode": "ArtList", "format": "json", "maxrecords": 40, "sort": "DateDesc", "timespan": span})
+    raw = http(url, timeout=60).decode("utf-8", "replace").strip()
+    if not raw.startswith("{"):
+        raise RuntimeError("GDELT: " + raw[:120])
+    return json.loads(raw).get("articles") or []
+
+
+def feed_news(prev):
+    """Recent English headlines for the ten materials from GDELT, marked as found automatically and not checked."""
+    import re, html as H
+    items = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("title")]
+    have_url = {x.get("url") for x in items}
+    norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+    have_title = {norm(x["title"]) for x in items}
+    added, errors = 0, []
+    for m, q in NEWS_Q.items():
+        try:
+            arts = gdelt(q)
+        except Exception as e:
+            errors.append("%s %s" % (m, why(e)))
+            time.sleep(6)
+            continue
+        n = 0
+        for a in arts:
+            title, url, dom = H.unescape(str(a.get("title") or "")).strip(), str(a.get("url") or ""), str(a.get("domain") or "").lower()
+            if n >= 3 or not title or not url.startswith("https://") or url in have_url or norm(title) in have_title:
+                continue
+            if not re.search(NEWS_KW[m], title, re.I) or re.search(NEWS_SPAM, title, re.I) or any(b in dom for b in NEWS_BLOCK):
+                continue
+            sd = str(a.get("seendate") or "")
+            day = "%s-%s-%s" % (sd[0:4], sd[4:6], sd[6:8]) if len(sd) >= 8 else TODAY.isoformat()
+            mats = [k for k, kw in NEWS_KW.items() if re.search(kw, title, re.I)]
+            items.append({"id": "%s-auto-%s" % (day, hashlib.md5(url.encode()).hexdigest()[:8]), "date": day, "title": title[:220], "url": url,
+                          "source": dom[4:] if dom.startswith("www.") else dom, "materials": mats or [m], "lang": "en", "auto": True, "foundAt": TODAY.isoformat()})
+            have_url.add(url)
+            have_title.add(norm(title))
+            n += 1
+            added += 1
+        time.sleep(6)          # GDELT asks for one request every five seconds
+    if len(errors) == len(NEWS_Q):
+        raise RuntimeError("; ".join(errors[:3]))
+    items.sort(key=lambda x: (str(x.get("date", "")), 0 if x.get("auto") else 1), reverse=True)
+    cut = (TODAY - dt.timedelta(days=45)).isoformat()
+    keep = [x for x in items if str(x.get("date", "")) >= cut]
+    if len(keep) < 20:
+        keep = items[:20]
+    meta = current("live-data/meta/status.json") or {}
+    meta = dict(meta, lastRun=iso(), news="GDELT, automatic")
+    upload("live-data/meta/status.json", meta)
+    return keep[:160], "ok (%d new stories, %d kept%s)" % (added, len(keep[:160]), ("; " + "; ".join(errors[:2])) if errors else "")
+
+
+MON_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+MON_CS = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"]
+MONTH_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+MONTH_CS = ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"]
+
+
+def day_txt(d, cs):
+    d = str(d)[:10]
+    y, mo, dd = int(d[:4]), int(d[5:7]), int(d[8:10])
+    return "%d. %s %d" % (dd, MON_CS[mo - 1], y) if cs else "%d %s %d" % (dd, MON_EN[mo - 1], y)
+
+
+def deadlines_from_page():
+    """The atlas's own list of upcoming deadlines, read from the page itself."""
+    import re
+    try:
+        page = http(BASE + "index.html?u=%d" % time.time(), timeout=60).decode("utf-8", "replace")
+    except Exception:
+        return []
+    out = []
+    for m in re.finditer(r'\{ date: "(\d{4}-\d{2}-\d{2})", materials: \[([^\]]*)\], title: "((?:[^"\\]|\\.)*)", title_cs: "((?:[^"\\]|\\.)*)"(?:, source: "((?:[^"\\]|\\.)*)")?(?:, url: "([^"]*)")?', page):
+        un = lambda t: (t or "").replace("\\'", "'").replace('\\"', '"')
+        out.append({"date": m.group(1), "materials": re.findall(r'"(\w+)"', m.group(2)), "title": un(m.group(3)), "title_cs": un(m.group(4)),
+                    "source": un(m.group(5)), "url": m.group(6) or ""})
+    return sorted(out, key=lambda x: x["date"])
+
+
+AREA_NAME = {"choke:suez": ("the Bab-el-Mandeb strait", "úžiny Bab al-Mandab"), "choke:malacca": ("the Strait of Malacca", "Malacké úžiny"),
+             "route:lobito": ("the Lobito corridor in Angola", "Lobitského koridoru v Angole"), "route:lobito-cd": ("the Lobito corridor in DR Congo", "Lobitského koridoru v DR Kongo")}
+
+
+def feed_brief(prev):
+    """Every Monday: a short summary of the week put together from the atlas's own data and headlines. No person or AI writes it."""
+    briefs = [b for b in (prev if isinstance(prev, list) else []) if isinstance(b, dict)]
+    monday = (TODAY - dt.timedelta(days=TODAY.weekday())).isoformat()
+    this = next((b for b in briefs if b.get("week") == monday), None)
+    if this and (not this.get("auto") or not FORCE):
+        return None, "skipped: this week's brief exists"
+    if TODAY.weekday() != 0 and not FORCE and any(b.get("week", "") >= (TODAY - dt.timedelta(days=7)).isoformat() for b in briefs):
+        return None, "skipped: written on Mondays"
+    names = {s["id"]: s["name"] for s in CFG["sites"]}
+    smat = {s["id"]: s["m"] for s in CFG["sites"]}
+    pts, watch_en, watch_cs = [], [], []
+    # 1. the next deadline
+    dls = [d for d in deadlines_from_page() if d["date"] >= TODAY.isoformat()]
+    if dls:
+        d = dls[0]
+        n = (dt.date.fromisoformat(d["date"]) - TODAY).days
+        mats_en = ", ".join(MAT_NAME[m][0] for m in d["materials"] if m in MAT_NAME) or "Deadline"
+        mats_cs = ", ".join(MAT_NAME[m][1] for m in d["materials"] if m in MAT_NAME) or "Termín"
+        pts.append({"materials": d["materials"], "source": d["source"] or "OreOrbit calendar", "url": d["url"],
+                    "text": "%s: %s on %s, in %d days." % (mats_en, d["title"], day_txt(d["date"], False), n),
+                    "text_cs": "%s: %s, %s, za %d dní." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True), n)})
+        for x in dls[:3]:
+            if x["date"] <= (TODAY + dt.timedelta(days=90)).isoformat():
+                watch_en.append("%s: %s" % (day_txt(x["date"], False), x["title"]))
+                watch_cs.append("%s: %s" % (day_txt(x["date"], True), x["title_cs"] or x["title"]))
+    # 2. heat at the plants
+    hs = (current("live-data/live/hotspots.json") or {}).get("sites") or {}
+    hot = sorted(((v.get("daysHot7") or 0, k) for k, v in hs.items() if v.get("daysHot7")), reverse=True)
+    if hs:
+        if hot:
+            d7, sid = hot[0]
+            pts.append({"materials": [smat.get(sid)] if smat.get(sid) else [], "source": "NASA FIRMS", "url": "https://firms.modaps.eosdis.nasa.gov",
+                        "text": "Heat at the plants: %d of %d sites showed furnace-hot pixels in the last 7 days, %s the most often (%d of 7 days)." % (len(hot), len(hs), names.get(sid, sid), d7),
+                        "text_cs": "Teplo v závodech: %d z %d lokalit mělo za posledních 7 dní pixely horké jako pec, nejčastěji %s (%d ze 7 dní)." % (len(hot), len(hs), names.get(sid, sid), d7)})
+    # 3. sulphur dioxide
+    so = current("live-data/live/so2.json") or {}
+    wk = (TODAY - dt.timedelta(days=9)).isoformat()
+    so_hi = sorted(((sum(1 for x in (v.get("series") or []) if x.get("d", "") >= wk and (x.get("near") or 0) >= 2), k) for k, v in (so.get("sites") or {}).items()), reverse=True)
+    if so_hi and so_hi[0][0]:
+        n, sid = so_hi[0]
+        pts.append({"materials": [smat.get(sid)] if smat.get(sid) else [], "source": "NASA GIBS", "url": "https://worldview.earthdata.nasa.gov",
+                    "text": "Sulphur dioxide: %s read above 2 Dobson units on %d of the days seen this week." % (names.get(sid, sid), n),
+                    "text_cs": "Oxid siřičitý: %s měl nad 2 Dobsonovy jednotky %s tohoto týdne." % (names.get(sid, sid), "v 1 viděném dni" if n == 1 else "v %d viděných dnech" % n)})
+    # 4. armed conflict
+    cf = current("live-data/live/conflict.json") or {}
+    if cf.get("areas") and cf.get("to"):
+        mo = str(cf["to"])[:7]
+        per = sorted(((v.get("byMonth") or {}).get(mo, 0), k) for k, v in cf["areas"].items())
+        tot = sum(n for n, _ in per)
+        if tot:
+            n, w = per[-1]
+            nm_en, nm_cs = AREA_NAME.get(w, (names.get(w, w), names.get(w, w)))
+            y, mm = int(mo[:4]), int(mo[5:7])
+            pts.append({"materials": [smat.get(w)] if smat.get(w) else [], "source": "UCDP", "url": "https://ucdp.uu.se/downloads/",
+                        "text": "Armed conflict: %d events near the supply chain in %s %d, most of them around %s (%d)." % (tot, MONTH_EN[mm - 1], y, nm_en, n),
+                        "text_cs": "Ozbrojené konflikty: %d událostí poblíž dodavatelského řetězce v měsíci %s %d, nejvíc v okolí %s (%d)." % (tot, MONTH_CS[mm - 1], y, nm_cs, n)})
+    # 5. EU defence tenders
+    td = current("live-data/live/tenders.json") or {}
+    sr, mons = td.get("series") or {}, td.get("months") or []
+    if sr and len(mons) >= 13:
+        last = {k: v[-2] for k, v in sr.items() if len(v) >= 13}
+        avg = {k: round(sum(v[-14:-2]) / 12) for k, v in sr.items() if len(v) >= 14}
+        y, mm = int(mons[-2][:4]), int(mons[-2][5:7])
+        if last and avg:
+            pts.append({"materials": [], "source": "TED", "url": "https://ted.europa.eu",
+                        "text": "EU defence tenders: %d weapons, %d ammunition and %d explosives notices in %s, against monthly averages of %d, %d and %d over the year before." % (
+                            last.get("weapons", 0), last.get("ammunition", 0), last.get("explosives", 0), MONTH_EN[mm - 1], avg.get("weapons", 0), avg.get("ammunition", 0), avg.get("explosives", 0)),
+                        "text_cs": "Obranné zakázky v EU: %d oznámení na zbraně, %d na munici a %d na výbušniny v měsíci %s, proti měsíčním průměrům %d, %d a %d za předchozí rok." % (
+                            last.get("weapons", 0), last.get("ammunition", 0), last.get("explosives", 0), MONTH_CS[mm - 1], avg.get("weapons", 0), avg.get("ammunition", 0), avg.get("explosives", 0))})
+    # 6. China's share of EU imports, the highest this month
+    tr = (current("live-data/live/trade.json") or {}).get("materials") or {}
+    best = None
+    for m, rows in tr.items():
+        for r in rows:
+            mo = r.get("monthly") or {}
+            cn, ext = mo.get("cn") or [], mo.get("ext") or []
+            if cn and ext and ext[-1] and ext[-1] > 1e6:
+                share = cn[-1] / ext[-1]
+                if not best or share > best[0]:
+                    best = (share, m, r.get("label", r.get("code")), mo.get("from"), len(ext))
+    if best:
+        share, m, label, frm, n = best
+        y, mm = int(frm[:4]), int(frm[5:7]) + n - 1
+        y, mm = y + (mm - 1) // 12, (mm - 1) % 12 + 1
+        pts.append({"materials": [m], "source": "Eurostat Comext", "url": "https://ec.europa.eu/eurostat/comext/newxtweb/",
+                    "text": "EU imports: China supplied %d%% of what the EU bought from outside the EU of %s (%s) in %s %d, the highest share among the products tracked." % (round(share * 100), label.lower(), MAT_NAME[m][0].lower(), MONTH_EN[mm - 1], y),
+                    "text_cs": "Dovoz do EU: Čína dodala %d %% toho, co EU nakoupila mimo EU, u položky %s (%s) v měsíci %s %d, nejvyšší podíl ze sledovaných produktů." % (round(share * 100), label, MAT_NAME[m][1].lower(), MONTH_CS[mm - 1], y)})
+    # 7. the week's headlines
+    news = current("live-data/news.json") or []
+    week_news = [x for x in news if isinstance(x, dict) and str(x.get("date", "")) >= (TODAY - dt.timedelta(days=7)).isoformat()]
+    for x in week_news[:3]:
+        pts.append({"materials": x.get("materials") or [], "source": "%s, %s" % (x.get("source", ""), day_txt(x.get("date", TODAY.isoformat()), False)[:-5]),
+                    "url": x.get("url", ""), "text": x.get("title", ""), "text_cs": x.get("title_cs") or x.get("title", "")})
+    counts = {}
+    for x in week_news:
+        for m in x.get("materials") or []:
+            counts[m] = counts.get(m, 0) + 1
+    top = sorted(counts.items(), key=lambda kv: -kv[1])[:2]
+    if top:
+        watch_en.append("Most covered this week: " + ", ".join("%s (%d stories)" % (MAT_NAME[m][0], n) for m, n in top if m in MAT_NAME))
+        watch_cs.append("Nejvíc zpráv tento týden: " + ", ".join("%s (%d)" % (MAT_NAME[m][1], n) for m, n in top if m in MAT_NAME))
+    alerts = len((current("live-data/live/hazards.json") or {}).get("alerts") or [])
+    brief = {"id": monday, "week": monday, "auto": True, "writtenAt": TODAY.isoformat(),
+             "title": "The week in data, %s" % day_txt(monday, False), "title_cs": "Týden v datech, %s" % day_txt(monday, True),
+             "lede": "%d stories on the ten materials in the last 7 days, %d of %d plants with furnace-hot pixels, and %d serious disaster alerts worldwide." % (len(week_news), len(hot), len(hs) or 31, alerts),
+             "lede_cs": "%d zpráv o deseti surovinách za posledních 7 dní, %d z %d závodů s pixely horkými jako pec a %d vážných výstrah před katastrofami ve světě." % (len(week_news), len(hot), len(hs) or 31, alerts),
+             "points": pts[:8], "soWhat": "", "soWhat_cs": "", "watchNext": watch_en, "watchNext_cs": watch_cs}
+    briefs = [b for b in briefs if b.get("week") != monday] + [brief]
+    briefs.sort(key=lambda b: str(b.get("week") or b.get("id") or ""), reverse=True)
+    return briefs[:12], "ok (week of %s, %d points)" % (monday, len(pts[:8]))
+
+
+def feed_memory(prev):
+    """Once a week: opens the live atlas in an invisible Chrome and saves the page's own snapshot of the state of
+    every material (window.__atlasSnapshot), which the page compares week on week. This is what the Monday task did."""
+    import subprocess
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "playwright"], check=True)
+        from playwright.sync_api import sync_playwright
+    exe = os.environ.get("CHROMIUM_PATH") or None
+    def snapshot():
+        with sync_playwright() as p:
+            b = p.chromium.launch(executable_path=exe, args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader"])
+            pg = b.new_page(viewport={"width": 1280, "height": 900})
+            pg.goto(BASE + "?nobloom", wait_until="domcontentloaded", timeout=90000)
+            pg.wait_for_function("typeof window.__atlasSnapshot === 'function'", timeout=90000)
+            pg.wait_for_timeout(20000)                     # let the live data arrive
+            snap = pg.evaluate("window.__atlasSnapshot()")
+            b.close()
+            return snap
+    try:
+        snap = snapshot()
+    except Exception as e:
+        if exe or "Executable doesn't exist" not in str(e) and "playwright install" not in str(e):
+            raise
+        subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], check=True)
+        snap = snapshot()
+    if not isinstance(snap, dict) or not isinstance(snap.get("mats"), dict) or len(snap["mats"]) < 5:
+        raise RuntimeError("the page gave no usable snapshot")
+    mem = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("date") != snap.get("date")]
+    mem.append(snap)
+    mem.sort(key=lambda x: str(x.get("date", "")), reverse=True)
+    return mem[:12], "ok (snapshot of %s, %d materials, %d weeks kept)" % (snap.get("date"), len(snap["mats"]), len(mem[:12]))
+
 # ---------------------------------------------------------------- run
 
 INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
-              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144}
+              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160}
 
 
 def main():
-    log("OreOrbit updater v2.4 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.5 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1553,7 +1805,7 @@ def main():
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
                      ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
                      ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders),
-                     ("trade", feed_trade), ("so2", feed_so2), ("imagery", feed_imagery), ("radar", feed_radar)]:
+                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
         if ONLY and name not in ONLY:
@@ -1569,7 +1821,7 @@ def main():
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
             continue
-        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json"}.get(name, "live-data/live/%s.json" % name)
+        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "memory": "live-data/memory.json"}.get(name, "live-data/live/%s.json" % name)
         t0 = time.time()
         try:
             prev = current(path)
@@ -1634,6 +1886,10 @@ def main():
     failed = [k for k, v in status.items() if str(v.get("status", "")).startswith("failed") and k in INTERVAL_H and (not ONLY or k in ONLY)]
     if failed:
         log("feeds that failed this run (their last good data stays online): " + ", ".join(failed))
+    stuck = [k for k, v in status.items() if k in INTERVAL_H and int(v.get("fails") or 0) >= 3]
+    if stuck:
+        log("feeds that have failed 3 runs or more in a row: %s. The run is marked as failed so GitHub emails you." % ", ".join(stuck))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
