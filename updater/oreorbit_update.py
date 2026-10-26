@@ -1562,7 +1562,7 @@ def gdelt(q, span="3d"):
         {"query": q + " sourcelang:english", "mode": "ArtList", "format": "json", "maxrecords": 250, "sort": "DateDesc", "timespan": span})
     for attempt in range(2):
         try:
-            raw = http(url, timeout=45, tries=1).decode("utf-8", "replace").strip()
+            raw = http(url, timeout=30, tries=1).decode("utf-8", "replace").strip()
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt == 0:
                 time.sleep(30)
@@ -1591,6 +1591,9 @@ def feed_news(prev):
         gi = (first + k) % len(NEWS_GROUPS)
         q = NEWS_GROUPS[gi]
         if k:
+            if time_left() < 150:
+                errors.append("questions left for the next run")
+                break
             time.sleep(20)
         try:
             arts = gdelt(q)
@@ -1787,8 +1790,20 @@ def feed_memory(prev):
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "playwright"], check=True, capture_output=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "playwright"], check=True, capture_output=True, timeout=180)
         from playwright.sync_api import sync_playwright
+
+    def install(with_deps):
+        """The browser alone (GitHub's machines already have nearly all its system libraries); the slower
+        system-package step only if the browser cannot start without it. Both with a strict time limit."""
+        cmd = [sys.executable, "-m", "playwright", "install"] + (["--with-deps"] if with_deps else []) + ["chromium"]
+        limit = max(60, min(420 if with_deps else 240, int(time_left()) - 150))
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=limit)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("installing the browser took longer than %d s; the next run tries again" % limit)
+        if r.returncode:
+            raise RuntimeError("could not install the browser: " + (r.stderr or r.stdout)[-300:])
     exe = os.environ.get("CHROMIUM_PATH") or None
     def snapshot():
         with sync_playwright() as p:
@@ -1803,12 +1818,18 @@ def feed_memory(prev):
     try:
         snap = snapshot()
     except Exception as e:
-        if exe or "Executable doesn't exist" not in str(e) and "playwright install" not in str(e):
+        if exe or ("Executable doesn't exist" not in str(e) and "playwright install" not in str(e)):
             raise
-        r = subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], capture_output=True, text=True)
-        if r.returncode:
-            raise RuntimeError("could not install the browser: " + (r.stderr or r.stdout)[-300:])
-        snap = snapshot()
+        install(False)
+        try:
+            snap = snapshot()
+        except Exception as e2:
+            if "shared librar" not in str(e2).lower() and "missing dependencies" not in str(e2).lower() and "install-deps" not in str(e2):
+                raise
+            if time_left() < 8 * 60:
+                raise RuntimeError("the browser needs system libraries and too little time is left; the next run tries again")
+            install(True)
+            snap = snapshot()
     if not isinstance(snap, dict) or not isinstance(snap.get("mats"), dict) or len(snap["mats"]) < 5:
         raise RuntimeError("the page gave no usable snapshot")
     mem = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("date") != snap.get("date")]
@@ -1823,7 +1844,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.7 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.8 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1848,7 +1869,7 @@ def main():
         if ONLY and name not in ONLY:
             log("%-9s not in this run" % name)
             continue
-        if name in HEAVY and time_left() < 5 * 60:
+        if name in HEAVY and time_left() < (8 if name == "memory" else 5) * 60:
             st["status"] = "postponed: this run's time was used up; it runs next time"
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
