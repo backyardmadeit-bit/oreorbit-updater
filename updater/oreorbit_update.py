@@ -1369,6 +1369,22 @@ def sun_cos_grid(terrain, span_km, sun_az, sun_el):
     return out
 
 
+def sample_smooth(grid, n, size):
+    """The n x n grid stretched over size x size pixels, blending smoothly between grid points
+    (one flat block per cell left a stair-step pattern in the heat maps)."""
+    out, k = [0.0] * (size * size), (n - 1) / size
+    for y in range(size):
+        gy = min(n - 1.0001, (y + 0.5) * k)
+        r0, fy = int(gy), gy - int(gy)
+        for x in range(size):
+            gx = min(n - 1.0001, (x + 0.5) * k)
+            c0, fx = int(gx), gx - int(gx)
+            a, b = grid[r0 * n + c0], grid[r0 * n + c0 + 1]
+            c, d = grid[(r0 + 1) * n + c0], grid[(r0 + 1) * n + c0 + 1]
+            out[y * size + x] = (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy
+    return out
+
+
 def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False, terrain=None):
     """Landsat 8/9 surface temperature in the same square as the mine photo. When the site's height model is known,
     the warmth that sunlit slopes get from the sun is removed first (a fit of temperature against how directly the sun
@@ -1394,7 +1410,7 @@ def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False, terrain=None):
         if terrain and isinstance(terrain.get("h"), list) and len(terrain["h"]) == terrain.get("n", 0) ** 2 and sun_az is not None and sun_el:
             n = terrain["n"]
             cg = sun_cos_grid(terrain, span_km, float(sun_az), float(sun_el))
-            ci = [cg[min(n - 1, (i // size) * n // size) * n + min(n - 1, (i % size) * n // size)] for i in range(size * size)]
+            ci = sample_smooth(cg, n, size)
             lo, hi = temps[int(len(temps) * 0.05)], temps[int(len(temps) * 0.95)]
             pts = [(ci[i], T[i]) for i in range(size * size) if T[i] is not None and lo <= T[i] <= hi]
             if len(pts) > 1000:
@@ -1482,11 +1498,11 @@ def feed_radar(prev):
                 changed = True
             try:
                 terrain = current(irec["terrain"]) if irec.get("terrain") else None
-                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 3, terrain=terrain)
+                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 4, terrain=terrain)
                 if hrec:
-                    path = "img/%s-heat-%s-3.png" % (sid, hrec["date"].replace("-", ""))   # a new name, so browsers cannot show an old copy
+                    path = "img/%s-heat-%s-4.png" % (sid, hrec["date"].replace("-", ""))   # a new name, so browsers cannot show an old copy
                     files[path] = png
-                    rec["heat"] = dict(hrec, file=path, style=3)
+                    rec["heat"] = dict(hrec, file=path, style=4)
                     heat_new[0] += 1
                     changed = True
             except Exception as e:
@@ -1518,7 +1534,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.3 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.4 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
