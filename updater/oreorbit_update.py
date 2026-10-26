@@ -1353,9 +1353,27 @@ def clean_mask(mask, size, need=3):
     return out
 
 
-def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False):
-    """Landsat 8/9 surface temperature in the same square as the mine photo: every pixel compared with the
-    median of the ground within about 1 km. Returns (record, png bytes) or (None, None) when nothing new."""
+def sun_cos_grid(terrain, span_km, sun_az, sun_el):
+    """How directly the sun hits each cell of the site's height model (cosine of the incidence angle)."""
+    n, h = terrain["n"], terrain["h"]
+    d = span_km * 1000 / (n - 1)                        # metres between grid points
+    az, el = math.radians(sun_az), math.radians(sun_el)
+    sx, sy, sz = math.sin(az) * math.cos(el), math.cos(az) * math.cos(el), math.sin(el)   # east, north, up
+    out = [0.0] * (n * n)
+    for r in range(n):
+        for c in range(n):
+            e = (h[r * n + min(n - 1, c + 1)] - h[r * n + max(0, c - 1)]) / 10 / (d * (min(n - 1, c + 1) - max(0, c - 1)))
+            no = (h[max(0, r - 1) * n + c] - h[min(n - 1, r + 1) * n + c]) / 10 / (d * (min(n - 1, r + 1) - max(0, r - 1)))   # row 0 is north
+            norm = math.sqrt(e * e + no * no + 1)
+            out[r * n + c] = (-e * sx - no * sy + sz) / norm
+    return out
+
+
+def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False, terrain=None):
+    """Landsat 8/9 surface temperature in the same square as the mine photo. When the site's height model is known,
+    the warmth that sunlit slopes get from the sun is removed first (a fit of temperature against how directly the sun
+    hits each slope); then every pixel is compared with the median of the ground within about 1 km.
+    Returns (record, png bytes) or (None, None) when nothing new."""
     feats = pc_search("landsat-c2-l2", lat, lng, (TODAY - dt.timedelta(days=60)).isoformat(), TODAY.isoformat(), limit=12,
                       query={"eo:cloud_cover": {"lt": 25}, "platform": {"in": ["landsat-8", "landsat-9"]}})
     bbox, size = box(lat, lng, span_km), 512
@@ -1365,16 +1383,37 @@ def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False):
         raw = pc_crop("landsat-c2-l2", f["id"], bbox, size, size, "png",
                       {"expression": "lwir11*0.00341802+149.0-273.15", "asset_as_band": "True", "rescale": "-40,80", "nodata": "0"})
         v, a = grey(Image.open(io.BytesIO(raw)), Image)
-        temps = [x * 120 / 255 - 40 for x, al in zip(v, a) if al]
+        T = [x * 120 / 255 - 40 if al else None for x, al in zip(v, a)]
+        temps = sorted(t for t in T if t is not None)
         if len(temps) < 0.8 * size * size:
             continue
+        p = f.get("properties") or {}
+        method = "local"
+        # remove the sun's effect on slopes, if the height model and the sun's position are known
+        sun_az, sun_el = p.get("view:sun_azimuth"), p.get("view:sun_elevation")
+        if terrain and isinstance(terrain.get("h"), list) and len(terrain["h"]) == terrain.get("n", 0) ** 2 and sun_az is not None and sun_el:
+            n = terrain["n"]
+            cg = sun_cos_grid(terrain, span_km, float(sun_az), float(sun_el))
+            ci = [cg[min(n - 1, (i // size) * n // size) * n + min(n - 1, (i % size) * n // size)] for i in range(size * size)]
+            lo, hi = temps[int(len(temps) * 0.05)], temps[int(len(temps) * 0.95)]
+            pts = [(ci[i], T[i]) for i in range(size * size) if T[i] is not None and lo <= T[i] <= hi]
+            if len(pts) > 1000:
+                mx, my = sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts)
+                sxx = sum((x - mx) ** 2 for x, _ in pts)
+                sxy = sum((x - mx) * (y - my) for x, y in pts)
+                syy = sum((y - my) ** 2 for _, y in pts)
+                b = sxy / sxx if sxx else 0
+                r2 = (sxy * sxy / (sxx * syy)) if sxx and syy else 0
+                if b > 0 and r2 >= 0.05:
+                    T = [t - b * (ci[i] - mx) if t is not None else None for i, t in enumerate(T)]
+                    method = "local+terrain"
         # local reference: median of 16-pixel blocks, then the median of the blocks within about 1 km
         bs, nb = 16, size // 16
         blocks = [[None] * nb for _ in range(nb)]
         for by in range(nb):
             for bx in range(nb):
-                vals = sorted(v[(by * bs + yy) * size + bx * bs + xx] for yy in range(bs) for xx in range(bs) if a[(by * bs + yy) * size + bx * bs + xx])
-                blocks[by][bx] = vals[len(vals) // 2] * 120 / 255 - 40 if vals else None
+                vals = sorted(T[(by * bs + yy) * size + bx * bs + xx] for yy in range(bs) for xx in range(bs) if T[(by * bs + yy) * size + bx * bs + xx] is not None)
+                blocks[by][bx] = vals[len(vals) // 2] if vals else None
         r = max(1, round(1000 / (span_km * 1000 / size) / bs))
         ref = [[None] * nb for _ in range(nb)]
         for by in range(nb):
@@ -1386,12 +1425,12 @@ def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False):
         hot = 0
         max_anom = -99.0
         for i in range(size * size):
-            if not a[i]:
+            if T[i] is None:
                 continue
             rf = ref[(i // size) // bs][(i % size) // bs]
             if rf is None:
                 continue
-            an = v[i] * 120 / 255 - 40 - rf
+            an = T[i] - rf
             max_anom = max(max_anom, an)
             if an > 8:
                 hot += 1
@@ -1399,14 +1438,13 @@ def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False):
                 px[i % size, i // size] = heat_colour(an)
         buf = io.BytesIO()
         over.save(buf, "PNG", optimize=True)
-        temps.sort()
-        p = f.get("properties") or {}
         m = span_km * 1000 / size
         rec = {"date": p.get("datetime", "")[:10], "scene": f["id"], "platform": p.get("platform"),
                "medianC": round(temps[len(temps) // 2], 1), "maxC": round(temps[-1], 1), "p995C": round(temps[int(len(temps) * 0.995) - 1], 1),
-               "hotHa": round(hot * m * m / 10000, 1), "maxAnomC": round(max_anom, 1), "method": "local", "time": p.get("datetime", "")[11:16]}
+               "hotHa": round(hot * m * m / 10000, 1), "maxAnomC": round(max_anom, 1), "method": method, "time": p.get("datetime", "")[11:16]}
         return rec, buf.getvalue()
     return None, None
+
 
 def feed_radar(prev):
     """The newest Sentinel-1 radar picture of each site (radar sees through cloud)."""
@@ -1443,11 +1481,12 @@ def feed_radar(prev):
                 rec["radar"] = {"file": path, "date": d, "scene": f["id"], "orbit": p.get("sat:orbit_state"), "platform": p.get("platform")}
                 changed = True
             try:
-                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 2)
+                terrain = current(irec["terrain"]) if irec.get("terrain") else None
+                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 3, terrain=terrain)
                 if hrec:
-                    path = "img/%s-heat-%s.png" % (sid, hrec["date"].replace("-", ""))
+                    path = "img/%s-heat-%s-3.png" % (sid, hrec["date"].replace("-", ""))   # a new name, so browsers cannot show an old copy
                     files[path] = png
-                    rec["heat"] = dict(hrec, file=path, style=2)
+                    rec["heat"] = dict(hrec, file=path, style=3)
                     heat_new[0] += 1
                     changed = True
             except Exception as e:
@@ -1467,7 +1506,7 @@ def feed_radar(prev):
     srcs = dict(out.get("sources") or {})
     srcs["radar"] = "Copernicus Sentinel-1 RTC (Microsoft Planetary Computer)"
     srcs["heat"] = ("Landsat 8 and 9 Collection 2 Level-2 surface temperature, USGS (Microsoft Planetary Computer); "
-                    "each pixel compared with the median of the ground within about 1 km")
+                    "warmth from sunlit slopes removed using the Copernicus DEM, then each pixel compared with the median of the ground within about 1 km")
     out.update({"sites": sites, "generated": TODAY.isoformat(), "sources": srcs})
     files["data/orbit-extras.json"] = out
     return files, "ok (%d sites with new pictures, %d unchanged, %d failed; heat maps: %d new, %d failed)" % (fresh, same, len(failed), heat_new[0], heat_new[1])
@@ -1479,7 +1518,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.2 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.3 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
