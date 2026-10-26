@@ -45,6 +45,13 @@ DRY = os.environ.get("DRY_RUN") == "1" or not KEY
 FORCE = os.environ.get("FORCE") == "1"
 ONLY = {x.strip() for x in os.environ.get("ONLY", "").split(",") if x.strip()}
 UA = "OreOrbit-updater/1.0 (+https://bohemiadefense.com/atlas)"
+START = time.time()
+BUDGET = float(os.environ.get("TIME_BUDGET_MIN") or "22") * 60   # GitHub stops a run at 30 minutes
+HEAVY = {"tenders", "clouds", "so2", "imagery", "radar"}
+
+
+def time_left():
+    return BUDGET - (time.time() - START)
 NOW = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 TODAY = NOW.date()
 
@@ -1237,8 +1244,15 @@ def feed_imagery(prev):
     cfg = {s["id"]: s for s in CFG["sites"]}
     if not sites:
         raise RuntimeError("could not read data/imagery.json from the website, so nothing was changed")
-    files, fresh, same, failed = {}, 0, 0, []
-    for sid, rec in sites.items():
+    files, fresh, same, failed, done = {}, 0, 0, [], 0
+    order = sorted(sites, key=lambda k: sites[k].get("checkedAt") or "")
+    for sid in order:
+        rec = sites[sid]
+        if time_left() < 100:
+            files["_partial"] = "%d of %d sites" % (done, len(order))
+            break
+        done += 1
+        rec["checkedAt"] = iso()
         site = dict(cfg.get(sid) or {}, lat=rec.get("lat", (cfg.get(sid) or {}).get("lat")), lng=rec.get("lng", (cfg.get(sid) or {}).get("lng")))
         if site.get("lat") is None:
             continue
@@ -1364,8 +1378,15 @@ def feed_radar(prev):
     if not sites:
         raise RuntimeError("could not read data/orbit-extras.json from the website, so nothing was changed")
     files, fresh, same, failed, heat_new = {}, 0, 0, [], [0, 0]
-    for sid in list(sites.keys()):
+    order, done = sorted(sites, key=lambda k: sites[k].get("checkedAt") or ""), 0
+    for sid in order:
+        if time_left() < 100:
+            files["_partial"] = "%d of %d sites" % (done, len(order))
+            break
+        done += 1
         rec, irec = dict(sites[sid]), (img.get("sites") or {}).get(sid) or {}
+        rec["checkedAt"] = iso()
+        sites[sid] = rec
         lat, lng = irec.get("lat", (cfg.get(sid) or {}).get("lat")), irec.get("lng", (cfg.get(sid) or {}).get("lng"))
         if lat is None:
             continue
@@ -1418,7 +1439,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.0 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.1 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1443,12 +1464,18 @@ def main():
         if ONLY and name not in ONLY:
             log("%-9s not in this run" % name)
             continue
+        if name in HEAVY and time_left() < 5 * 60:
+            st["status"] = "postponed: this run's time was used up; it runs next time"
+            status[name] = st
+            log("%-9s %s" % (name, st["status"]))
+            continue
         if not due(name):
             st["status"] = "skipped: refreshed less than %s ago" % (("%d hours" % INTERVAL_H[name]) if INTERVAL_H[name] < 48 else "%d days" % (INTERVAL_H[name] // 24))
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
             continue
         path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json"}.get(name, "live-data/live/%s.json" % name)
+        t0 = time.time()
         try:
             prev = current(path)
             if name == "hotspots":
@@ -1459,11 +1486,16 @@ def main():
             if obj is None:
                 st["status"] = note
             elif name in ("imagery", "radar"):
+                partial = obj.pop("_partial", None)
                 pics = [p for p in obj if p.startswith("img/")]
                 for p in pics:
                     upload_bytes(p, obj[p])
                 res = upload(path, obj[path])
-                st.update({"ok": iso(), "fails": 0, "status": note})
+                if partial:
+                    note = note + " · partial: %s checked, the rest next run" % partial
+                    st.update({"fails": 0, "status": note})       # not marked ok, so it continues next run
+                else:
+                    st.update({"ok": iso(), "fails": 0, "status": note})
                 note = note + " · %d pictures sent · %s" % (len(pics), res)
             elif name == "clouds":
                 res = [upload(p, o) for p, o in obj.items()]
@@ -1475,7 +1507,7 @@ def main():
                 res = upload(path, obj)
                 st.update({"ok": iso(), "fails": 0, "status": note})
                 note = note + " · " + res
-            log("%-9s %s" % (name, note))
+            log("%-9s %s (%ds)" % (name, note, time.time() - t0))
         except Exception as e:
             st["fails"] = int(st.get("fails") or 0) + 1
             st["status"] = "failed: " + str(e)[:160]
