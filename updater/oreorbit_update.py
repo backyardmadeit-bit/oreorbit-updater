@@ -1260,7 +1260,7 @@ def feed_imagery(prev):
             f, d, bbox = s2_clear_scene(site, rec, Image)
             if not f:
                 continue
-            if rec.get("nowScene") == f["id"]:
+            if rec.get("nowScene") == f["id"] and (rec.get("change") or {}).get("method", "").endswith("isolated pixels removed"):
                 same += 1
                 continue
             size, ymd = 700, d.replace("-", "")
@@ -1276,9 +1276,8 @@ def feed_imagery(prev):
                     n1, a1 = ndvi_values(f["id"], bbox, size, Image)
                     s0, sa0 = scl_values(then[0]["id"], bbox, size, Image)
                     s1, sa1 = scl_values(f["id"], bbox, size, Image)
-                    valid = veg = lost = 0
-                    over = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-                    px = over.load()
+                    valid = veg = 0
+                    raw_lost = [False] * (size * size)
                     for i in range(size * size):
                         if not (a0[i] and a1[i] and sa0[i] and sa1[i] and s0[i] in CLEAR_SCL and s1[i] in CLEAR_SCL):
                             continue
@@ -1286,15 +1285,21 @@ def feed_imagery(prev):
                         if n0[i] >= 0.25:
                             veg += 1
                             if n1[i] < 0.15 and n0[i] - n1[i] >= 0.18:
-                                lost += 1
-                                px[i % size, i // size] = (255, 61, 127, 215)
+                                raw_lost[i] = True
+                    kept = clean_mask(raw_lost, size)
+                    lost = sum(kept)
+                    over = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+                    px = over.load()
+                    for i, on in enumerate(kept):
+                        if on:
+                            px[i % size, i // size] = (255, 61, 127, 215)
                     buf = io.BytesIO()
                     over.save(buf, "PNG", optimize=True)
                     chg_path = "img/%s-change-%s.png" % (sid, ymd)
                     files[chg_path] = buf.getvalue()
                     m = (rec.get("spanKm") or 7.0) * 1000 / size
                     new["change"] = {"lostHa": round(lost * m * m / 10000), "validPct": round(100 * valid / (size * size)),
-                                     "method": "NDVI fell by at least 0.18, from vegetated (>= 0.25) to bare ground or water (< 0.15)",
+                                     "method": "NDVI fell by at least 0.18, from vegetated (>= 0.25) to bare ground or water (< 0.15); isolated pixels removed",
                                      "file": chg_path, "from": rec["thenDate"], "to": d, "vegPct": round(100 * veg / valid) if valid else 0}
             rec.update(new)
             sites[sid] = rec
@@ -1312,14 +1317,50 @@ def feed_imagery(prev):
 
 
 
-def heat_for(lat, lng, span_km, rec_heat, Image):
+HEAT_STOPS = [(4.0, (255, 107, 20, 40)), (6.0, (255, 107, 20, 90)), (9.0, (255, 107, 20, 255)), (12.5, (255, 215, 106, 255)), (16.0, (255, 246, 220, 255))]
+
+
+def heat_colour(an):
+    """The page's legend: a faint orange at +4 C, then orange, gold and cream at +16 C and above.
+    Weak anomalies stay faint, because sunny slopes alone can be a few degrees warmer than the valley."""
+    if an >= HEAT_STOPS[-1][0]:
+        return HEAT_STOPS[-1][1]
+    for (a0, c0), (a1, c1) in zip(HEAT_STOPS, HEAT_STOPS[1:]):
+        if an < a1:
+            t = (an - a0) / (a1 - a0)
+            return tuple(round(c0[k] + (c1[k] - c0[k]) * t) for k in range(4))
+    return HEAT_STOPS[0][1]
+
+
+def clean_mask(mask, size, need=3):
+    """Keeps a pixel only if at least `need` of its 8 neighbours are also set: removes specks from shadows and snow."""
+    out = [False] * (size * size)
+    for i, on in enumerate(mask):
+        if not on:
+            continue
+        x, y = i % size, i // size
+        n = 0
+        for dy in (-1, 0, 1):
+            yy = y + dy
+            if yy < 0 or yy >= size:
+                continue
+            row = yy * size
+            for dx in (-1, 0, 1):
+                xx = x + dx
+                if (dx or dy) and 0 <= xx < size and mask[row + xx]:
+                    n += 1
+        out[i] = n >= need
+    return out
+
+
+def heat_for(lat, lng, span_km, rec_heat, Image, restyle=False):
     """Landsat 8/9 surface temperature in the same square as the mine photo: every pixel compared with the
     median of the ground within about 1 km. Returns (record, png bytes) or (None, None) when nothing new."""
     feats = pc_search("landsat-c2-l2", lat, lng, (TODAY - dt.timedelta(days=60)).isoformat(), TODAY.isoformat(), limit=12,
                       query={"eo:cloud_cover": {"lt": 25}, "platform": {"in": ["landsat-8", "landsat-9"]}})
     bbox, size = box(lat, lng, span_km), 512
     for f in feats[:4]:
-        if (rec_heat or {}).get("scene") == f["id"]:
+        if (rec_heat or {}).get("scene") == f["id"] and not restyle:
             return None, None          # the newest usable scene is the one already shown
         raw = pc_crop("landsat-c2-l2", f["id"], bbox, size, size, "png",
                       {"expression": "lwir11*0.00341802+149.0-273.15", "asset_as_band": "True", "rescale": "-40,80", "nodata": "0"})
@@ -1355,8 +1396,7 @@ def heat_for(lat, lng, span_km, rec_heat, Image):
             if an > 8:
                 hot += 1
             if an >= 4:
-                t = min(1.0, (an - 4) / 12)
-                px[i % size, i // size] = (255, round(255 * (1 - t)), 0, round(110 + 145 * t))
+                px[i % size, i // size] = heat_colour(an)
         buf = io.BytesIO()
         over.save(buf, "PNG", optimize=True)
         temps.sort()
@@ -1403,11 +1443,11 @@ def feed_radar(prev):
                 rec["radar"] = {"file": path, "date": d, "scene": f["id"], "orbit": p.get("sat:orbit_state"), "platform": p.get("platform")}
                 changed = True
             try:
-                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image)
+                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image, restyle=(rec.get("heat") or {}).get("style") != 2)
                 if hrec:
                     path = "img/%s-heat-%s.png" % (sid, hrec["date"].replace("-", ""))
                     files[path] = png
-                    rec["heat"] = dict(hrec, file=path)
+                    rec["heat"] = dict(hrec, file=path, style=2)
                     heat_new[0] += 1
                     changed = True
             except Exception as e:
@@ -1439,7 +1479,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v2.1 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.2 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
