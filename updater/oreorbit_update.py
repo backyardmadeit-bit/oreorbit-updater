@@ -1193,7 +1193,7 @@ def pc_crop(collection, item, bbox, w, h, fmt, params):
 def grey(img, Image):
     """(values 0-255, alpha) lists from a picture the server returned (grey or grey+alpha)."""
     img = img.convert("LA")
-    return list(img.getchannel(0).getdata()), list(img.getchannel(1).getdata())
+    return list(img.getchannel(0).tobytes()), list(img.getchannel(1).tobytes())
 
 
 def scl_values(item_id, bbox, size, Image):
@@ -1297,6 +1297,63 @@ def feed_imagery(prev):
     return files, "ok (%d new pictures, %d unchanged, %d failed)" % (fresh, same, len(failed))
 
 
+
+def heat_for(lat, lng, span_km, rec_heat, Image):
+    """Landsat 8/9 surface temperature in the same square as the mine photo: every pixel compared with the
+    median of the ground within about 1 km. Returns (record, png bytes) or (None, None) when nothing new."""
+    feats = pc_search("landsat-c2-l2", lat, lng, (TODAY - dt.timedelta(days=60)).isoformat(), TODAY.isoformat(), limit=12,
+                      query={"eo:cloud_cover": {"lt": 25}, "platform": {"in": ["landsat-8", "landsat-9"]}})
+    bbox, size = box(lat, lng, span_km), 512
+    for f in feats[:4]:
+        if (rec_heat or {}).get("scene") == f["id"]:
+            return None, None          # the newest usable scene is the one already shown
+        raw = pc_crop("landsat-c2-l2", f["id"], bbox, size, size, "png",
+                      {"expression": "lwir11*0.00341802+149.0-273.15", "asset_as_band": "True", "rescale": "-40,80", "nodata": "0"})
+        v, a = grey(Image.open(io.BytesIO(raw)), Image)
+        temps = [x * 120 / 255 - 40 for x, al in zip(v, a) if al]
+        if len(temps) < 0.8 * size * size:
+            continue
+        # local reference: median of 16-pixel blocks, then the median of the blocks within about 1 km
+        bs, nb = 16, size // 16
+        blocks = [[None] * nb for _ in range(nb)]
+        for by in range(nb):
+            for bx in range(nb):
+                vals = sorted(v[(by * bs + yy) * size + bx * bs + xx] for yy in range(bs) for xx in range(bs) if a[(by * bs + yy) * size + bx * bs + xx])
+                blocks[by][bx] = vals[len(vals) // 2] * 120 / 255 - 40 if vals else None
+        r = max(1, round(1000 / (span_km * 1000 / size) / bs))
+        ref = [[None] * nb for _ in range(nb)]
+        for by in range(nb):
+            for bx in range(nb):
+                near = sorted(blocks[y][x] for y in range(max(0, by - r), min(nb, by + r + 1)) for x in range(max(0, bx - r), min(nb, bx + r + 1)) if blocks[y][x] is not None)
+                ref[by][bx] = near[len(near) // 2] if near else None
+        over = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        px = over.load()
+        hot = 0
+        max_anom = -99.0
+        for i in range(size * size):
+            if not a[i]:
+                continue
+            rf = ref[(i // size) // bs][(i % size) // bs]
+            if rf is None:
+                continue
+            an = v[i] * 120 / 255 - 40 - rf
+            max_anom = max(max_anom, an)
+            if an > 8:
+                hot += 1
+            if an >= 4:
+                t = min(1.0, (an - 4) / 12)
+                px[i % size, i // size] = (255, round(255 * (1 - t)), 0, round(110 + 145 * t))
+        buf = io.BytesIO()
+        over.save(buf, "PNG", optimize=True)
+        temps.sort()
+        p = f.get("properties") or {}
+        m = span_km * 1000 / size
+        rec = {"date": p.get("datetime", "")[:10], "scene": f["id"], "platform": p.get("platform"),
+               "medianC": round(temps[len(temps) // 2], 1), "maxC": round(temps[-1], 1), "p995C": round(temps[int(len(temps) * 0.995) - 1], 1),
+               "hotHa": round(hot * m * m / 10000, 1), "maxAnomC": round(max_anom, 1), "method": "local", "time": p.get("datetime", "")[11:16]}
+        return rec, buf.getvalue()
+    return None, None
+
 def feed_radar(prev):
     """The newest Sentinel-1 radar picture of each site (radar sees through cloud)."""
     Image, _ = need_pillow()
@@ -1306,28 +1363,40 @@ def feed_radar(prev):
     cfg = {s["id"]: s for s in CFG["sites"]}
     if not sites:
         raise RuntimeError("could not read data/orbit-extras.json from the website, so nothing was changed")
-    files, fresh, same, failed = {}, 0, 0, []
+    files, fresh, same, failed, heat_new = {}, 0, 0, [], [0, 0]
     for sid in list(sites.keys()):
         rec, irec = dict(sites[sid]), (img.get("sites") or {}).get(sid) or {}
         lat, lng = irec.get("lat", (cfg.get(sid) or {}).get("lat")), irec.get("lng", (cfg.get(sid) or {}).get("lng"))
         if lat is None:
             continue
         try:
+            changed = False
             feats = pc_search("sentinel-1-rtc", lat, lng, (TODAY - dt.timedelta(days=24)).isoformat(), TODAY.isoformat(), limit=10)
-            if not feats:
-                continue
-            f = feats[0]
-            p = f.get("properties") or {}
-            if (rec.get("radar") or {}).get("scene") == f["id"]:
-                same += 1
-                continue
-            d = p.get("datetime", "")[:10]
-            jpg = pc_crop("sentinel-1-rtc", f["id"], box(lat, lng, irec.get("spanKm") or 7.0), 512, 512, "jpg", {"assets": "vv", "rescale": "0,0.35"})
-            path = "img/%s-radar-%s.jpg" % (sid, d.replace("-", ""))
-            files[path] = jpg
-            rec["radar"] = {"file": path, "date": d, "scene": f["id"], "orbit": p.get("sat:orbit_state"), "platform": p.get("platform")}
+            if feats and (rec.get("radar") or {}).get("scene") != feats[0]["id"]:
+                f = feats[0]
+                p = f.get("properties") or {}
+                d = p.get("datetime", "")[:10]
+                jpg = pc_crop("sentinel-1-rtc", f["id"], box(lat, lng, irec.get("spanKm") or 7.0), 512, 512, "jpg", {"assets": "vv", "rescale": "0,0.35"})
+                path = "img/%s-radar-%s.jpg" % (sid, d.replace("-", ""))
+                files[path] = jpg
+                rec["radar"] = {"file": path, "date": d, "scene": f["id"], "orbit": p.get("sat:orbit_state"), "platform": p.get("platform")}
+                changed = True
+            try:
+                hrec, png = heat_for(lat, lng, irec.get("spanKm") or 7.0, rec.get("heat"), Image)
+                if hrec:
+                    path = "img/%s-heat-%s.png" % (sid, hrec["date"].replace("-", ""))
+                    files[path] = png
+                    rec["heat"] = dict(hrec, file=path)
+                    heat_new[0] += 1
+                    changed = True
+            except Exception as e:
+                log("  heat %s: %s" % (sid, str(e)[:200]))
+                heat_new[1] += 1
             sites[sid] = rec
-            fresh += 1
+            if changed:
+                fresh += 1
+            else:
+                same += 1
         except Exception as e:
             failed.append("%s: %s" % (sid, str(e)[:140]))
             log("  radar %s: %s" % (sid, str(e)[:200]))
@@ -1336,9 +1405,11 @@ def feed_radar(prev):
     out = dict(prev)
     srcs = dict(out.get("sources") or {})
     srcs["radar"] = "Copernicus Sentinel-1 RTC (Microsoft Planetary Computer)"
+    srcs["heat"] = ("Landsat 8 and 9 Collection 2 Level-2 surface temperature, USGS (Microsoft Planetary Computer); "
+                    "each pixel compared with the median of the ground within about 1 km")
     out.update({"sites": sites, "generated": TODAY.isoformat(), "sources": srcs})
     files["data/orbit-extras.json"] = out
-    return files, "ok (%d new pictures, %d unchanged, %d failed)" % (fresh, same, len(failed))
+    return files, "ok (%d sites with new pictures, %d unchanged, %d failed; heat maps: %d new, %d failed)" % (fresh, same, len(failed), heat_new[0], heat_new[1])
 
 # ---------------------------------------------------------------- run
 
@@ -1347,7 +1418,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v1.9 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v2.0 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
