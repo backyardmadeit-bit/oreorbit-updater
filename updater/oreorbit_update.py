@@ -442,7 +442,7 @@ def pw_rows(service, portid, since):
     rows, offset = [], 0
     while True:
         q = urllib.parse.urlencode({"where": "portid='%s' AND date >= DATE '%s'" % (portid, since), "outFields": "*",
-                                    "orderByFields": "date", "f": "json", "resultOffset": offset, "resultRecordCount": 2000})
+                                    "orderByFields": "date", "f": "json", "resultOffset": offset, "resultRecordCount": 1000})
         j = jget(PW % service + "?" + q, timeout=90)
         if j.get("error"):
             raise RuntimeError(str(j["error"])[:120])
@@ -484,41 +484,53 @@ def pw_series(rows, fields):
 
 
 def feed_traffic(prev):
+    """IMF PortWatch: daily ship counts at the chokepoints and port calls at the supply-chain ports. Series that fail keep
+    their last figures; the next run asks again only for those, gently, until all are fresh."""
     prev = prev or {}
     since = (TODAY - dt.timedelta(days=425)).isoformat()
     cps, ports = dict(prev.get("chokepoints") or {}), dict(prev.get("ports") or {})
-    ok, failed = 0, 0
-    for k, pid in CFG["portwatch"]["chokepoints"].items():
-        try:
-            s = pw_series(pw_rows("Daily_Chokepoints_Data", pid, since), {"total": ["n_total"], "bulk": ["n_dry_bulk", "n_bulk"]})
-            if s:
-                s["id"] = pid
-                cps[k] = s
+    jobs = [("cp", k, pid, None) for k, pid in CFG["portwatch"]["chokepoints"].items()] + \
+           [("port", k, p["id"], p["name"]) for k, p in CFG["portwatch"]["ports"].items()]
+    stale = set(prev.get("stale") or [])
+    last = parse_iso(prev.get("fetchedAt"))
+    if stale and not FORCE and last and (NOW - last).total_seconds() < 6 * 86400:
+        jobs = [j for j in jobs if j[1] in stale]            # a retry: only the series that failed last time
+    ok, failed = 0, []
+    for n, (kind, k, pid, name) in enumerate(jobs):
+        if n:
+            time.sleep(1.5)
+        for attempt in (0, 1):
+            try:
+                if kind == "cp":
+                    srs = pw_series(pw_rows("Daily_Chokepoints_Data", pid, since), {"total": ["n_total"], "bulk": ["n_dry_bulk", "n_bulk"]})
+                    if srs:
+                        srs["id"] = pid
+                        cps[k] = srs
+                else:
+                    srs = pw_series(pw_rows("Daily_Ports_Data", pid, since), {"calls": ["portcalls", "portcalls_total"], "export": ["export", "export_total"]})
+                    if srs:
+                        srs.update({"id": pid, "name": name})
+                        ports[k] = srs
                 ok += 1
-        except Exception as e:
-            failed += 1
-            log("  PortWatch %s: %s" % (pid, str(e)[:120]))
-    for k, p in CFG["portwatch"]["ports"].items():
-        try:
-            s = pw_series(pw_rows("Daily_Ports_Data", p["id"], since), {"calls": ["portcalls", "portcalls_total"], "export": ["export", "export_total"]})
-            if s:
-                s.update({"id": p["id"], "name": p["name"]})
-                ports[k] = s
-                ok += 1
-        except Exception as e:
-            failed += 1
-            log("  PortWatch %s: %s" % (p["id"], str(e)[:120]))
-    if not ok:
+                break
+            except Exception as e:
+                if attempt == 0:
+                    time.sleep(8)
+                    continue
+                failed.append(k)
+                log("  PortWatch %s: %s" % (pid, str(e)[:120]))
+    if not ok and not (cps or ports):
         raise RuntimeError("PortWatch returned nothing usable")
     out = dict(prev)
-    out.update({"fetchedAt": iso(), "chokepoints": cps, "ports": ports})
+    out.update({"chokepoints": cps, "ports": ports, "stale": failed})
+    if not stale or ok:
+        out["fetchedAt"] = iso()
     out.setdefault("source", "IMF PortWatch (IMF, University of Oxford)")
     out.setdefault("url", "https://portwatch.imf.org")
     if failed:
         out["_retry"] = True        # the failed series are tried again on the next run, not in a week
-        return out, "ok (%d of %d series refreshed, %d kept from the last run and retried next run)" % (ok, ok + failed, failed)
-    return out, "ok (%d series)" % ok
-
+        return out, "ok (%d of %d series refreshed, %d kept from the last run and retried next run)" % (ok, ok + len(failed), len(failed))
+    return out, "ok (%d series%s)" % (ok, ", the ones that failed last time" if stale and len(jobs) < 14 else "")
 
 def in_box(b, lat, lng):
     (la1, lo1), (la2, lo2) = b["bbox"]
@@ -1588,7 +1600,6 @@ def gdelt(q, span="3d"):
 
 NEWS_RSS = [   # public feeds of mining, defence and space news sites; a feed that fails is skipped for that run
     ("im-mining.com", "https://im-mining.com/feed/"),
-    ("australianmining.com.au", "https://www.australianmining.com.au/feed/"),
     ("politico.eu", "https://www.politico.eu/feed/"),
     ("mining-technology.com", "https://www.mining-technology.com/feed/"),
     ("northernminer.com", "https://www.northernminer.com/feed/"),
@@ -1935,7 +1946,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v3.3 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.4 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
