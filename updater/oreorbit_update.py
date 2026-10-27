@@ -443,7 +443,7 @@ def pw_rows(service, portid, since):
     while True:
         q = urllib.parse.urlencode({"where": "portid='%s' AND date >= DATE '%s'" % (portid, since), "outFields": "*",
                                     "orderByFields": "date", "f": "json", "resultOffset": offset, "resultRecordCount": 1000})
-        j = jget(PW % service + "?" + q, timeout=90)
+        j = json.loads(http(PW % service + "?" + q, timeout=30, tries=1).decode("utf-8", "replace"))   # one try, 30 s: feed_traffic retries once itself
         if j.get("error"):
             raise RuntimeError(str(j["error"])[:120])
         feats = j.get("features") or []
@@ -495,8 +495,12 @@ def feed_traffic(prev):
     last = parse_iso(prev.get("fetchedAt"))
     if stale and not FORCE and last and (NOW - last).total_seconds() < 6 * 86400:
         jobs = [j for j in jobs if j[1] in stale]            # a retry: only the series that failed last time
-    ok, failed = 0, []
+    ok, failed, t0 = 0, [], time.time()
     for n, (kind, k, pid, name) in enumerate(jobs):
+        if time.time() - t0 > 180 or time_left() < 6 * 60:     # never let PortWatch hold up the run: the rest waits for the next one
+            failed += [j[1] for j in jobs[n:]]
+            log("  PortWatch: %d series left for the next run (time limit)" % (len(jobs) - n))
+            break
         if n:
             time.sleep(1.5)
         for attempt in (0, 1):
@@ -1946,7 +1950,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v3.4 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.5 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
