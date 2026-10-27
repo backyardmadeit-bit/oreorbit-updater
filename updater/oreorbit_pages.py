@@ -392,7 +392,7 @@ def legal_page(cfg, today):
            ("GDELT Project", "Open news index; headlines link to the original publishers.")]
     body = """<h1>Imprint, privacy and data licences</h1>
 <section><h2>Operator</h2><p>%(who)s. Contact: <a href="mailto:%(mail)s">%(mail)s</a>.</p></section>
-<section><h2>Privacy</h2><p>OreOrbit uses no cookies, trackers or analytics. Nothing you type is sent anywhere: the assessment register and your settings (language, sound, chosen materials) stay in your own browser's storage on your device. Like every website, the hosting server keeps standard access logs for security and operation.</p></section>
+<section><h2>Privacy</h2><p>OreOrbit uses no cookies and no trackers. It counts page views and button clicks as anonymous daily totals, without storing IP addresses or anything else about visitors, and skips browsers that ask not to be tracked. Nothing you type is sent anywhere: the assessment register and your settings (language, sound, chosen materials) stay in your own browser's storage on your device. Like every website, the hosting server keeps standard access logs for security and operation.</p></section>
 <section><h2>Terms of use</h2><p>OreOrbit is provided free of charge for information. Data are collected automatically from public sources and can contain errors or delays; stories found automatically are not checked. Nothing here is investment, legal or professional advice. Check the original sources before relying on a figure.</p>
 <p>OreOrbit's own text, figures and charts may be quoted and reused with credit to “OreOrbit (Bohemia Defense)” and a link. Third-party data remain under their own licences, listed below.</p></section>
 <section><h2>Data sources and licences</h2><dl class="signals">%(src)s</dl></section>""" % {
@@ -811,7 +811,7 @@ def embed_page(live, today):
 <style>body{margin:0;padding:18px 20px 14px;background:#050607}.e-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.e-n{font-weight:300;font-size:44px;letter-spacing:-.04em;line-height:1}.e-t{color:#a3aaae;font-size:14px;max-width:46ch}.e-s{margin-top:6px;font-size:12px;color:#697176}.e-s a{color:#a3aaae}</style></head>
 <body><div class="e-top"><div class="e-n">%(v)d%%</div><div class="e-t">China's share of EU imports of the ten critical minerals behind Europe's defence, %(month)s</div></div>
 %(chart)s
-<div class="e-s">OreOrbit Dependency Index · Eurostat Comext · <a href="%(base)sp/dependency-index.html" target="_blank" rel="noopener">OreOrbit by Bohemia Defense</a></div></body></html>
+<div class="e-s">OreOrbit Dependency Index · Eurostat Comext · <a href="%(base)sp/dependency-index.html" target="_blank" rel="noopener">OreOrbit by Bohemia Defense</a></div><script src="../library.js" defer></script></body></html>
 """ % {"base": BASE, "v": v, "month": e(month_txt(last["month"])), "chart": index_chart(series)}
     return path, html
 
