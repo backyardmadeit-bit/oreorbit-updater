@@ -1581,6 +1581,41 @@ def gdelt(q, span="3d"):
     return []
 
 
+NEWS_RSS = [   # public feeds of mining, defence and space news sites; a feed that fails is skipped for that run
+    ("mining.com", "https://www.mining.com/feed/"),
+    ("mining-technology.com", "https://www.mining-technology.com/feed/"),
+    ("northernminer.com", "https://www.northernminer.com/feed/"),
+    ("breakingdefense.com", "https://breakingdefense.com/feed/"),
+    ("defensenews.com", "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml"),
+    ("spacenews.com", "https://spacenews.com/feed/"),
+]
+
+
+def rss_items(url):
+    """Title, link and date of each item in an RSS or Atom feed."""
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime
+    raw = http(url, timeout=30, tries=1)
+    root = ET.fromstring(raw)
+    out = []
+    for it in root.iter():
+        tag = it.tag.rsplit("}", 1)[-1]
+        if tag not in ("item", "entry"):
+            continue
+        get = lambda name: next((c for c in it if c.tag.rsplit("}", 1)[-1] == name), None)
+        t, l = get("title"), get("link")
+        link = (l.get("href") if l is not None and l.get("href") else (l.text if l is not None else "")) or ""
+        d = next((x for x in (get("pubDate"), get("published"), get("updated")) if x is not None), None)   # an element without children is falsy
+        day = ""
+        if d is not None and d.text:
+            try:
+                day = parsedate_to_datetime(d.text.strip()).date().isoformat()
+            except (TypeError, ValueError):
+                day = d.text.strip()[:10]
+        out.append(((t.text or "").strip() if t is not None else "", link.strip(), day))
+    return out
+
+
 def feed_news(prev):
     """Recent English headlines for the ten materials from GDELT (two grouped questions), each sorted to its material(s)
     by the words in its title and marked as found automatically and not checked."""
@@ -1590,8 +1625,38 @@ def feed_news(prev):
     norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
     have_title = {norm(x["title"]) for x in items}
     per_mat, added, errors, answered, throttled = {}, 0, [], 0, 0
+    feeds_ok = 0
+
+    def take(title, url, dom, day):
+        nonlocal added
+        title = H.unescape(title or "").strip()
+        dom = (dom or "").lower()
+        if not title or not url.startswith("https://") or url in have_url or norm(title) in have_title:
+            return
+        if re.search(NEWS_SPAM, title, re.I) or any(b in dom for b in NEWS_BLOCK):
+            return
+        mats = [k for k, kw in NEWS_KW.items() if re.search(kw, title, re.I)]
+        if not mats or per_mat.get(mats[0], 0) >= 3:
+            return
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", day or "") or day < (TODAY - dt.timedelta(days=7)).isoformat():
+            return
+        items.append({"id": "%s-auto-%s" % (day, hashlib.md5(url.encode()).hexdigest()[:8]), "date": day, "title": title[:220], "url": url,
+                      "source": dom[4:] if dom.startswith("www.") else dom, "materials": mats, "lang": "en", "auto": True, "foundAt": TODAY.isoformat()})
+        have_url.add(url)
+        have_title.add(norm(title))
+        per_mat[mats[0]] = per_mat.get(mats[0], 0) + 1
+        added += 1
+
+    for dom, url in NEWS_RSS:
+        try:
+            for title, link, day in rss_items(url):
+                take(title, link, dom, day)
+            feeds_ok += 1
+        except Exception as e:
+            errors.append("%s %s" % (dom, why(e)[:60]))
+    answered += feeds_ok
     first = int(time.time() // 3600) % len(NEWS_GROUPS)          # a different first question each run
-    for k in range(len(NEWS_GROUPS)):
+    for k in range(min(2, len(NEWS_GROUPS))):
         gi = (first + k) % len(NEWS_GROUPS)
         q = NEWS_GROUPS[gi]
         if k:
@@ -1610,25 +1675,12 @@ def feed_news(prev):
             errors.append("question %d %s" % (gi + 1, msg))
             continue
         for a in arts:
-            title, url, dom = H.unescape(str(a.get("title") or "")).strip(), str(a.get("url") or ""), str(a.get("domain") or "").lower()
-            if not title or not url.startswith("https://") or url in have_url or norm(title) in have_title:
-                continue
-            if re.search(NEWS_SPAM, title, re.I) or any(b in dom for b in NEWS_BLOCK):
-                continue
-            mats = [k for k, kw in NEWS_KW.items() if re.search(kw, title, re.I)]
-            if not mats or per_mat.get(mats[0], 0) >= 3:
-                continue
             sd = str(a.get("seendate") or "")
-            day = "%s-%s-%s" % (sd[0:4], sd[4:6], sd[6:8]) if len(sd) >= 8 else TODAY.isoformat()
-            items.append({"id": "%s-auto-%s" % (day, hashlib.md5(url.encode()).hexdigest()[:8]), "date": day, "title": title[:220], "url": url,
-                          "source": dom[4:] if dom.startswith("www.") else dom, "materials": mats, "lang": "en", "auto": True, "foundAt": TODAY.isoformat()})
-            have_url.add(url)
-            have_title.add(norm(title))
-            per_mat[mats[0]] = per_mat.get(mats[0], 0) + 1
-            added += 1
+            take(str(a.get("title") or ""), str(a.get("url") or ""), str(a.get("domain") or ""),
+                 "%s-%s-%s" % (sd[0:4], sd[4:6], sd[6:8]) if len(sd) >= 8 else TODAY.isoformat())
     if not answered:
         last = parse_iso((current("live-data/meta/status.json") or {}).get("lastRun"))
-        if throttled == len(NEWS_GROUPS) and last and (NOW - last).total_seconds() < 48 * 3600:
+        if throttled and last and (NOW - last).total_seconds() < 48 * 3600:
             return None, "skipped: GDELT asked to slow down; the next run tries again"
         raise RuntimeError("; ".join(errors[:4]))
     items.sort(key=lambda x: (str(x.get("date", "")), 0 if x.get("auto") else 1), reverse=True)
@@ -1639,7 +1691,7 @@ def feed_news(prev):
     meta = current("live-data/meta/status.json") or {}
     meta = dict(meta, lastRun=iso(), news="GDELT, automatic")
     upload("live-data/meta/status.json", meta)
-    return keep[:160], "ok (%d new stories: %s%s)" % (added, ", ".join("%s %d" % (k, v) for k, v in sorted(per_mat.items())) or "none",
+    return keep[:160], "ok (%d new stories: %s; %d of %d news feeds read%s)" % (added, ", ".join("%s %d" % (k, v) for k, v in sorted(per_mat.items())) or "none", feeds_ok, len(NEWS_RSS),
                                                        ("; " + "; ".join(errors[:2])) if errors else "")
 
 
@@ -1876,7 +1928,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v3.1 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.2 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
