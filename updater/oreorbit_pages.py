@@ -527,8 +527,11 @@ def dependency_page(ref, live, today):
 <li>The index is the plain average of the ten shares, so a small but critical mineral such as gallium counts as much as lithium.</li>
 <li>Values, not tonnes; imports from outside the EU only. Single months can swing widely when few shipments arrive, so read the trend more than one month.</li>
 <li>Updated automatically when Eurostat publishes a new month, usually about six weeks after the month ends.</li></ul></section>
+<section><h2>Embed this chart</h2><p>Paste this code into an article or a blog post. The chart updates itself every month and credits OreOrbit.</p>
+<p class="cite-text" style="font-family:monospace;font-size:13px;word-break:break-all">%(embed)s</p><button type="button" class="copy" data-copy="%(embed)s" data-label="Copy the embed code" data-done="Embed code copied" hidden>Copy the embed code</button></section>
 %(cite)s
 <p class="open"><a class="cta" href="../">See the minerals on the live atlas</a></p></article>""" % {
+        "embed": e('<iframe src="' + BASE + 'p/embed-index.html" width="100%" height="420" style="border:0;max-width:760px" title="OreOrbit Dependency Index" loading="lazy"></iframe>'),
         "month": e(month_txt(last["month"])), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
         "chart": index_chart(series), "quote": e(quote), "trs": trs, "cite": cite_box(title, path, today)}
     ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for ten critical raw materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite). Source: Eurostat Comext.",
@@ -677,6 +680,142 @@ def dependency_page_cs(ref, live, today):
     return path, page(path, title, quote[:300], body, ld, today, [("Atlas", ""), ("Knihovna", "p/index.html"), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
 
 
+# ---------------------------------------------------------------- the weekly LinkedIn cards and the embeddable chart
+
+PRODUCTS = [("Drones", "Drony", {"ree": "motor magnets", "ga": "radio links (GaN)", "gr": "battery anodes", "co": "battery cathodes", "li": "battery cells", "ni": "battery cathodes", "ge": "thermal camera lenses"}),
+            ("Ammunition and guided munitions", "Munice a řízená munice", {"sb": "primers and hardened lead", "w": "penetrators and fragmentation", "ree": "fin actuators", "ga": "seekers and fuzes"}),
+            ("Optics and thermal imaging", "Optika a termovize", {"ge": "infrared lenses", "ga": "detectors (GaAs, InGaAs)", "ree": "laser rangefinders"}),
+            ("Radar and electronics", "Radary a elektronika", {"ga": "GaN power amplifiers", "ge": "high-frequency chips", "ree": "magnets and garnets", "sb": "infrared detectors"}),
+            ("Armoured vehicles", "Obrněná vozidla", {"ti": "armour and structures", "w": "penetrators and tooling", "ni": "armour steel", "ree": "electric drives"}),
+            ("Aircraft and space", "Letectví a kosmonautika", {"ti": "airframes and engines", "ni": "engine superalloys", "co": "engine superalloys", "ree": "actuators", "ga": "solar cells (GaAs)", "ge": "solar-cell substrates"}),
+            ("Batteries and energy storage", "Baterie a úložiště energie", {"li": "cells", "co": "cathodes", "ni": "cathodes", "gr": "anodes"})]
+FONTS_URL = "https://bohemiadefense.com/atlas/fonts/"
+
+
+def card_doc(inner):
+    return ("""<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:HG;src:url(%(F)shanken-grotesk-latin-wght-normal.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:DM;src:url(%(F)sdm-mono-latin-400-normal.woff2) format("woff2")}
+*{box-sizing:border-box;margin:0;padding:0}body{width:1080px;height:1350px;background:#050607;color:#eceee9;font-family:HG,"Helvetica Neue",Arial,sans-serif;position:relative;overflow:hidden}
+.orb{position:absolute;right:-260px;top:-240px;width:760px;height:760px;border-radius:50%%;border:1.5px solid rgba(236,238,233,.08)}
+.sat{position:absolute;right:250px;top:96px;width:16px;height:16px;border-radius:50%%;background:#3ddc97;box-shadow:0 0 0 8px rgba(61,220,151,.15)}
+.top{position:absolute;left:84px;top:78px;font:500 22px HG}.top span{color:#8d959a;font-weight:400}
+.k{position:absolute;left:84px;top:170px;font:400 22px DM,monospace;color:#8d959a}
+h1{position:absolute;left:84px;top:215px;width:910px;font-weight:250;font-size:92px;line-height:.98;letter-spacing:-.05em}h1 b{font-weight:500;color:#fff}
+.sub{position:absolute;left:84px;width:880px;font-size:32px;line-height:1.3;color:#a3aaae}.sub b{color:#eceee9;font-weight:600}
+.foot{position:absolute;left:84px;right:84px;bottom:84px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1.5px solid rgba(236,238,233,.12);padding-top:26px}
+.cta{font-size:26px;line-height:1.35}.cta b{display:block;font-weight:600;color:#fff}.cta span{font:400 21px DM,monospace;color:#3ddc97}
+.who{text-align:right;font:400 19px DM,monospace;color:#8d959a;line-height:1.6}.who b{font:600 22px HG;color:#eceee9}
+.src{position:absolute;left:84px;bottom:36px;font:400 15px DM,monospace;color:#5d6469;white-space:nowrap}
+.list{position:absolute;left:84px;right:84px}.r{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:center;padding:12px 0;border-top:1.5px solid rgba(236,238,233,.10)}
+.nm{display:flex;flex-direction:column;gap:2px;padding-left:28px;position:relative}.nm i{position:absolute;left:0;top:10px;width:14px;height:14px;border-radius:50%%}
+.nm b{font-size:27px;font-weight:500}.nm span{font:400 17px DM,monospace;color:#8d959a}
+.bar{display:flex;align-items:center;gap:20px}.tr{flex:1;height:14px;border-radius:14px;background:rgba(236,238,233,.08);overflow:hidden}.fl{height:100%%;border-radius:14px}
+.v{width:190px;font-size:28px;font-weight:600;white-space:nowrap}.v em{display:block;font:400 16px DM,monospace;color:#8d959a;font-style:normal}
+.big{position:absolute;left:84px;top:430px;font-weight:200;font-size:300px;line-height:1;letter-spacing:-.06em}
+.chart{position:absolute;left:84px;right:84px;top:820px;height:260px}
+.main{position:absolute;left:84px;right:84px;top:165px;bottom:230px;display:flex;flex-direction:column;gap:24px}
+.main>*{position:static!important;left:auto!important;top:auto!important;width:auto!important}
+.main .big{font-size:230px;line-height:.9}.main .chart{height:230px;margin-top:auto}.main .list{margin-top:6px}
+</style></head><body><div class="orb"></div><div class="sat"></div>
+<div class="top">OreOrbit <span>· by Bohemia Defense</span></div>%(inner)s
+<div class="foot"><div class="cta"><b>%(cta)s</b><span>bohemiadefense.com/atlas</span></div><div class="who"><b>David Madali</b><br>Bohemia Defense · Prague</div></div>
+</body></html>""" % {"F": FONTS_URL, "inner": inner[0], "cta": inner[1]})
+
+
+def social_cards(ref, live, today):
+    """Three LinkedIn cards for this week, each with an English and a Czech caption."""
+    cards = []
+    series = dependency_series(live.get("trade"))
+    if series:
+        last = series[-1]
+        v = round(last["value"] * 100)
+        yago = next((x for x in series if x["month"] == "%04d-%s" % (int(last["month"][:4]) - 1, last["month"][5:])), None)
+        dy = (v - round(yago["value"] * 100)) if yago else None
+        svg = index_chart(series).replace('class="chart"', 'style="width:100%;height:100%"').replace('class="c-x"', 'font-size="13" fill="#697176" font-family="DM, monospace"')
+        inner = ('<div class="main"><div class="k">OreOrbit Dependency Index · %s</div><h1 style="font-size:74px">China\'s share of Europe\'s <b>defence-mineral imports</b></h1>'
+                 '<div class="big">%d%%</div><div class="sub">%s</div><div class="chart">%s</div></div>'
+                 '<div class="src">Equal-weighted share of extra-EU import value, ten minerals · Eurostat Comext via OreOrbit</div>') % (
+            month_txt(last["month"]), v, ("<b>%+d points</b> from a year earlier" % dy) if dy is not None else "", svg)
+        cards.append({"slug": "index", "title": "Dependency Index, %s" % month_txt(last["month"]), "html": card_doc((inner, "The monthly number, with the method")),
+                      "en": "China supplied %d%% of the EU's imports of the ten critical minerals behind Europe's defence industry in %s%s.\n\nThat's the OreOrbit Dependency Index: each mineral counts equally, so gallium matters as much as lithium. Full breakdown and method in the first comment.\n\n#CriticalRawMaterials #DefenceIndustry #SupplyChain #Europe" % (
+                          v, month_txt(last["month"]), (", %s from %d%% a year earlier" % ("up" if dy > 0 else "down" if dy < 0 else "unchanged", round(yago["value"] * 100))) if yago else ""),
+                      "cs": "Čína v %s dodala %d %% dovozu deseti kritických surovin, na kterých stojí evropský obranný průmysl, do EU%s.\n\nTo je Index závislosti OreOrbit: každá surovina má stejnou váhu, takže galium se počítá stejně jako lithium. Rozpad a metodika v prvním komentáři." % (
+                          MONTH_CS_LOC[int(last["month"][5:7]) - 1] + " " + last["month"][:4], v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else ""),
+                      "link": BASE + "p/dependency-index.html"})
+        if yago:
+            moves = sorted(((round(last["per"][m] * 100) - round(yago["per"][m] * 100), m) for m in last["per"] if m in yago["per"]), key=lambda t: -abs(t[0]))
+            if moves:
+                d, m = moves[0]
+                nm = ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m)
+                a, b = round(yago["per"][m] * 100), round(last["per"][m] * 100)
+                inner = ('<div class="main"><div class="k">Biggest move this year · %s</div><h1 style="font-size:80px">%s: China\'s share <b>%s %d points</b> in a year</h1>'
+                         '<div class="list">'
+                         '<div class="r"><div class="nm"><i style="background:#555"></i><b>%s</b><span>China\'s share of EU imports</span></div><div class="bar"><div class="tr"><div class="fl" style="width:%d%%;background:#6b7277"></div></div><div class="v">%d%%</div></div></div>'
+                         '<div class="r"><div class="nm"><i style="background:%s"></i><b>%s</b><span>China\'s share of EU imports</span></div><div class="bar"><div class="tr"><div class="fl" style="width:%d%%;background:%s"></div></div><div class="v">%d%%</div></div></div></div>'
+                         '<div class="sub">One month can swing, so read it as a signal, not a verdict. The full monthly series is on OreOrbit.</div></div>'
+                         '<div class="src">Share of extra-EU import value · Eurostat Comext via OreOrbit</div>') % (
+                    month_txt(last["month"]), nm, "up" if d > 0 else "down", abs(d), month_txt(yago["month"]), a, a, COL.get(m, "#eee"), month_txt(last["month"]), b, COL.get(m, "#eee"), b)
+                cards.append({"slug": "mover", "title": "%s, %+d points" % (nm, d), "html": card_doc((inner, "Every mineral, month by month")),
+                              "en": "%s: China's share of the EU's imports went from %d%% to %d%% in a year (%s to %s).\n\nWhen one supplier's share moves this much, someone in a European purchasing department either found a second source, or lost one. Monthly data per mineral in the first comment.\n\n#CriticalRawMaterials #SupplyChain #DefenceIndustry" % (
+                                  nm, a, b, month_txt(yago["month"]), month_txt(last["month"])),
+                              "cs": "%s: podíl Číny na dovozu do EU se za rok změnil z %d %% na %d %%.\n\nKdyž se podíl jednoho dodavatele pohne takhle, někdo v evropském nákupu buď našel druhý zdroj, nebo ho ztratil. Měsíční data v prvním komentáři." % (MAT_CS.get(m, nm), a, b),
+                              "link": BASE + "p/dependency-index.html"})
+    wk = dt.date.fromisoformat(today).isocalendar()[1]
+    pen, pcs, uses = PRODUCTS[wk % len(PRODUCTS)]
+    rows, conc, cn = [], 0, 0
+    for m in [x for x in ref["order"] if x in uses]:
+        x = (ref["materials"][m].get("worst") or {}).get("x") or {}
+        pct, who = x.get("pct"), x.get("who", "China")
+        if pct and pct > 65:
+            conc += 1
+            cn += who == "China"
+        rows.append('<div class="r"><div class="nm"><i style="background:%s"></i><b>%s</b><span>%s</span></div><div class="bar"><div class="tr"><div class="fl" style="width:%s%%;background:%s"></div></div><div class="v">%s <em>%s</em></div></div></div>' % (
+            COL[m], e(ref["materials"][m]["info"]["name"]), e(uses[m]), pct or 0, COL[m], ("%s%%" % pct) if pct else "China", e(who if pct else "leads, no public total")))
+    inner = ('<div class="main"><div class="k">Product spotlight</div><h1 style="font-size:%dpx">%s.<br><b>%d critical minerals.</b></h1><div class="sub">For <b>%d of them, one country controls more than 65%%</b> of a key stage%s.</div>'
+             '<div class="list">%s</div></div><div class="src">Leading country\'s share at the tightest stage · USGS, IEA via OreOrbit</div>') % (
+        84 if len(pen) <= 14 else 70, e(pen), len(rows), conc, (". China in %d" % cn) if cn else "", "".join(rows[:7]))
+    cards.append({"slug": "product", "title": pen, "html": card_doc((inner, "Check your own product in 60 seconds")),
+                  "en": "%s depend on %d of the ten critical minerals. For %d of them, one country controls more than 65%% of a key stage%s.\n\nYou can check your own product type in 60 seconds, free, in OreOrbit's quick check (link in the first comment).\n\n#DefenceIndustry #CriticalRawMaterials #SupplyChain" % (
+                      pen, len(rows), conc, (", China in %d" % cn) if cn else ""),
+                  "cs": "%s závisí na %d z deseti kritických surovin. U %d z nich ovládá jedna země přes 65 %% klíčové fáze%s.\n\nSvůj typ výrobku si prověříte za 60 sekund zdarma v rychlé kontrole OreOrbit (odkaz v prvním komentáři)." % (
+                      pcs, len(rows), conc, (", Čína u %d" % cn) if cn else ""),
+                  "link": BASE + "#check"})
+    return cards
+
+
+def social_page(cards, files, today):
+    """The private page with this week's cards and captions (not in the sitemap, not indexed)."""
+    path = "p/social.html"
+    items = "".join("""<section><h2>%s</h2><figure class="sat"><img src="../%s" alt="" width="1080" height="1350" loading="lazy" style="max-width:420px"></figure>
+<p><a class="cta" href="../%s" download>Download the picture</a></p>
+<h3 class="small">English caption</h3><p class="cite-text" style="white-space:pre-line">%s</p><button type="button" class="copy" data-copy="%s" data-label="Copy the English caption" data-done="Copied" hidden>Copy the English caption</button>
+<h3 class="small">Czech caption</h3><p class="cite-text" style="white-space:pre-line">%s</p><button type="button" class="copy" data-copy="%s" data-label="Copy the Czech caption" data-done="Copied" hidden>Copy the Czech caption</button>
+<p class="small">First comment: %s</p></section>""" % (e(c["title"]), e(f), e(f), e(c["en"]), e(c["en"]), e(c["cs"]), e(c["cs"]), e(c["link"])) for c, f in zip(cards, files))
+    body = '<h1>This week on LinkedIn</h1><p class="lede">Three cards drawn from this week\'s data, with captions. Post one, put the link in the first comment, and answer every comment in the first hour.</p>' + items
+    html = page(path, "This week's LinkedIn cards", "Private page", body, [], today, [("Atlas", ""), ("LinkedIn cards", path)])
+    return path, html.replace('<meta name="author"', '<meta name="robots" content="noindex, nofollow">\n<meta name="author"', 1)
+
+
+def embed_page(live, today):
+    """A minimal page with the index chart, for journalists to embed with an iframe."""
+    path = "p/embed-index.html"
+    series = dependency_series(live.get("trade"))
+    if not series:
+        return path, None
+    last = series[-1]
+    v = round(last["value"] * 100)
+    html = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OreOrbit Dependency Index</title>
+<meta name="robots" content="noindex"><link rel="canonical" href="%(base)sp/dependency-index.html"><link rel="stylesheet" href="../fonts/fonts.css"><link rel="stylesheet" href="../library.css">
+<style>body{margin:0;padding:18px 20px 14px;background:#050607}.e-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.e-n{font-weight:300;font-size:44px;letter-spacing:-.04em;line-height:1}.e-t{color:#a3aaae;font-size:14px;max-width:46ch}.e-s{margin-top:6px;font-size:12px;color:#697176}.e-s a{color:#a3aaae}</style></head>
+<body><div class="e-top"><div class="e-n">%(v)d%%</div><div class="e-t">China's share of EU imports of the ten critical minerals behind Europe's defence, %(month)s</div></div>
+%(chart)s
+<div class="e-s">OreOrbit Dependency Index · Eurostat Comext · <a href="%(base)sp/dependency-index.html" target="_blank" rel="noopener">OreOrbit by Bohemia Defense</a></div></body></html>
+""" % {"base": BASE, "v": v, "month": e(month_txt(last["month"])), "chart": index_chart(series)}
+    return path, html
+
+
 def sitemap(paths, today):
     urls = [BASE] + [BASE + p for p in paths]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -697,5 +836,8 @@ def build(ref, live, cfg, today):
     for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: dependency_page_cs(ref, live, today), lambda: services_page_cs(cfg, today), lambda: about_page_cs(cfg, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
         p, h = fn()
         out[p] = h
-    out["sitemap.xml"] = sitemap(sorted(out.keys()), today)
+    ep, eh = embed_page(live, today)
+    if eh:
+        out[ep] = eh
+    out["sitemap.xml"] = sitemap(sorted(k for k in out.keys() if k not in ("p/embed-index.html",)), today)
     return out

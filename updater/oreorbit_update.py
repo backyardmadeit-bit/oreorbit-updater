@@ -47,7 +47,7 @@ ONLY = {x.strip() for x in os.environ.get("ONLY", "").split(",") if x.strip()}
 UA = "OreOrbit-updater/1.0 (+https://bohemiadefense.com/atlas)"
 START = time.time()
 BUDGET = float(os.environ.get("TIME_BUDGET_MIN") or "22") * 60   # GitHub stops a run at 30 minutes
-HEAVY = {"tenders", "clouds", "so2", "imagery", "radar", "memory"}
+HEAVY = {"tenders", "clouds", "so2", "imagery", "radar", "memory", "social"}
 
 
 def time_left():
@@ -1943,14 +1943,60 @@ def feed_pages(prev):
 
 
 
+
+# ---------------------------------------------------------------- part seven: this week's LinkedIn cards
+
+def feed_social(prev):
+    """Three LinkedIn cards from this week's data, drawn in an invisible browser, on a private page with captions."""
+    import subprocess
+    import oreorbit_pages as P
+    ref = current("data/reference.json")
+    if not isinstance(ref, dict) or not ref.get("materials"):
+        raise RuntimeError("could not read data/reference.json from the website")
+    cards = P.social_cards(ref, {"trade": current("live-data/live/trade.json") or {}}, TODAY.isoformat())
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "playwright"], check=True, capture_output=True, timeout=180)
+        from playwright.sync_api import sync_playwright
+    exe = os.environ.get("CHROMIUM_PATH") or None
+    def shoot():
+        pngs = []
+        with sync_playwright() as pw:
+            b = pw.chromium.launch(executable_path=exe)
+            pg = b.new_page(viewport={"width": 1080, "height": 1350}, device_scale_factor=2)
+            for c in cards:
+                pg.set_content(c["html"], wait_until="load", timeout=60000)
+                pg.wait_for_timeout(1200)                  # the fonts arrive from the website
+                pngs.append(pg.screenshot(type="png"))
+            b.close()
+        return pngs
+    try:
+        pngs = shoot()
+    except Exception as e:
+        if exe or ("Executable doesn't exist" not in str(e) and "playwright install" not in str(e)):
+            raise
+        r = subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], capture_output=True, text=True, timeout=max(60, min(240, int(time_left()) - 150)))
+        if r.returncode:
+            raise RuntimeError("could not install the browser: " + (r.stderr or r.stdout)[-200:])
+        pngs = shoot()
+    ymd, files, names = TODAY.strftime("%Y%m%d"), {}, []
+    for c, png in zip(cards, pngs):
+        f = "img/social-%s-%s.png" % (ymd, c["slug"])
+        files[f] = png
+        names.append(f)
+    path, html = P.social_page(cards, names, TODAY.isoformat())
+    files[path] = html
+    return files, "ok (%d cards: %s)" % (len(cards), ", ".join(c["title"] for c in cards))
+
 # ---------------------------------------------------------------- run
 
 INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
-              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160, "pages": 20}
+              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160, "pages": 20, "social": 160}
 
 
 def main():
-    log("OreOrbit updater v3.5 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.6 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1969,7 +2015,7 @@ def main():
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
                      ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
                      ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders),
-                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory), ("pages", feed_pages)]:
+                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory), ("pages", feed_pages), ("social", feed_social)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
         if ONLY and name not in ONLY:
@@ -1985,7 +2031,7 @@ def main():
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
             continue
-        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "memory": "live-data/memory.json", "pages": "p/index.html"}.get(name, "live-data/live/%s.json" % name)
+        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "memory": "live-data/memory.json", "pages": "p/index.html", "social": "p/social.html"}.get(name, "live-data/live/%s.json" % name)
         t0 = time.time()
         try:
             prev = current(path)
@@ -2008,6 +2054,11 @@ def main():
                 else:
                     st.update({"ok": iso(), "fails": 0, "status": note})
                 note = note + " · %d pictures sent · %s" % (len(pics), res)
+            elif name == "social":
+                for fp, body in obj.items():
+                    upload_bytes(fp, body if isinstance(body, bytes) else body.encode("utf-8"))
+                st.update({"ok": iso(), "fails": 0, "status": note})
+                note = note + " · %d files sent" % len(obj)
             elif name == "pages":
                 res = [upload_bytes(p, h.encode("utf-8")) for p, h in obj.items()]
                 sent = sum(1 for r in res if r != "unchanged")
