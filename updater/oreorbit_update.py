@@ -487,7 +487,7 @@ def feed_traffic(prev):
     prev = prev or {}
     since = (TODAY - dt.timedelta(days=425)).isoformat()
     cps, ports = dict(prev.get("chokepoints") or {}), dict(prev.get("ports") or {})
-    ok = 0
+    ok, failed = 0, 0
     for k, pid in CFG["portwatch"]["chokepoints"].items():
         try:
             s = pw_series(pw_rows("Daily_Chokepoints_Data", pid, since), {"total": ["n_total"], "bulk": ["n_dry_bulk", "n_bulk"]})
@@ -496,6 +496,7 @@ def feed_traffic(prev):
                 cps[k] = s
                 ok += 1
         except Exception as e:
+            failed += 1
             log("  PortWatch %s: %s" % (pid, str(e)[:120]))
     for k, p in CFG["portwatch"]["ports"].items():
         try:
@@ -505,6 +506,7 @@ def feed_traffic(prev):
                 ports[k] = s
                 ok += 1
         except Exception as e:
+            failed += 1
             log("  PortWatch %s: %s" % (p["id"], str(e)[:120]))
     if not ok:
         raise RuntimeError("PortWatch returned nothing usable")
@@ -512,6 +514,9 @@ def feed_traffic(prev):
     out.update({"fetchedAt": iso(), "chokepoints": cps, "ports": ports})
     out.setdefault("source", "IMF PortWatch (IMF, University of Oxford)")
     out.setdefault("url", "https://portwatch.imf.org")
+    if failed:
+        out["_retry"] = True        # the failed series are tried again on the next run, not in a week
+        return out, "ok (%d of %d series refreshed, %d kept from the last run and retried next run)" % (ok, ok + failed, failed)
     return out, "ok (%d series)" % ok
 
 
@@ -1582,7 +1587,9 @@ def gdelt(q, span="3d"):
 
 
 NEWS_RSS = [   # public feeds of mining, defence and space news sites; a feed that fails is skipped for that run
-    ("mining.com", "https://www.mining.com/feed/"),
+    ("im-mining.com", "https://im-mining.com/feed/"),
+    ("australianmining.com.au", "https://www.australianmining.com.au/feed/"),
+    ("politico.eu", "https://www.politico.eu/feed/"),
     ("mining-technology.com", "https://www.mining-technology.com/feed/"),
     ("northernminer.com", "https://www.northernminer.com/feed/"),
     ("breakingdefense.com", "https://breakingdefense.com/feed/"),
@@ -1928,7 +1935,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v3.2 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.3 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -1998,8 +2005,12 @@ def main():
                     status["cloudshi%d" % i] = {"checked": iso(), "fails": 0, "ok": iso(), "status": "ok"}
                 note = note + " · " + ", ".join(sorted(set(res)))
             else:
+                retry = isinstance(obj, dict) and obj.pop("_retry", False)
                 res = upload(path, obj)
-                st.update({"ok": iso(), "fails": 0, "status": note})
+                if retry:
+                    st.update({"fails": 0, "status": note})      # not marked ok, so it runs again next time
+                else:
+                    st.update({"ok": iso(), "fails": 0, "status": note})
                 note = note + " · " + res
             log("%-9s %s (%ds)" % (name, note, time.time() - t0))
         except Exception as e:
