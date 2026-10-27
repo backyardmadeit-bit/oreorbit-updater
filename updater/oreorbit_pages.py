@@ -101,7 +101,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None):
 <header class="bar">
   <a class="brand" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="11" ry="3.6" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(-24 12 12)"/></svg>OreOrbit</a>
   <span class="by">by <a href="https://bohemiadefense.com/">Bohemia Defense</a></span>
-  <nav><a href="index.html">Library</a><a href="services.html">Services</a><a href="about.html">About</a><a class="cta" href="../">Open the atlas</a></nav>
+  <nav><a href="index.html">Library</a><a href="dependency-index.html">Index</a><a href="services.html">Services</a><a href="about.html">About</a><a class="cta" href="../">Open the atlas</a></nav>
 </header>
 <main class="doc">
 %(crumbs)s
@@ -320,7 +320,8 @@ def index_page(ref, today):
             COL[m], SLUG[m], e(info.get("name", m)), e(("%s %s" % (pct_txt(wx), wx.get("who", ""))) if wx else ""),
             "".join('<li><a href="%s.html">%s</a></li>' % (e(s["id"]), e(s["name"])) for s in ss)))
     body = ('<h1>Library</h1><p class="lede">Every material and every site on OreOrbit as a page you can read, link to and cite. '
-            'Rebuilt every day from the same data as the live atlas.</p><ul class="lib">%s</ul>') % "".join(rows)
+            'Rebuilt every day from the same data as the live atlas.</p>'
+            '<p class="open"><a class="cta" href="dependency-index.html">OreOrbit Dependency Index: the monthly number</a></p><ul class="lib">%s</ul>') % "".join(rows)
     ld = [{"@type": "CollectionPage", "@id": BASE + path + "#collection", "name": title, "dateModified": today, "author": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}}]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Library", path)])
 
@@ -430,6 +431,103 @@ def services_page(cfg, today):
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)])
 
 
+def dependency_series(trade):
+    """The OreOrbit Dependency Index, month by month: China's share of the value of EU imports from outside the EU,
+    for each of the ten materials (all tracked products of a material added up), averaged with equal weight per material."""
+    mats = (trade or {}).get("materials") or {}
+    per = {}
+    for m, rows in mats.items():
+        for r in rows:
+            mo = r.get("monthly") or {}
+            frm, cn, ext = mo.get("from"), mo.get("cn") or [], mo.get("ext") or []
+            if not frm:
+                continue
+            y0, m0 = int(frm[:4]), int(frm[5:7])
+            for i in range(min(len(cn), len(ext))):
+                k = "%04d-%02d" % (y0 + (m0 - 1 + i) // 12, (m0 - 1 + i) % 12 + 1)
+                a = per.setdefault(k, {}).setdefault(m, [0.0, 0.0])
+                a[0] += float(cn[i] or 0)
+                a[1] += float(ext[i] or 0)
+    out = []
+    for k in sorted(per):
+        shares = {m: v[0] / v[1] for m, v in per[k].items() if v[1] > 0}
+        if len(shares) >= 8:
+            out.append({"month": k, "value": sum(shares.values()) / len(shares), "n": len(shares),
+                        "over50": sum(1 for x in shares.values() if x > 0.5), "per": shares})
+    return out
+
+
+def month_txt(k):
+    return "%s %s" % (MONTH[int(k[5:7]) - 1], k[:4])
+
+
+def index_chart(series):
+    n = len(series)
+    if n < 2:
+        return ""
+    W, H, top, left = 640, 220, 14, 34
+    vals = [x["value"] * 100 for x in series]
+    lo, hi = max(0, min(vals) - 10), min(100, max(vals) + 10)
+    X = lambda i: left + (W - left - 10) * i / (n - 1)
+    Y = lambda v: top + (H - top - 26) * (1 - (v - lo) / (hi - lo or 1))
+    out = ['<svg class="chart" viewBox="0 0 %d %d" role="img" aria-label="OreOrbit Dependency Index by month" data-name="oreorbit-dependency-index">' % (W, H)]
+    for g in range(int(lo // 10 * 10 + 10), int(hi) + 1, 10):
+        out.append('<line x1="%d" x2="%d" y1="%.1f" y2="%.1f" stroke="rgba(236,238,233,.08)"/><text x="0" y="%.1f" class="c-x">%d%%</text>' % (left, W - 10, Y(g), Y(g), Y(g) + 4, g))
+    pts = " ".join("%.1f,%.1f" % (X(i), Y(v)) for i, v in enumerate(vals))
+    out.append('<polyline points="%s" fill="none" stroke="#3ddc97" stroke-width="2.5" stroke-linejoin="round"/>' % pts)
+    out.append('<circle cx="%.1f" cy="%.1f" r="5" fill="#3ddc97"/>' % (X(n - 1), Y(vals[-1])))
+    for i, x in enumerate(series):
+        if x["month"].endswith("-01") or i == n - 1:
+            out.append('<text x="%.1f" y="%d" class="c-x"%s>%s</text>' % (X(i) if i == n - 1 else X(i) - 14, H - 6, ' text-anchor="end"' if i == n - 1 else "", e(MON[int(x["month"][5:7]) - 1] + " " + x["month"][2:4])))
+    out.append("</svg>")
+    return "".join(out)
+
+
+def dependency_page(ref, live, today):
+    path = "p/dependency-index.html"
+    series = dependency_series(live.get("trade"))
+    title = "OreOrbit Dependency Index: China's share of Europe's defence-mineral imports"
+    if not series:
+        return path, page(path, title, "Monthly index of China's share of EU imports of the ten critical minerals behind Europe's defence.", "<h1>OreOrbit Dependency Index</h1><p class=\"lede\">The index appears once the monthly trade data is available.</p>", [], today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
+    last = series[-1]
+    v = round(last["value"] * 100)
+    prev_m = series[-2] if len(series) > 1 else None
+    yago = next((x for x in series if x["month"] == "%04d-%s" % (int(last["month"][:4]) - 1, last["month"][5:])), None)
+    d_m = (v - round(prev_m["value"] * 100)) if prev_m else None
+    d_y = (v - round(yago["value"] * 100)) if yago else None
+    chg = lambda d: (("+%d" % d if d > 0 else "%d" % d) + (" point" if abs(d) == 1 else " points")) if d is not None else "n/a"
+    names = {m: ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m) for m in last["per"]}
+    quote = "China supplied %d%% of the EU's imports of the ten critical minerals behind Europe's defence industry in %s, according to the OreOrbit Dependency Index by Bohemia Defense%s." % (
+        v, month_txt(last["month"]), (", %s from %d%% a year earlier" % ("up" if d_y > 0 else "down" if d_y < 0 else "unchanged", round(yago["value"] * 100))) if yago else "")
+    desc = quote
+    rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
+    trs = "".join('<li style="--c:%s"><span>%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d%%%s</span></li>' % (
+        COL.get(m, "#eceee9"), e(names[m]), x * 100, round(x * 100),
+        ("" if not yago or m not in yago["per"] else ' <em>%s</em>' % e(chg(round(x * 100) - round(yago["per"][m] * 100)).replace(" points", " pts").replace(" point", " pt")))) for m, x in rows)
+    body = """<article style="--c:#3ddc97">
+<p class="kicker"><i></i>Monthly · Eurostat data for %(month)s</p>
+<h1>OreOrbit Dependency Index</h1>
+<p class="lede">China's share of what the EU imports from outside the EU across the ten critical minerals behind Europe's defence industry. Each mineral counts equally.</p>
+<dl class="figs"><div><dt>%(v)d%%</dt><dd>China's share in %(month)s</dd></div><div><dt>%(dm)s</dt><dd>change from the month before</dd></div><div><dt>%(dy)s</dt><dd>change from a year earlier</dd></div><div><dt>%(over)d of %(n)d</dt><dd>minerals where China supplied more than half</dd></div></dl>
+<section><h2>Month by month</h2>%(chart)s<p class="small">Equal-weighted average of China's share of the value of extra-EU imports, per mineral. Source: Eurostat Comext, via OreOrbit.</p><button type="button" class="dl" hidden>Download chart (SVG)</button></section>
+<section><h2>Quote it</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" hidden>Copy the sentence</button><p class="small">Journalists and analysts may quote the index and reuse the chart with credit to “OreOrbit Dependency Index (Bohemia Defense)” and a link to this page.</p></section>
+<section><h2>By mineral, %(month)s</h2><ul class="idx">%(trs)s</ul><p class="small">China's share of the value of extra-EU imports, all tracked products of each mineral added up; change against the same month a year earlier.</p></section>
+<section><h2>How it is made</h2><ul class="plain">
+<li>For each of the ten minerals, OreOrbit adds up the value of the EU's monthly imports from outside the EU of the products it tracks (for example permanent magnets, rare-earth compounds and metals for rare earths) and takes China's share.</li>
+<li>The index is the plain average of the ten shares, so a small but critical mineral such as gallium counts as much as lithium.</li>
+<li>Values, not tonnes; imports from outside the EU only. Single months can swing widely when few shipments arrive, so read the trend more than one month.</li>
+<li>Updated automatically when Eurostat publishes a new month, usually about six weeks after the month ends.</li></ul></section>
+%(cite)s
+<p class="open"><a class="cta" href="../">See the minerals on the live atlas</a></p></article>""" % {
+        "month": e(month_txt(last["month"])), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
+        "chart": index_chart(series), "quote": e(quote), "trs": trs, "cite": cite_box(title, path, today)}
+    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for ten critical raw materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite). Source: Eurostat Comext.",
+           "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today,
+           "temporalCoverage": "%s/%s" % (series[0]["month"], last["month"]), "variableMeasured": "China's share of extra-EU import value, equal-weighted across ten materials",
+           "isBasedOn": "https://ec.europa.eu/eurostat/comext/newxtweb/", "keywords": ["critical raw materials", "defence industry", "EU imports", "China", "supply chain"]}]
+    return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
+
+
 def sitemap(paths, today):
     urls = [BASE] + [BASE + p for p in paths]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -447,7 +545,7 @@ def build(ref, live, cfg, today):
             continue
         p, h = site_page(s, ref, live, today)
         out[p] = h
-    for fn in (lambda: index_page(ref, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
+    for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
         p, h = fn()
         out[p] = h
     out["sitemap.xml"] = sitemap(sorted(out.keys()), today)
