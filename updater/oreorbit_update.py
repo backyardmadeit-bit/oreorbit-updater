@@ -1876,7 +1876,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v3.0 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.1 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})

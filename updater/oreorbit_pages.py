@@ -101,7 +101,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None):
 <header class="bar">
   <a class="brand" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="11" ry="3.6" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(-24 12 12)"/></svg>OreOrbit</a>
   <span class="by">by <a href="https://bohemiadefense.com/">Bohemia Defense</a></span>
-  <nav><a href="index.html">Library</a><a href="about.html">About</a><a class="cta" href="../">Open the atlas</a></nav>
+  <nav><a href="index.html">Library</a><a href="services.html">Services</a><a href="about.html">About</a><a class="cta" href="../">Open the atlas</a></nav>
 </header>
 <main class="doc">
 %(crumbs)s
@@ -109,7 +109,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None):
 </main>
 <footer class="foot">
   <p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %(today_txt)s.</p>
-  <p><a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>
+  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>
 </footer>
 <script src="../library.js" defer></script>
 </body>
@@ -349,8 +349,8 @@ def about_page(ref, cfg, today):
 <p>Everything comes from public sources, named and dated on the page where it is used. An automatic updater collects and processes the data every three hours and rebuilds these pages every day. Stories found automatically are labelled as not checked. OreOrbit shows measurements and the public record; it does not forecast and is not investment or legal advice.</p>
 <p>The full list of sources and their licences is on the <a href="legal.html">legal page</a>.</p></section>
 <section><h2>Working with us</h2>
-<p>OreOrbit is free. For defence and space manufacturers who need a defensible answer, Bohemia Defense offers a fixed-scope review of one product line under Article 24 of the EU Critical Raw Materials Act, and ongoing monitoring of the materials, sites and deadlines in your own register.</p>
-<p><a class="cta" href="mailto:%(mail)s?subject=OreOrbit">Write to %(mail)s</a></p></section>
+<p>OreOrbit is free. For defence and space manufacturers who need a defensible answer, Bohemia Defense offers a fixed-scope supply-chain risk review of one product line, supporting documentation under Article 24 of the EU Critical Raw Materials Act, and ongoing monitoring of the materials, sites and deadlines in your own register.</p>
+<p><a class="cta" href="services.html">See services and prices</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Read a sample review (PDF)</a></p></section>
 <section><h2>How to cite OreOrbit</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: critical minerals from orbit. Bohemia Defense. https://bohemiadefense.com/atlas/</p>
 <p class="small">Each page in the library has its own citation. Figures and charts may be quoted and reused with credit to “OreOrbit (Bohemia Defense)” and a link.</p></section>""" % {"bbc": BBC, "mail": e(mail), "year": today[:4]}
     ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
@@ -389,6 +389,47 @@ def legal_page(cfg, today):
     return path, page(path, title, desc, body, [], today, [("Atlas", ""), ("Legal", path)])
 
 
+def services_page(cfg, today):
+    path = "p/services.html"
+    title = "Services: critical raw materials risk review for defence and space manufacturers"
+    desc = "Know which of your products stop when a border closes. A two-to-three-week review of one product line's exposure to critical raw materials, from €4,900, by Bohemia Defense with OreOrbit data."
+    mail = cfg.get("contactEmail") or "david@madali.cz"
+    subj = "mailto:%s?subject=%s" % (mail, "Intro%20call%20about%20a%20raw%20materials%20review")
+    body = """<h1>Know which of your products stop when a border closes.</h1>
+<p class="lede">For defence, security and space manufacturers in Central Europe: a two-to-three-week review of one product line's exposure to critical raw materials, built on OreOrbit's live data and signed by an analyst.</p>
+<p class="open"><a class="cta" href="%(subj)s">Book a free 30-minute intro call</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Read a sample review (PDF, 7 pages)</a></p>
+<section><h2>Who it is for</h2><ul class="plain">
+<li>Manufacturers and suppliers of ammunition, armoured vehicles, drones, optics, radar and electronics, whose parts depend on minerals refined mostly in China.</li>
+<li>Space companies with gallium and germanium in their solar cells and electronics.</li>
+<li>Large companies asked to assess their raw-material supply chains under Article 24 of the EU Critical Raw Materials Act, and the suppliers their prime contractors are now questioning.</li>
+</ul></section>
+<section><h2>What we offer</h2>
+<dl class="signals">
+<div><dt>OreOrbit<br><b>Free</b></dt><dd>The live atlas, the library of citable pages, the weekly brief and the in-browser assessment, which never sends your data anywhere.</dd></div>
+<div><dt>Readiness review<br><b>from €4,900</b></dt><dd>One product line, two to three weeks. You get the register of every part with a critical raw material and where it comes from; a rating for each part; stress tests against real export controls; options for second sources in Europe; a report management can sign, and a board presentation. It supports documentation under Article 24 of the Critical Raw Materials Act.<br><span class="small">Founding clients: the first three reviews cost €2,900, in exchange for a short testimonial and an anonymised case study.</span></dd></div>
+<div><dt>Monitoring<br><b>from €390 / month</b></dt><dd>After a review: alerts when anything changes for your materials, sites and deadlines, a short monthly note written and checked by an analyst, and a yearly update of the register.</dd></div>
+<div><dt>Briefings<br><b>from €500</b></dt><dd>A briefing for a board, an association or a ministry on critical raw materials and Europe's defence industry.</dd></div>
+</dl>
+<p class="small">Prices exclude VAT where it applies. Larger product ranges are quoted after the intro call.</p></section>
+<section><h2>How a review runs</h2><ul class="dates">
+<li><time>Day 1</time><span>A free 30-minute intro call to agree the product line and the people involved.</span></li>
+<li><time>Week 1</time><span>Two working sessions with your engineering and purchasing teams to fill the register, part by part.</span></li>
+<li><time>Week 2</time><span>Analysis and stress tests against export controls, chokepoints and sites, using OreOrbit's live data.</span></li>
+<li><time>Week 3</time><span>The report and a presentation for management. You keep the register.</span></li>
+</ul></section>
+<section><h2>Your data</h2><p>Your register stays yours. We sign a non-disclosure agreement on request, the register can be built in your browser so that it never leaves your premises, and nothing about your company is ever published. Anonymised, aggregated figures are only used with your written consent.</p></section>
+<section><h2>What it is, and what it is not</h2><p>A review is an independent analysis of supply-chain risk, from public data and the information you provide. It supports the documentation the Critical Raw Materials Act asks for, but it is not legal advice or a certification; confirm your legal obligations with counsel.</p></section>
+<section><h2>Who does the work</h2><div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<p><a href="https://madali.cz/"><b>David Madali</b></a>, founder of <a href="https://bohemiadefense.com/">Bohemia Defense</a> and creator of OreOrbit. An analyst of the defence industry, critical raw materials and the space economy, quoted by BBC News Chinese, with a background in economic diplomacy at the Czech Ministry of Foreign Affairs and export consulting at CzechTrade.</p>
+<p><a class="cta" href="%(subj)s">Book a free 30-minute intro call</a></p></div></div></section>""" % {"subj": e(subj)}
+    ld = [{"@type": "Service", "@id": BASE + path + "#service", "name": "Critical raw materials supply-chain risk review", "serviceType": "Supply-chain risk assessment",
+           "description": desc, "provider": {"@id": ORG["@id"]}, "areaServed": "Europe", "url": BASE + path,
+           "offers": [{"@type": "Offer", "name": "Readiness review, one product line", "price": "4900", "priceCurrency": "EUR", "priceSpecification": {"@type": "PriceSpecification", "minPrice": 4900, "priceCurrency": "EUR"}},
+                      {"@type": "Offer", "name": "Monitoring", "price": "390", "priceCurrency": "EUR", "priceSpecification": {"@type": "UnitPriceSpecification", "price": 390, "priceCurrency": "EUR", "unitText": "month"}},
+                      {"@type": "Offer", "name": "Briefing", "price": "500", "priceCurrency": "EUR"}]}]
+    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)])
+
+
 def sitemap(paths, today):
     urls = [BASE] + [BASE + p for p in paths]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -406,7 +447,7 @@ def build(ref, live, cfg, today):
             continue
         p, h = site_page(s, ref, live, today)
         out[p] = h
-    for fn in (lambda: index_page(ref, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
+    for fn in (lambda: index_page(ref, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
         p, h = fn()
         out[p] = h
     out["sitemap.xml"] = sitemap(sorted(out.keys()), today)
