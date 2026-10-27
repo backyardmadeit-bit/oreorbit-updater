@@ -84,7 +84,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
     sw = ('<a class="lang" href="%s" hreflang="%s" lang="%s">%s</a>' % (e(alt[2:]), "en" if cs else "cs", "en" if cs else "cs", "English" if cs else "Česky")) if alt else ""
     nav = ('<a href="index.html">Knihovna</a><a href="dependency-index-cs.html">Index</a><a href="services-cs.html">Služby</a><a href="about-cs.html">O projektu</a>%s<a class="cta" href="../?lang=cs">Otevřít atlas</a>' % sw) if cs else \
           ('<a href="index.html">Library</a><a href="dependency-index.html">Index</a><a href="services.html">Services</a><a href="about.html">About</a>%s<a class="cta" href="../">Open the atlas</a>' % sw)
-    foot = ('<p>OreOrbit vytváří a provozuje <a href="https://madali.cz/cs/">David Madali</a> v <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> v Praze. Veřejná data, automaticky obnovovaná každý den. Data k %s.</p>\n  <p><a href="services-cs.html">Služby</a> <a href="about-cs.html">O projektu</a> <a href="legal.html">Právní informace a licence (anglicky)</a> <a href="https://madali.cz/cs/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>' % e(day_cs(today))) if cs else None
+    foot = ('<p>OreOrbit vytváří a provozuje <a href="https://madali.cz/cs/">David Madali</a> v <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> v Praze. Veřejná data, automaticky obnovovaná každý den. Data k %s.</p>\n  <p><a href="services-cs.html">Služby</a> <a href="about-cs.html">O projektu</a> <a href="legal.html">Právní informace a licence (anglicky)</a> <a href="https://madali.cz/cs/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957 · Na Spravedlnosti 2919/2, 530 02 Pardubice</p>' % e(day_cs(today))) if cs else None
     return """<!doctype html>
 <html lang="%(lang)s">
 <head>
@@ -125,7 +125,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 </html>
 """ % {"title": e(title), "desc": e(desc), "url": e(url), "ld": json.dumps(ld, ensure_ascii=False).replace("</", "<\\/"),
        "crumbs": crumb_html, "body": body, "today_txt": e(day(today)), "lang": lang, "alt": alt_head, "nav": nav, "by": "od" if cs else "by", "bdpath": "cs/" if cs else "",
-       "foot": foot or ('<p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %s.</p>\n  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>' % e(day(today)))}
+       "foot": foot or ('<p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %s.</p>\n  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957 · Na Spravedlnosti 2919/2, 530 02 Pardubice</p>' % e(day(today)))}
 
 
 def cite_box(title, path, today):
@@ -372,7 +372,7 @@ def legal_page(cfg, today):
     path = "p/legal.html"
     title = "Imprint, privacy and data licences"
     desc = "Who operates OreOrbit, what it does with your data (nothing leaves your browser), terms of use, and the licences of every data source."
-    who = ", ".join(x for x in [cfg.get("company") or "David Madali (Bohemia Defense)", ("IČO " + cfg["companyId"]) if cfg.get("companyId") else "", cfg.get("address") or "Prague, Czech Republic"] if x)
+    who = ", ".join(x for x in [cfg.get("company") or "David Madali (Bohemia Defense), natural person registered in the Czech Trade Register", "IČO " + (cfg.get("companyId") or "22229957"), cfg.get("address") or "Na Spravedlnosti 2919/2, 530 02 Pardubice, Czech Republic"] if x)
     mail = cfg.get("contactEmail") or "david@madali.cz"
     src = [("Copernicus Sentinel-1, -2 and -5P data", "European Union, Copernicus programme; free, full and open access with attribution."),
            ("Landsat 8 and 9", "U.S. Geological Survey; public domain."),
