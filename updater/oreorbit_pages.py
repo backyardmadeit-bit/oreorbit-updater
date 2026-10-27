@@ -63,10 +63,10 @@ def pct_txt(x):
     return (">" if x.get("approx") == ">" else "") + "%s%%" % x.get("pct")
 
 
-def page(path, title, desc, body, ld_extra, today, crumbs=None):
+def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=None):
     url = BASE + path
     ld = {"@context": "https://schema.org", "@graph": [
-        dict({"@type": "WebPage", "@id": url + "#page", "url": url, "name": title, "description": desc, "inLanguage": "en",
+        dict({"@type": "WebPage", "@id": url + "#page", "url": url, "name": title, "description": desc, "inLanguage": lang,
               "dateModified": today, "isPartOf": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}},
              **({"breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [
                  {"@type": "ListItem", "position": i + 1, "name": n, "item": BASE + u} for i, (n, u) in enumerate(crumbs)]}} if crumbs else {})),
@@ -76,8 +76,17 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None):
         crumb_html = '<nav class="crumbs" aria-label="Breadcrumb">' + " / ".join(
             ('<a href="%s">%s</a>' % (e("../" + u if not u.startswith("p/") else u[2:]), e(n)) if i < len(crumbs) - 1 else e(n))
             for i, (n, u) in enumerate(crumbs)) + "</nav>"
+    cs = lang == "cs"
+    alt_head = ""
+    if alt:
+        en_url, cs_url = (BASE + alt, url) if cs else (url, BASE + alt)
+        alt_head = '<link rel="alternate" hreflang="en" href="%s">\n<link rel="alternate" hreflang="cs" href="%s">\n<link rel="alternate" hreflang="x-default" href="%s">\n' % (e(en_url), e(cs_url), e(en_url))
+    sw = ('<a class="lang" href="%s" hreflang="%s" lang="%s">%s</a>' % (e(alt[2:]), "en" if cs else "cs", "en" if cs else "cs", "English" if cs else "Česky")) if alt else ""
+    nav = ('<a href="index.html">Knihovna</a><a href="dependency-index-cs.html">Index</a><a href="services-cs.html">Služby</a><a href="about-cs.html">O projektu</a>%s<a class="cta" href="../?lang=cs">Otevřít atlas</a>' % sw) if cs else \
+          ('<a href="index.html">Library</a><a href="dependency-index.html">Index</a><a href="services.html">Services</a><a href="about.html">About</a>%s<a class="cta" href="../">Open the atlas</a>' % sw)
+    foot = ('<p>OreOrbit vytváří a provozuje <a href="https://madali.cz/cs/">David Madali</a> v <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> v Praze. Veřejná data, automaticky obnovovaná každý den. Data k %s.</p>\n  <p><a href="services-cs.html">Služby</a> <a href="about-cs.html">O projektu</a> <a href="legal.html">Právní informace a licence (anglicky)</a> <a href="https://madali.cz/cs/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>' % e(day_cs(today))) if cs else None
     return """<!doctype html>
-<html lang="en">
+<html lang="%(lang)s">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -86,6 +95,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None):
 <meta name="author" content="David Madali">
 <meta name="theme-color" content="#050607">
 <link rel="canonical" href="%(url)s">
+%(alt)s
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../library.css">
 <meta property="og:type" content="article">
@@ -100,22 +110,22 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None):
 <body>
 <header class="bar">
   <a class="brand" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="11" ry="3.6" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(-24 12 12)"/></svg>OreOrbit</a>
-  <span class="by">by <a href="https://bohemiadefense.com/">Bohemia Defense</a></span>
-  <nav><a href="index.html">Library</a><a href="dependency-index.html">Index</a><a href="services.html">Services</a><a href="about.html">About</a><a class="cta" href="../">Open the atlas</a></nav>
+  <span class="by">%(by)s <a href="https://bohemiadefense.com/%(bdpath)s">Bohemia Defense</a></span>
+  <nav>%(nav)s</nav>
 </header>
 <main class="doc">
 %(crumbs)s
 %(body)s
 </main>
 <footer class="foot">
-  <p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %(today_txt)s.</p>
-  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>
+  %(foot)s
 </footer>
 <script src="../library.js" defer></script>
 </body>
 </html>
 """ % {"title": e(title), "desc": e(desc), "url": e(url), "ld": json.dumps(ld, ensure_ascii=False).replace("</", "<\\/"),
-       "crumbs": crumb_html, "body": body, "today_txt": e(day(today))}
+       "crumbs": crumb_html, "body": body, "today_txt": e(day(today)), "lang": lang, "alt": alt_head, "nav": nav, "by": "od" if cs else "by", "bdpath": "cs/" if cs else "",
+       "foot": foot or ('<p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %s.</p>\n  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>' % e(day(today)))}
 
 
 def cite_box(title, path, today):
@@ -355,7 +365,7 @@ def about_page(ref, cfg, today):
 <section><h2>How to cite OreOrbit</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: critical minerals from orbit. Bohemia Defense. https://bohemiadefense.com/atlas/</p>
 <p class="small">Each page in the library has its own citation. Figures and charts may be quoted and reused with credit to “OreOrbit (Bohemia Defense)” and a link.</p></section>""" % {"bbc": BBC, "mail": e(mail), "year": today[:4]}
     ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
-    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("About", path)])
+    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("About", path)], alt="p/about-cs.html")
 
 
 def legal_page(cfg, today):
@@ -428,7 +438,7 @@ def services_page(cfg, today):
            "offers": [{"@type": "Offer", "name": "Readiness review, one product line", "price": "4900", "priceCurrency": "EUR", "priceSpecification": {"@type": "PriceSpecification", "minPrice": 4900, "priceCurrency": "EUR"}},
                       {"@type": "Offer", "name": "Monitoring", "price": "390", "priceCurrency": "EUR", "priceSpecification": {"@type": "UnitPriceSpecification", "price": 390, "priceCurrency": "EUR", "unitText": "month"}},
                       {"@type": "Offer", "name": "Briefing", "price": "500", "priceCurrency": "EUR"}]}]
-    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)])
+    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)], alt="p/services-cs.html")
 
 
 def dependency_series(trade):
@@ -525,7 +535,146 @@ def dependency_page(ref, live, today):
            "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today,
            "temporalCoverage": "%s/%s" % (series[0]["month"], last["month"]), "variableMeasured": "China's share of extra-EU import value, equal-weighted across ten materials",
            "isBasedOn": "https://ec.europa.eu/eurostat/comext/newxtweb/", "keywords": ["critical raw materials", "defence industry", "EU imports", "China", "supply chain"]}]
-    return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
+    return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)], alt="p/dependency-index-cs.html")
+
+
+MON_CS = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"]
+MONTH_CS_NOM = ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"]
+MONTH_CS_LOC = ["lednu", "únoru", "březnu", "dubnu", "květnu", "červnu", "červenci", "srpnu", "září", "říjnu", "listopadu", "prosinci"]
+MAT_CS = {"ree": "Vzácné zeminy", "ti": "Titan", "w": "Wolfram", "sb": "Antimon", "ga": "Galium", "ge": "Germanium", "li": "Lithium", "co": "Kobalt", "ni": "Nikl", "gr": "Grafit"}
+
+
+def day_cs(d):
+    d = str(d or "")[:10]
+    try:
+        return "%d. %s %d" % (int(d[8:10]), MON_CS[int(d[5:7]) - 1], int(d[:4]))
+    except (ValueError, IndexError):
+        return d
+
+
+def cite_box_cs(title, path, today):
+    text = "Madali, D. (%s). %s. OreOrbit, Bohemia Defense. %s%s (data k %s)." % (today[:4], title, BASE, path, day_cs(today))
+    return ('<aside class="cite" aria-labelledby="cite-h"><h2 id="cite-h">Citujte tuto stránku</h2><p class="cite-text">%s</p>'
+            '<button type="button" class="copy" data-copy="%s" data-label="Zkopírovat citaci" data-done="Citace zkopírována" hidden>Zkopírovat citaci</button>'
+            '<p class="small">Údaje a grafy lze citovat a dále použít s uvedením „OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></aside>') % (e(text), e(text))
+
+
+def services_page_cs(cfg, today):
+    path = "p/services-cs.html"
+    title = "Služby: posouzení rizik kritických surovin pro výrobce obranné a kosmické techniky"
+    desc = "Zjistěte, které vaše výrobky se zastaví, když se zavře hranice. Posouzení závislosti jedné výrobní řady na kritických surovinách za dva až tři týdny, od 4 900 €, od Bohemia Defense s daty OreOrbit."
+    mail = cfg.get("contactEmail") or "david@madali.cz"
+    subj = "mailto:%s?subject=%s" % (mail, "%C3%9Avodn%C3%AD%20hovor%20k%20posouzen%C3%AD%20surovin")
+    body = """<h1>Zjistěte, které vaše výrobky se zastaví, když se zavře hranice.</h1>
+<p class="lede">Pro výrobce obranné, bezpečnostní a kosmické techniky ve střední Evropě: posouzení závislosti jedné výrobní řady na kritických surovinách za dva až tři týdny, postavené na živých datech OreOrbit a podepsané analytikem.</p>
+<p class="open"><a class="cta" href="%(subj)s">Domluvit úvodní 30minutový hovor zdarma</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Ukázkové posouzení (PDF, 7 stran, anglicky)</a></p>
+<section><h2>Pro koho to je</h2><ul class="plain">
+<li>Výrobci a dodavatelé munice, obrněných vozidel, dronů, optiky, radarů a elektroniky, jejichž díly závisejí na surovinách zpracovávaných převážně v Číně.</li>
+<li>Kosmické firmy s galiem a germaniem v solárních článcích a elektronice.</li>
+<li>Velké firmy, které mají podle článku 24 nařízení EU o kritických surovinách posuzovat svůj dodavatelský řetězec, a dodavatelé, na které se teď obracejí jejich hlavní zákazníci.</li>
+</ul></section>
+<section><h2>Co nabízíme</h2>
+<dl class="signals">
+<div><dt>OreOrbit<br><b>Zdarma</b></dt><dd>Živý atlas, knihovna stránek k citaci, týdenní přehled a posouzení přímo v prohlížeči, které vaše data nikam neodesílá.</dd></div>
+<div><dt>Posouzení připravenosti<br><b>od 4 900 €</b></dt><dd>Jedna výrobní řada za dva až tři týdny. Dostanete registr všech dílů s kritickou surovinou a jejich původu, hodnocení každého dílu, zátěžové testy proti skutečným vývozním kontrolám, evropské alternativní zdroje, zprávu, kterou může podepsat vedení, a prezentaci pro vedení. Slouží jako podklad pro článek 24 nařízení o kritických surovinách.<br><span class="small">Zakládající klienti: první tři posouzení za 2 900 € výměnou za krátkou referenci a anonymizovanou případovou studii.</span></dd></div>
+<div><dt>Sledování<br><b>od 390 € měsíčně</b></dt><dd>Po posouzení: upozornění na změny u vašich surovin, lokalit a termínů, krátká měsíční zpráva, kterou napíše a zkontroluje analytik, a roční aktualizace registru.</dd></div>
+<div><dt>Briefingy<br><b>od 500 €</b></dt><dd>Pro vedení firem, asociace a ministerstva o kritických surovinách a evropském obranném průmyslu.</dd></div>
+</dl>
+<p class="small">Ceny jsou bez DPH, pokud se uplatňuje. Širší sortiment naceníme po úvodním hovoru.</p></section>
+<section><h2>Jak posouzení probíhá</h2><ul class="dates">
+<li><time>Den 1</time><span>Úvodní 30minutový hovor zdarma: výrobní řada a lidé, kteří se zapojí.</span></li>
+<li><time>Týden 1</time><span>Dvě pracovní setkání s vaší konstrukcí a nákupem, při kterých díl po dílu vyplníme registr.</span></li>
+<li><time>Týden 2</time><span>Analýza a zátěžové testy proti vývozním kontrolám, úzkým místům a lokalitám s živými daty OreOrbit.</span></li>
+<li><time>Týden 3</time><span>Zpráva a prezentace pro vedení. Registr zůstává vám.</span></li>
+</ul></section>
+<section><h2>Vaše data</h2><p>Váš registr patří vám. Na požádání podepíšeme dohodu o mlčenlivosti, registr lze vyplnit přímo ve vašem prohlížeči, takže neopustí vaši firmu, a nic o vaší firmě nikdy nezveřejníme. Anonymizované souhrnné údaje použijeme jen s vaším písemným souhlasem.</p></section>
+<section><h2>Co to je a co ne</h2><p>Posouzení je nezávislá analýza rizik dodavatelského řetězce z veřejných dat a informací, které nám poskytnete. Slouží jako podklad pro dokumentaci podle nařízení o kritických surovinách, není ale právní radou ani certifikací; své právní povinnosti si ověřte s právníkem.</p></section>
+<section><h2>Kdo práci dělá</h2><div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<p><a href="https://madali.cz/cs/"><b>David Madali</b></a>, zakladatel <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> a autor OreOrbit. Analytik obranného průmyslu, kritických surovin a kosmické ekonomiky, citovaný čínskou službou BBC News, se zkušenostmi z ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a z exportního poradenství v CzechTrade.</p>
+<p><a class="cta" href="%(subj)s">Domluvit úvodní 30minutový hovor zdarma</a></p></div></div></section>""" % {"subj": e(subj)}
+    ld = [{"@type": "Service", "@id": BASE + path + "#service", "name": "Posouzení rizik kritických surovin v dodavatelském řetězci", "inLanguage": "cs", "description": desc,
+           "provider": {"@id": ORG["@id"]}, "areaServed": "Europe", "url": BASE + path,
+           "offers": [{"@type": "Offer", "name": "Posouzení připravenosti", "price": "4900", "priceCurrency": "EUR"}, {"@type": "Offer", "name": "Sledování", "price": "390", "priceCurrency": "EUR"}]}]
+    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Služby", path)], lang="cs", alt="p/services.html")
+
+
+def about_page_cs(cfg, today):
+    path = "p/about-cs.html"
+    title = "O projektu OreOrbit"
+    desc = "OreOrbit je bezplatný živý atlas kritických surovin, na kterých stojí evropský obranný a kosmický průmysl. Vytvořil ho David Madali v Bohemia Defense v Praze."
+    mail = cfg.get("contactEmail") or "david@madali.cz"
+    body = """<h1>O projektu OreOrbit</h1>
+<p class="lede">Obrana Evropy stojí na deseti surovinách a u sedmi z nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. OreOrbit ukazuje, kde se tyto suroviny těží a zpracovávají, jak se dostávají do Evropy a co se tento týden mění, z veřejných dat a satelitních snímků.</p>
+<section><h2>Kdo za tím stojí</h2>
+<div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<p><a href="https://madali.cz/cs/"><b>David Madali</b></a> je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. V roce 2024 založil <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a>, nezávislý analytický projekt o evropském obranném průmyslu, bezpečnosti a zahraniční politice, a v roce 2026 vytvořil OreOrbit.</p>
+<p>Jako analytika ho citovala čínská služba BBC News (<a href="%(bbc)s" rel="noopener">červenec 2025</a>). Má zkušenosti z ekonomie, ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a exportního poradenství v CzechTrade, kde založil klastr 12 firem z bezpečnostního průmyslu.</p>
+<p><a href="https://madali.cz/cs/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali-cz/">Stránka zakladatele</a></p>
+</div></div></section>
+<section><h2>Co to je</h2><ul class="plain">
+<li>Živý atlas 31 dolů, rafinerií a továren na magnety, devíti obchodních tras a úzkých míst mezi nimi.</li>
+<li>Satelitní snímky každé lokality každý týden: fotografie Sentinel-2, odlesněná plocha od roku 2018, radar Sentinel-1 a tepelné mapy Landsat.</li>
+<li>Signály každých pár hodin: teplo v závodech, lodě v úžinách, zemětřesení a výstrahy, konflikty u dodavatelského řetězce.</li>
+<li>Měsíční data o dovozu do EU, termíny vývozních kontrol, zátěžový test a posouzení, které běží ve vašem prohlížeči a nikam neodchází.</li>
+<li><a href="index.html">Knihovna</a> stránek o každé surovině a lokalitě k citaci (anglicky) a měsíční <a href="dependency-index-cs.html">Index závislosti</a>.</li>
+</ul></section>
+<section><h2>Jak to funguje</h2>
+<p>Všechno pochází z veřejných zdrojů, uvedených a datovaných tam, kde jsou použity. Automatická aktualizace sbírá a zpracovává data každé tři hodiny a stránky obnovuje každý den. Automaticky nalezené zprávy jsou označené jako neověřené. OreOrbit ukazuje měření a veřejné záznamy; nepředpovídá a není investiční ani právní radou.</p>
+<p>Úplný seznam zdrojů a jejich licencí je na <a href="legal.html">právní stránce</a> (anglicky).</p></section>
+<section><h2>Spolupráce</h2>
+<p>OreOrbit je zdarma. Výrobcům obranné a kosmické techniky, kteří potřebují obhajitelnou odpověď, nabízí Bohemia Defense posouzení rizik jedné výrobní řady s pevným rozsahem jako podklad pro článek 24 nařízení EU o kritických surovinách a průběžné sledování surovin, lokalit a termínů z vašeho registru.</p>
+<p><a class="cta" href="services-cs.html">Služby a ceny</a> &nbsp; <a href="mailto:%(mail)s?subject=OreOrbit">Napsat na %(mail)s</a></p></section>
+<section><h2>Jak OreOrbit citovat</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: kritické suroviny z oběžné dráhy. Bohemia Defense. https://bohemiadefense.com/atlas/</p></section>""" % {"bbc": BBC, "mail": e(mail), "year": today[:4]}
+    ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "inLanguage": "cs", "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
+    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("O projektu", path)], lang="cs", alt="p/about.html")
+
+
+def dependency_page_cs(ref, live, today):
+    path = "p/dependency-index-cs.html"
+    series = dependency_series(live.get("trade"))
+    title = "Index závislosti OreOrbit: podíl Číny na dovozu surovin pro evropskou obranu"
+    if not series:
+        return path, page(path, title, "Měsíční index podílu Číny na dovozu deseti kritických surovin do EU.", "<h1>Index závislosti OreOrbit</h1><p class=\"lede\">Index se zobrazí, jakmile budou k dispozici měsíční obchodní data.</p>", [], today, [("Atlas", ""), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
+    last = series[-1]
+    v = round(last["value"] * 100)
+    mi = int(last["month"][5:7]) - 1
+    mon_nom, mon_loc = "%s %s" % (MONTH_CS_NOM[mi], last["month"][:4]), "%s %s" % (MONTH_CS_LOC[mi], last["month"][:4])
+    prev_m = series[-2] if len(series) > 1 else None
+    yago = next((x for x in series if x["month"] == "%04d-%s" % (int(last["month"][:4]) - 1, last["month"][5:])), None)
+    def chg(d):
+        if d is None:
+            return "–"
+        w = "bod" if abs(d) == 1 else "body" if 2 <= abs(d) <= 4 else "bodů"
+        return ("+%d" % d if d > 0 else "%d" % d) + " " + w
+    d_m = (v - round(prev_m["value"] * 100)) if prev_m else None
+    d_y = (v - round(yago["value"] * 100)) if yago else None
+    quote = "Čína v %s dodala %d %% dovozu deseti kritických surovin, na kterých stojí evropský obranný průmysl, do EU, podle Indexu závislosti OreOrbit od Bohemia Defense%s." % (
+        mon_loc, v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else "")
+    rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
+    trs = "".join('<li style="--c:%s"><span>%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d %%%s</span></li>' % (
+        COL.get(m, "#eceee9"), e(MAT_CS.get(m, m)), x * 100, round(x * 100),
+        ("" if not yago or m not in yago["per"] else ' <em>%s</em>' % e(chg(round(x * 100) - round(yago["per"][m] * 100))))) for m, x in rows)
+    body = """<article style="--c:#3ddc97">
+<p class="kicker"><i></i>Měsíčně · data Eurostatu za %(nom)s</p>
+<h1>Index závislosti OreOrbit</h1>
+<p class="lede">Podíl Číny na tom, co EU dováží ze zemí mimo EU, napříč deseti kritickými surovinami, na kterých stojí evropský obranný průmysl. Každá surovina má stejnou váhu.</p>
+<dl class="figs"><div><dt>%(v)d %%</dt><dd>podíl Číny, %(nom)s</dd></div><div><dt>%(dm)s</dt><dd>změna proti předchozímu měsíci</dd></div><div><dt>%(dy)s</dt><dd>změna proti stejnému měsíci před rokem</dd></div><div><dt>%(over)d z %(n)d</dt><dd>surovin, u kterých Čína dodala víc než polovinu</dd></div></dl>
+<section><h2>Měsíc po měsíci</h2>%(chart)s<p class="small">Průměr podílů Číny na hodnotě dovozu do EU ze zemí mimo EU, se stejnou vahou pro každou surovinu. Zdroj: Eurostat Comext, přes OreOrbit.</p><button type="button" class="dl" data-label="Stáhnout graf (SVG)" hidden>Stáhnout graf (SVG)</button></section>
+<section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
+<section><h2>Podle surovin, %(nom)s</h2><ul class="idx">%(trs)s</ul><p class="small">Podíl Číny na hodnotě dovozu do EU ze zemí mimo EU, všechny sledované produkty dané suroviny dohromady; změna proti stejnému měsíci před rokem.</p></section>
+<section><h2>Jak index vzniká</h2><ul class="plain">
+<li>U každé z deseti surovin OreOrbit sečte měsíční hodnotu dovozu sledovaných produktů do EU ze zemí mimo EU (například u vzácných zemin permanentní magnety, sloučeniny a kovy) a spočítá podíl Číny.</li>
+<li>Index je prostý průměr deseti podílů, takže malá, ale kritická surovina jako galium váží stejně jako lithium.</li>
+<li>Hodnoty, ne tuny; jen dovoz ze zemí mimo EU. Jednotlivé měsíce mohou výrazně kolísat, když dorazí málo zásilek, proto čtěte spíš trend.</li>
+<li>Obnovuje se automaticky, jakmile Eurostat zveřejní nový měsíc, obvykle zhruba šest týdnů po jeho konci.</li></ul></section>
+%(cite)s
+<p class="open"><a class="cta" href="../?lang=cs">Suroviny na živém atlasu</a></p></article>""" % {
+        "nom": e(mon_nom), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
+        "chart": index_chart(series), "quote": e(quote), "trs": trs, "cite": cite_box_cs(title, path, today)}
+    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "Index závislosti OreOrbit", "inLanguage": "cs", "description": quote, "url": BASE + path,
+           "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today,
+           "temporalCoverage": "%s/%s" % (series[0]["month"], last["month"])}]
+    return path, page(path, title, quote[:300], body, ld, today, [("Atlas", ""), ("Knihovna", "p/index.html"), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
 
 
 def sitemap(paths, today):
@@ -545,7 +694,7 @@ def build(ref, live, cfg, today):
             continue
         p, h = site_page(s, ref, live, today)
         out[p] = h
-    for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
+    for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: dependency_page_cs(ref, live, today), lambda: services_page_cs(cfg, today), lambda: about_page_cs(cfg, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
         p, h = fn()
         out[p] = h
     out["sitemap.xml"] = sitemap(sorted(out.keys()), today)
