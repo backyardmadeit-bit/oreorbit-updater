@@ -102,7 +102,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 <meta property="og:title" content="%(title)s">
 <meta property="og:description" content="%(desc)s">
 <meta property="og:url" content="%(url)s">
-<meta property="og:image" content="https://bohemiadefense.com/atlas/img/og-oreorbit.png">
+<meta property="og:image" content="https://bohemiadefense.com/atlas/og-oreorbit.png">
 <meta property="og:site_name" content="OreOrbit">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">%(ld)s</script>
