@@ -1862,7 +1862,7 @@ def feed_brief(prev):
              "points": pts[:8], "soWhat": "", "soWhat_cs": "", "watchNext": watch_en, "watchNext_cs": watch_cs}
     briefs = [b for b in briefs if b.get("week") != monday] + [brief]
     briefs.sort(key=lambda b: str(b.get("week") or b.get("id") or ""), reverse=True)
-    return briefs[:12], "ok (week of %s, %d points)" % (monday, len(pts[:8]))
+    return briefs[:60], "ok (week of %s, %d points)" % (monday, len(pts[:8]))   # a year of briefs, each also on its own page
 
 
 def feed_memory(prev):
@@ -1932,7 +1932,7 @@ def feed_pages(prev):
     get = lambda path: current(path) or {}
     live = {"trade": get("live-data/live/trade.json"), "imagery": get("data/imagery.json"), "extras": get("data/orbit-extras.json"),
             "hotspots": get("live-data/live/hotspots.json"), "so2": get("live-data/live/so2.json"), "conflict": get("live-data/live/conflict.json"),
-            "news": current("live-data/news.json") or []}
+            "news": current("live-data/news.json") or [], "briefs": current("live-data/briefs.json") or []}
     cfg = {}
     try:
         txt = http(BASE + "config.js?u=%d" % time.time(), timeout=30).decode("utf-8", "replace")
@@ -1996,7 +1996,7 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
 
 
 def main():
-    log("OreOrbit updater v3.6 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.9 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})

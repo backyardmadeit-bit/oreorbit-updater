@@ -246,11 +246,26 @@ def material_page(m, ref, live, today):
         body.append('<section><h2>Recent news</h2><ul class="news">%s</ul><p class="small">Stories marked “found automatically” come from the GDELT news database and were not checked; open the source before quoting.</p></section>' % "".join(
             '<li><a href="%s" rel="noopener">%s</a><span>%s, %s · %s</span></li>' % (e(x.get("url")), e(x.get("title")), e(x.get("source")), e(day(x.get("date"))),
                                                                               "found automatically" if x.get("auto") else "checked against the source") for x in news))
+    qas = []
+    src0 = ((info.get("stats") or [{}])[0] or {}).get("src")
+    if lede_fact:
+        qas.append(("Which country controls %s?" % name.lower(), lede_fact + (" Source: %s." % src0 if src0 else "")))
+    if info.get("uses"):
+        qas.append(("What is %s used for in defence and space?" % name.lower(), info["uses"]))
+    ser = dependency_series(live.get("trade"))
+    if ser and m in ser[-1]["per"]:
+        qas.append(("How much of the EU's %s imports come from China?" % name.lower(),
+                    "In %s, China supplied %d%% of the value of the EU's imports of %s from outside the EU, across the products OreOrbit tracks (Eurostat Comext)." % (month_txt(ser[-1]["month"]), round(ser[-1]["per"][m] * 100), name.lower())))
+    if info.get("europe"):
+        qas.append(("Can Europe produce %s itself?" % name.lower(), info["europe"]))
+    qas.append(("How can a manufacturer check its exposure to %s?" % name.lower(),
+                "OreOrbit's free quick check shows which critical minerals a product type depends on (bohemiadefense.com/atlas/#check). A readiness review by Bohemia Defense maps one product line's actual parts in two to three weeks."))
+    body.append(qa_section(qas))
     body.append(cite_box(title, path, today))
     body.append('<p class="open"><a class="cta" href="../">See %s on the live atlas</a></p></article>' % e(name.lower()))
     ld = [{"@type": "Article", "@id": BASE + path + "#article", "headline": title, "description": desc, "dateModified": today, "inLanguage": "en",
            "author": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "mainEntityOfPage": BASE + path,
-           "about": {"@type": "Thing", "name": name}, "isAccessibleForFree": True}]
+           "about": {"@type": "Thing", "name": name}, "isAccessibleForFree": True}, faq_ld(path, qas)]
     return path, page(path, title, desc, "\n".join(body), ld, today, [("Atlas", ""), ("Library", "p/index.html"), (name, path)])
 
 
@@ -816,6 +831,175 @@ def embed_page(live, today):
     return path, html
 
 
+# ---------------------------------------------------------------- v3.9: questions, guides and archives
+
+def qa_section(qas):
+    return '<section class="faq"><h2>Key questions</h2>%s</section>' % "".join('<h3>%s</h3><p>%s</p>' % (e(q), e(a)) for q, a in qas)
+
+
+def faq_ld(path, qas):
+    return {"@type": "FAQPage", "@id": BASE + path + "#faq", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in qas]}
+
+
+def article_ld(path, title, desc, today, published=None, about=None):
+    d = {"@type": "Article", "@id": BASE + path + "#article", "headline": title[:110], "description": desc[:300], "dateModified": today, "inLanguage": "en",
+         "author": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "mainEntityOfPage": BASE + path, "isAccessibleForFree": True}
+    if published:
+        d["datePublished"] = published
+    if about:
+        d["about"] = {"@type": "Thing", "name": about}
+    return d
+
+
+def brief_pages(live, today):
+    """One dated page per weekly brief, and an archive of them."""
+    out, rows = {}, []
+    briefs = [b for b in (live.get("briefs") or []) if isinstance(b, dict) and b.get("week")]
+    briefs.sort(key=lambda b: b["week"], reverse=True)
+    for b in briefs:
+        wk = str(b["week"])[:10]
+        path = "p/brief-%s.html" % wk
+        title = b.get("title") or "The week in data, %s" % day(wk)
+        pts = [x for x in (b.get("points") or []) if isinstance(x, dict) and x.get("text")]
+        items = "".join('<li style="--c:%s"><span>%s</span>%s</li>' % (COL.get((x.get("materials") or [""])[0], "#3ddc97"), e(x["text"]),
+                        (' <a href="%s" rel="noopener">%s</a>' % (e(x["url"]), e(x.get("source") or "Source"))) if str(x.get("url", "")).startswith("https://") else (' <span class="src">%s</span>' % e(x.get("source") or ""))) for x in pts)
+        watch = "".join("<li>%s</li>" % e(w) for w in (b.get("watchNext") or []))
+        body = ('<article style="--c:#3ddc97"><p class="kicker"><i></i>Weekly brief · week of %s</p><h1>%s</h1><p class="lede">%s</p>'
+                '<section><h2>This week</h2><ul class="plain brief">%s</ul></section>%s'
+                '<p class="small">Assembled automatically every Monday from OreOrbit\'s own data and the week\'s headlines; no person or AI writes it. Each point links to its source. <a href="briefs.html">All weekly briefs</a></p>%s'
+                '<p class="open"><a class="cta" href="../">See this week on the live atlas</a></p></article>') % (
+            e(day(wk)), e(title), e(b.get("lede") or ""), items, ('<section><h2>What to watch</h2><ul class="plain">%s</ul></section>' % watch) if watch else "", cite_box(title, path, today))
+        desc = ("%s: %s" % (title, b.get("lede") or ""))[:300]
+        out[path] = page(path, title, desc, body, [article_ld(path, title, desc, today, wk)], today, [("Atlas", ""), ("Library", "p/index.html"), ("Weekly briefs", "p/briefs.html"), (day(wk), path)])
+        rows.append('<li><a href="brief-%s.html">%s</a><span>%s</span></li>' % (wk, e(title), e((b.get("lede") or "")[:160])))
+    if rows:
+        path = "p/briefs.html"
+        title = "Weekly briefs: the week in critical minerals and Europe's defence supply chain"
+        body = ('<h1>Weekly briefs</h1><p class="lede">Every Monday OreOrbit assembles a short, dated summary of the week from its own data: deadlines, heat at the plants, conflict near the supply chain, tenders, imports and the top stories.</p>'
+                '<ul class="lib">%s</ul>') % "".join(rows)
+        out[path] = page(path, title, "Dated weekly summaries of critical minerals and Europe's defence supply chain, from OreOrbit's data.", body,
+                         [{"@type": "CollectionPage", "@id": BASE + path + "#page", "name": title, "url": BASE + path, "dateModified": today}], today, [("Atlas", ""), ("Library", "p/index.html"), ("Weekly briefs", path)])
+    return out
+
+
+def index_snapshots(ref, live, today):
+    """A permanent page for every month of the Dependency Index, so each figure has a stable address to cite."""
+    out = {}
+    series = dependency_series(live.get("trade"))
+    names = {m: ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m) for m in ref["order"]}
+    for i, x in enumerate(series):
+        k = x["month"]; v = round(x["value"] * 100)
+        path = "p/dependency-index-%s.html" % k
+        prev = series[i - 1] if i else None
+        yago = next((y for y in series if y["month"] == "%04d-%s" % (int(k[:4]) - 1, k[5:])), None)
+        title = "OreOrbit Dependency Index, %s: %d%%" % (month_txt(k), v)
+        quote = "China supplied %d%% of the EU's imports of the ten critical minerals behind Europe's defence industry in %s, according to the OreOrbit Dependency Index (Bohemia Defense)%s." % (
+            v, month_txt(k), (", against %d%% a year earlier" % round(yago["value"] * 100)) if yago else "")
+        rows = sorted(x["per"].items(), key=lambda kv: -kv[1])
+        lis = "".join('<li style="--c:%s"><span><a href="%s.html">%s</a></span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d%%</span></li>' % (
+            COL.get(m, "#eceee9"), SLUG.get(m, m), e(names.get(m, m)), sh * 100, round(sh * 100)) for m, sh in rows)
+        nav = []
+        if prev:
+            nav.append('<a href="dependency-index-%s.html">%s: %d%%</a>' % (prev["month"], e(month_txt(prev["month"])), round(prev["value"] * 100)))
+        if i + 1 < len(series):
+            nx = series[i + 1]; nav.append('<a href="dependency-index-%s.html">%s: %d%%</a>' % (nx["month"], e(month_txt(nx["month"])), round(nx["value"] * 100)))
+        body = ('<article style="--c:#3ddc97"><p class="kicker"><i></i>OreOrbit Dependency Index · monthly snapshot</p><h1>%s: %d%%</h1><p class="lede">%s</p>'
+                '<section><h2>By mineral</h2><ul class="idx">%s</ul><p class="small">China\'s share of the value of extra-EU imports, all tracked products per mineral. Source: Eurostat Comext, via OreOrbit.</p></section>'
+                '<section><h2>Other months</h2><p class="monthnav">%s</p><p><a href="dependency-index.html">The latest index, method and embeddable chart</a></p></section>%s</article>') % (
+            e(month_txt(k)), v, e(quote), lis, " · ".join(nav), cite_box(title, path, today))
+        out[path] = page(path, title, quote[:300], body, [article_ld(path, title, quote, today, k + "-15", "OreOrbit Dependency Index")], today,
+                         [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", "p/dependency-index.html"), (month_txt(k), path)])
+    return out, series
+
+
+SPACE = [("ga", "gallium arsenide solar cells"), ("ge", "substrates for multi-junction solar cells"), ("ree", "magnets in reaction wheels, actuators and motors"),
+         ("ti", "structures, fuel tanks and engines"), ("ni", "superalloys for rocket engines"), ("co", "superalloys for rocket engines"), ("li", "satellite batteries")]
+
+
+def space_page(ref, live, today):
+    path = "p/space.html"
+    title = "Critical minerals for the space industry: who controls them, and what Europe imports"
+    ser = dependency_series(live.get("trade")); last = ser[-1] if ser else None
+    names = {m: ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m) for m in ref["order"]}
+    rows = []
+    for m, use in SPACE:
+        wx = ((ref["materials"].get(m) or {}).get("worst") or {}).get("x") or {}
+        lead = ("%s %s" % (pct_txt(wx), wx.get("who", ""))) if wx.get("pct") else "China leads"
+        imp = ("%d%%" % round(last["per"][m] * 100)) if last and m in last["per"] else "–"
+        rows.append('<tr><td><i style="background:%s"></i><a href="%s.html">%s</a></td><td>%s</td><td><b>%s</b></td><td>%s</td></tr>' % (COL.get(m, "#eee"), SLUG[m], e(names[m]), e(use), e(lead), e(imp)))
+    ga = (ref["materials"].get("ga") or {}).get("info") or {}
+    ga_stat = next((st for st in ga.get("stats") or [] if "primary" in str(st.get("what", ""))), None)
+    qas = [("Which critical minerals does the space industry depend on?",
+            "Satellites and launchers rely on gallium and germanium for solar cells, rare-earth magnets in reaction wheels, actuators and motors, titanium for structures and fuel tanks, nickel and cobalt superalloys for rocket engines, and lithium for batteries."),
+           ("Why is gallium important for satellites?",
+            "Gallium arsenide is used in the high-efficiency solar cells that power most satellites." + ((" %s %s (%s)." % (ga_stat.get("num"), ga_stat.get("what"), ga_stat.get("src"))) if ga_stat else ""))]
+    if last:
+        qas.append(("How dependent is Europe on China for these minerals?",
+                    "Across the ten critical minerals OreOrbit tracks, China supplied %d%% of the value of the EU's imports from outside the EU in %s (OreOrbit Dependency Index, Eurostat data). The share varies widely by mineral; see the table above." % (round(last["value"] * 100), month_txt(last["month"]))))
+    qas.append(("How can a space company check its exposure?",
+                "OreOrbit's free quick check includes 'Aircraft and space' as a product type (bohemiadefense.com/atlas/#check). For a specific product line, Bohemia Defense offers a readiness review that maps the actual parts."))
+    body = ('<article style="--c:#22d3ee"><p class="kicker"><i></i>Space economy · critical raw materials</p><h1>Critical minerals for the space industry</h1>'
+            '<p class="lede">Satellites and launchers depend on a handful of critical minerals, and for several of them one country controls the key stage of supply. Here is which ones, what they are used for, and how much of Europe\'s imports come from China.</p>'
+            '<section><h2>What a satellite is made of</h2><table class="tbl"><tr><th>Mineral</th><th>Use in space</th><th>Leading country, tightest stage</th><th>China\'s share of EU imports%s</th></tr>%s</table>'
+            '<p class="small">World shares: USGS and IEA via OreOrbit. EU imports: value of imports from outside the EU, Eurostat Comext. Typical uses; individual designs differ.</p></section>%s%s'
+            '<p class="open"><a class="cta" href="../#check">Check aircraft and space in 60 seconds</a></p></article>') % (
+        (", " + e(month_txt(last["month"]))) if last else "", "".join(rows), qa_section(qas), cite_box(title, path, today))
+    desc = "Which critical minerals satellites and launchers depend on, who controls them, and how much of Europe's imports come from China."
+    return path, page(path, title, desc, body, [article_ld(path, title, desc, today, about="Critical raw materials in the space industry"), faq_ld(path, qas)], today,
+                      [("Atlas", ""), ("Library", "p/index.html"), ("Space", path)])
+
+
+def crma_page(today):
+    path = "p/crma-article-24.html"
+    title = "Article 24 of the EU Critical Raw Materials Act: what large manufacturers must do"
+    qas = [("What does Article 24 of the Critical Raw Materials Act require?",
+            "Large companies that manufacture strategic technologies using strategic raw materials must, at least every three years, carry out a risk assessment of their supply chain: map where the strategic raw materials they use are extracted, processed and recycled, analyse the factors that could affect supply, and assess their vulnerability. If they find significant vulnerabilities, they should work to reduce them, for example by diversifying or substituting."),
+           ("Who has to comply?",
+            "Large companies that manufacture strategic technologies in the EU using strategic raw materials. Under the original Act, member states had to identify these companies by 24 May 2025. A 2026 amendment proposal would move the identification to the European Commission."),
+           ("When did the Critical Raw Materials Act enter into force?", "On 23 May 2024. It lists 34 critical raw materials, 17 of them strategic."),
+           ("What is changing in 2026?",
+            "The Commission has proposed amendments under which it would identify the large companies itself, and the companies would carry out the risk assessment within months of being informed and at least every three years, including mapping the components that contain strategic raw materials. The European Parliament adopted its position on 20 October 2026; the final text was still being negotiated at the end of October 2026."),
+           ("Does it affect suppliers that are not large companies?",
+            "Not directly, but large companies need origin and supply information from their suppliers to complete their assessments, so smaller suppliers can expect questions about where their materials come from.")]
+    body = ('<article style="--c:#3ddc97"><p class="kicker"><i></i>Explainer · EU law · as of 30 October 2026</p><h1>Article 24 of the Critical Raw Materials Act</h1>'
+            '<p class="lede">What the EU asks large manufacturers of strategic technologies to do about their raw-materials supply chains, who it applies to, and what is changing in 2026.</p>%s'
+            '<section><h2>Sources</h2><ul class="plain"><li>Regulation (EU) 2024/1252 (Critical Raw Materials Act), in force since 23 May 2024</li><li>Legislative Observatory of the European Parliament: amendments to the Critical Raw Materials Act (2026)</li><li>Council of the EU working documents on Article 24 (2026)</li></ul>'
+            '<p class="small">An explainer, not legal advice. Check the current text of the regulation and its amendments with your legal counsel.</p></section>%s'
+            '<p class="open"><a class="cta" href="services.html">How a readiness review supports Article 24</a></p></article>') % (qa_section(qas), cite_box(title, path, today))
+    desc = "What Article 24 of the EU Critical Raw Materials Act requires from large manufacturers, who it covers, and the 2026 amendments."
+    return path, page(path, title, desc, body, [article_ld(path, title, desc, today, about="EU Critical Raw Materials Act"), faq_ld(path, qas)], today,
+                      [("Atlas", ""), ("Library", "p/index.html"), ("CRMA Article 24", path)])
+
+
+def china_controls_page(today):
+    path = "p/china-export-controls.html"
+    title = "China's export controls on critical minerals: a timeline, and what is paused until when"
+    tl = [("Aug 2023", "Gallium and germanium need a Chinese export licence."), ("Sep 2024", "Antimony follows."),
+          ("Dec 2024", "China bans exports of gallium, germanium and antimony to the United States."),
+          ("Feb 2025", "Tungsten, tellurium, bismuth, molybdenum and indium need export licences."),
+          ("Apr 2025", "Seven heavy rare earths, including dysprosium and terbium, need a licence for every export. This was never paused."),
+          ("Oct 2025", "A wider package: more rare earths, rare-earth equipment and technology, lithium batteries and graphite anodes, superhard materials, and the 0.1% rule for foreign-made products."),
+          ("Nov 2025", "China pauses most of the October 2025 package until 10 November 2026, and suspends the US ban on gallium, germanium and antimony until 27 November 2026."),
+          ("Sep 2026", "The wider US–China trade truce is extended to 10 January 2027; the announcement does not mention the rare-earth pause."),
+          ("10 Nov 2026", "The pause on the October 2025 package is due to end."), ("27 Nov 2026", "The suspension of the US ban on gallium, germanium and antimony is due to end.")]
+    qas = [("What is China's 0.1% rule?",
+            "A rule announced in October 2025 under which products made anywhere in the world that contain at least 0.1% Chinese-origin rare earths by value would need a Chinese export licence. It was paused until 10 November 2026."),
+           ("Which minerals need a Chinese export licence today?",
+            "Among others gallium, germanium, antimony, tungsten and seven heavy rare earths including dysprosium and terbium. Licences are decided case by case, for every destination including Europe."),
+           ("What happens on 10 November 2026?",
+            "China's one-year pause on its October 2025 rare-earth package is due to end. As of late October 2026, no extension had been published. Check OreOrbit's deadline calendar for the latest status.")]
+    body = ('<article style="--c:#f5c45c"><p class="kicker"><i></i>Explainer · export controls · as of 30 October 2026</p><h1>China\'s export controls on critical minerals</h1>'
+            '<p class="lede">Since 2023, China has put a growing list of critical minerals under export licensing. Here is the timeline, what is paused, and the dates to watch.</p>'
+            '<section><h2>Timeline</h2><ul class="dates">%s</ul></section>%s'
+            '<section><h2>Sources</h2><ul class="plain"><li>China Ministry of Commerce announcements, including No. 46 (2024) and Nos. 55–58, 61, 62 and 70 (2025)</li><li>Reporting by Reuters, Bloomberg Government, Fastmarkets and CNBC</li></ul>'
+            '<p class="small">Export-control decisions change at short notice. This page is updated when they do; dates on the live atlas update automatically.</p></section>%s'
+            '<p class="open"><a class="cta" href="../">See the deadlines on the live atlas</a></p></article>') % (
+        "".join('<li><time>%s</time><span>%s</span></li>' % (e(d), e(t)) for d, t in tl), qa_section(qas), cite_box(title, path, today))
+    desc = "A timeline of China's export controls on gallium, germanium, antimony, tungsten and rare earths, the 0.1% rule, and the November 2026 deadlines."
+    return path, page(path, title, desc, body, [article_ld(path, title, desc, today, about="China's export controls on critical minerals"), faq_ld(path, qas)], today,
+                      [("Atlas", ""), ("Library", "p/index.html"), ("China's export controls", path)])
+
+
 def sitemap(paths, today):
     urls = [BASE] + [BASE + p for p in paths]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -836,6 +1020,26 @@ def build(ref, live, cfg, today):
     for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: dependency_page_cs(ref, live, today), lambda: services_page_cs(cfg, today), lambda: about_page_cs(cfg, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
         p, h = fn()
         out[p] = h
+    out.update(brief_pages(live, today))
+    snaps, ser = index_snapshots(ref, live, today)
+    out.update(snaps)
+    if ser and "p/dependency-index.html" in out:
+        months = " · ".join('<a href="dependency-index-%s.html">%s: %d%%</a>' % (x["month"], e(month_txt(x["month"])), round(x["value"] * 100)) for x in reversed(ser))
+        out["p/dependency-index.html"] = out["p/dependency-index.html"].replace('<aside class="cite"', '<section><h2>Every month</h2><p class="monthnav">%s</p></section><aside class="cite"' % months, 1)
+    for fn in (lambda: space_page(ref, live, today), lambda: crma_page(today), lambda: china_controls_page(today)):
+        try:
+            pth, html = fn()
+            out[pth] = html
+        except Exception as ex:
+            print("page failed:", ex)
+    if "p/index.html" in out:
+        guides = ('<section class="guides"><h2>Guides and archives</h2><ul class="lib">'
+                  '<li><a href="space.html">Critical minerals for the space industry</a><span>Satellites, launchers and the minerals they need</span></li>'
+                  '<li><a href="crma-article-24.html">Article 24 of the Critical Raw Materials Act</a><span>What large manufacturers must do, and the 2026 changes</span></li>'
+                  '<li><a href="china-export-controls.html">China\'s export controls on critical minerals</a><span>Timeline, the 0.1% rule and the November 2026 deadlines</span></li>'
+                  '<li><a href="briefs.html">Weekly briefs</a><span>Every Monday, the week in data</span></li>'
+                  '<li><a href="dependency-index.html">OreOrbit Dependency Index</a><span>The monthly number, with every month on its own page</span></li></ul></section>')
+        out["p/index.html"] = out["p/index.html"].replace('<ul class="lib">', guides + '<h2>Materials and sites</h2><ul class="lib">', 1)
     ep, eh = embed_page(live, today)
     if eh:
         out[ep] = eh
