@@ -1995,8 +1995,141 @@ INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotsp
               "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160, "pages": 20, "social": 160}
 
 
+
+# ---------------------------------------------------------------- v3.10: emails (the free Monday brief, paid monitoring alerts)
+# Settings as GitHub secrets: SMTP_HOST, SMTP_PORT (465), SMTP_USER, SMTP_PASS, MAIL_FROM ("OreOrbit <brief@bohemiadefense.com>").
+# Subscribers come from the website (subs-export.php, same key as update.php); nobody's address is stored in this repository.
+
+def _subs_api(state=None):
+    if state is None:
+        return json.loads(http(BASE + "subs-export.php", headers={"X-Atlas-Key": KEY}, timeout=60).decode("utf-8"))
+    return json.loads(http(BASE + "subs-export.php?state=1", data=json.dumps(state).encode("utf-8"),
+                           headers={"X-Atlas-Key": KEY, "Content-Type": "application/json"}, timeout=60, method="POST").decode("utf-8"))
+
+
+def _esc(t):
+    return (str(t or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _day(iso, cs):
+    try:
+        d = dt.date.fromisoformat(str(iso)[:10])
+    except Exception:
+        return str(iso)
+    return ("%d. %d. %d" % (d.day, d.month, d.year)) if cs else d.strftime("%-d %b %Y")
+
+
+def _mail_html(cs, kicker, title, lede, sections, unsub):
+    """A plain, readable email in the OreOrbit style: white page, dark text, green accents."""
+    rows = ""
+    for head, items in sections:
+        if not items:
+            continue
+        lis = "".join('<tr><td style="padding:10px 0;border-top:1px solid #e6e8e5;font:15px/1.5 Arial,sans-serif;color:#13171a">%s</td></tr>' % it for it in items)
+        rows += ('<tr><td style="padding:22px 0 6px;font:12px/1.4 Menlo,Consolas,monospace;color:#5b6267">%s</td></tr>%s' % (_esc(head), lis))
+    atlas = BASE + ("?lang=cs" if cs else "")
+    return ('<!doctype html><html><body style="margin:0;background:#f3f4f1"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f3f4f1"><tr><td align="center" style="padding:24px 12px">'
+            '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:14px">'
+            '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:22px 28px;font:600 16px Arial,sans-serif;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span></td></tr>'
+            '<tr><td style="padding:26px 28px 8px"><p style="margin:0 0 6px;font:12px Menlo,Consolas,monospace;color:#0f8f5c">%s</p>'
+            '<h1 style="margin:0;font:600 24px/1.25 Arial,sans-serif;color:#050607">%s</h1><p style="margin:12px 0 0;font:15px/1.55 Arial,sans-serif;color:#3b4247">%s</p></td></tr>'
+            '<tr><td style="padding:0 28px"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0">%s</table></td></tr>'
+            '<tr><td style="padding:24px 28px"><a href="%s" style="display:inline-block;background:#050607;color:#eceee9;text-decoration:none;font:600 14px Arial,sans-serif;padding:12px 20px;border-radius:999px">%s</a></td></tr>'
+            '<tr><td style="padding:18px 28px 26px;border-top:1px solid #e6e8e5;font:12px/1.6 Arial,sans-serif;color:#868c90">%s<br>'
+            '<a href="%s" style="color:#868c90">%s</a></td></tr></table></td></tr></table></body></html>') % (
+        _esc("Kritické suroviny z oběžné dráhy" if cs else "Critical minerals from orbit"), _esc(kicker), _esc(title), _esc(lede), rows, atlas,
+        _esc("Otevřít atlas" if cs else "Open the atlas"),
+        _esc("Bohemia Defense · David Madali · IČO 22229957 · bohemiadefense.com/atlas"), unsub,
+        _esc("Odhlásit odběr" if cs else "Unsubscribe"))
+
+
+def _mins_ok(item_mins, mins):
+    return not mins or not item_mins or any(m in mins for m in item_mins)
+
+
+def send_mail():
+    host, user, pw = os.environ.get("SMTP_HOST", "").strip(), os.environ.get("SMTP_USER", "").strip(), os.environ.get("SMTP_PASS", "")
+    if not (host and user and pw):
+        return "skipped (add SMTP_HOST, SMTP_USER, SMTP_PASS and MAIL_FROM as GitHub secrets to send emails)"
+    if DRY:
+        return "skipped (dry run)"
+    import smtplib, ssl, urllib.parse as up
+    from email.message import EmailMessage
+    port = int(os.environ.get("SMTP_PORT", "465") or 465)
+    sender = os.environ.get("MAIL_FROM", "").strip() or ("OreOrbit <%s>" % user)
+    data = _subs_api()
+    subs, state = data.get("subs") or [], data.get("state") or {}
+    if isinstance(state, list):
+        state = {}
+    active = set(e.lower() for e in (data.get("active") or []))
+    briefs = current("live-data/briefs.json") or []
+    news = current("live-data/news.json") or []
+    news = news if isinstance(news, list) else (news.get("items") or [])
+    dls = [d for d in deadlines_from_page() if d.get("date", "") >= TODAY.isoformat()]
+    unsub = lambda s: BASE + "unsubscribe.php?e=" + up.quote(s["email"]) + "&t=" + s.get("token", "")
+    out = []
+    # 1. the free Monday brief, once a week, to everyone who signed up for it (each for their minerals)
+    latest = max(briefs, key=lambda b: str(b.get("week", ""))) if briefs else None
+    if latest and latest.get("week") and latest["week"] != state.get("brief_week") and TODAY.weekday() in (0, 1, 2):
+        for sb in [x for x in subs if x.get("plan") == "brief"]:
+            cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
+            pts = [x for x in (latest.get("points") or []) if _mins_ok(x.get("materials"), mins)][:8]
+            items = ['%s%s' % (_esc((cs and x.get("text_cs")) or x.get("text")), (' <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc(x["url"]), _esc(x.get("source") or "Source"))) if str(x.get("url", "")).startswith("https://") else "") for x in pts]
+            dl = ['<b>%s</b> · %s' % (_esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:4]
+            kicker = ("Pondělní přehled · týden od " if cs else "Monday brief · week of ") + _day(latest["week"], cs)
+            subj = ("OreOrbit · pondělní přehled · " if cs else "OreOrbit · Monday brief · ") + _day(latest["week"], cs)
+            ttl = (latest.get("title_cs") or ("Týden v datech, " + _day(latest["week"], True))) if cs else (latest.get("title") or subj)
+            led = (latest.get("lede_cs") or "Hlavní změny týdne u vašich surovin, z dat OreOrbit a zpráv týdne.") if cs else (latest.get("lede") or "")
+            html = _mail_html(cs, kicker, ttl, led, [("Tento týden" if cs else "This week", items), ("Nejbližší termíny" if cs else "Next deadlines", dl)], unsub(sb))
+            out.append((sb["email"], subj, html))
+        state["brief_week"] = latest["week"]
+    # 2. paid monitoring: an alert only when something new happens for the client's minerals
+    al = state.setdefault("alerts", {})
+    for e in sorted(active):
+        sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
+        cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
+        st = al.setdefault(e, {"since": TODAY.isoformat(), "dl": []})
+        fresh = [n for n in news if str(n.get("addedAt") or n.get("date") or "") > st.get("since", "") and _mins_ok(n.get("materials"), mins) and n.get("materials")]
+        items = ['%s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in fresh[:8]]
+        due = []
+        for d in dls:
+            left = (dt.date.fromisoformat(d["date"]) - TODAY).days
+            k = "%s|%s|%d" % (d["date"], d.get("title", "")[:40], left)
+            if left in (30, 14, 7, 1) and _mins_ok(d.get("materials"), mins) and k not in st["dl"]:
+                due.append('<b>%s</b> · %s · %s' % (_esc(("za %d dní" % left) if cs else ("in %d days" % left)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
+                st["dl"] = (st["dl"] + [k])[-200:]
+        if items or due:
+            subj = ("OreOrbit · upozornění pro vaše suroviny" if cs else "OreOrbit · alert for your minerals")
+            html = _mail_html(cs, "Monitoring", ("Co se změnilo u vašich surovin" if cs else "What changed for your minerals"),
+                              ("Od posledního upozornění." if cs else "Since your last alert."),
+                              [("Nové zprávy" if cs else "New", items), ("Blíží se termín" if cs else "Deadline coming up", due)], unsub(sb))
+            out.append((e, subj, html))
+        st["since"] = TODAY.isoformat()
+    if not out:
+        _subs_api(state)
+        return "nothing to send (%d subscribers, %d monitoring clients)" % (len(subs), len(active))
+    sent = 0
+    with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=60) if port == 465 else smtplib.SMTP(host, port, timeout=60) as smtp:
+        if port != 465:
+            smtp.starttls(context=ssl.create_default_context())
+        smtp.login(user, pw)
+        for to, subj, html in out:
+            try:
+                m = EmailMessage()
+                m["From"], m["To"], m["Subject"] = sender, to, subj
+                m["List-Unsubscribe"] = "<%s>" % (BASE + "unsubscribe.php")
+                m.set_content("Open this email in an HTML-capable mail app, or read the brief at " + BASE)
+                m.add_alternative(html, subtype="html")
+                smtp.send_message(m)
+                sent += 1
+                time.sleep(1.2)          # gentle with the mail server
+            except Exception as ex:
+                log("mail      could not send to one address: %s" % str(ex)[:120])
+    _subs_api(state)
+    return "ok (%d of %d emails sent)" % (sent, len(out))
+
 def main():
-    log("OreOrbit updater v3.9 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
+    log("OreOrbit updater v3.10 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
     rs = current("live-data/live/runstatus.json") or {}
     status = dict(rs.get("sources") or {})
@@ -2100,6 +2233,12 @@ def main():
             log("history   " + upload("live-data/live/history.json", hf))
     except Exception as e:
         log("history   FAILED: %s" % e)
+
+    if not ONLY or "mail" in ONLY:
+        try:
+            log("mail      " + send_mail())
+        except Exception as e:
+            log("mail      FAILED: %s" % e)
 
     try:
         out = dict(rs)

@@ -84,7 +84,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
     sw = ('<a class="lang" href="%s" hreflang="%s" lang="%s">%s</a>' % (e(alt[2:]), "en" if cs else "cs", "en" if cs else "cs", "English" if cs else "Česky")) if alt else ""
     nav = ('<a href="index.html">Knihovna</a><a href="dependency-index-cs.html">Index</a><a href="services-cs.html">Služby</a><a href="about-cs.html">O projektu</a>%s<a class="cta" href="../?lang=cs">Otevřít atlas</a>' % sw) if cs else \
           ('<a href="index.html">Library</a><a href="dependency-index.html">Index</a><a href="services.html">Services</a><a href="about.html">About</a>%s<a class="cta" href="../">Open the atlas</a>' % sw)
-    foot = ('<p>OreOrbit vytváří a provozuje <a href="https://madali.cz/cs/">David Madali</a> v <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> v Praze. Veřejná data, automaticky obnovovaná každý den. Data k %s.</p>\n  <p><a href="services-cs.html">Služby</a> <a href="about-cs.html">O projektu</a> <a href="legal.html">Právní informace a licence (anglicky)</a> <a href="https://madali.cz/cs/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957 · Na Spravedlnosti 2919/2, 530 02 Pardubice</p>' % e(day_cs(today))) if cs else None
+    foot = ('<p>OreOrbit vytváří a provozuje <a href="https://madali.cz/cs/">David Madali</a> v <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> v Praze. Veřejná data, automaticky obnovovaná každý den. Data k %s.</p>\n  <p><a href="services-cs.html">Služby</a> <a href="about-cs.html">O projektu</a> <a href="legal.html">Právní informace a licence (anglicky)</a> <a href="https://madali.cz/cs/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957</p>' % e(day_cs(today))) if cs else None
     return """<!doctype html>
 <html lang="%(lang)s">
 <head>
@@ -125,7 +125,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 </html>
 """ % {"title": e(title), "desc": e(desc), "url": e(url), "ld": json.dumps(ld, ensure_ascii=False).replace("</", "<\\/"),
        "crumbs": crumb_html, "body": body, "today_txt": e(day(today)), "lang": lang, "alt": alt_head, "nav": nav, "by": "od" if cs else "by", "bdpath": "cs/" if cs else "",
-       "foot": foot or ('<p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %s.</p>\n  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957 · Na Spravedlnosti 2919/2, 530 02 Pardubice</p>' % e(day(today)))}
+       "foot": foot or ('<p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %s.</p>\n  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957</p>' % e(day(today)))}
 
 
 def cite_box(title, path, today):
@@ -387,7 +387,7 @@ def legal_page(cfg, today):
     path = "p/legal.html"
     title = "Imprint, privacy and data licences"
     desc = "Who operates OreOrbit, what it does with your data (nothing leaves your browser), terms of use, and the licences of every data source."
-    who = ", ".join(x for x in [cfg.get("company") or "David Madali (Bohemia Defense), natural person registered in the Czech Trade Register", "IČO " + (cfg.get("companyId") or "22229957"), cfg.get("address") or "Na Spravedlnosti 2919/2, 530 02 Pardubice, Czech Republic"] if x)
+    who = ", ".join(x for x in [cfg.get("company") or "David Madali (Bohemia Defense), natural person registered in the Czech Trade Register", "IČO " + (cfg.get("companyId") or "22229957"), cfg.get("address") or ""] if x)
     mail = cfg.get("contactEmail") or "david@madali.cz"
     src = [("Copernicus Sentinel-1, -2 and -5P data", "European Union, Copernicus programme; free, full and open access with attribution."),
            ("Landsat 8 and 9", "U.S. Geological Survey; public domain."),
@@ -418,9 +418,9 @@ def legal_page(cfg, today):
 def services_page(cfg, today):
     path = "p/services.html"
     title = "Services: critical raw materials risk review for defence and space manufacturers"
-    desc = "Know which of your products stop when a border closes. A two-to-three-week review of one product line's exposure to critical raw materials, from €4,900, by Bohemia Defense with OreOrbit data."
+    desc = "Know which of your products stop when a border closes. Free atlas, monitoring of your minerals, and a two-to-three-week readiness review of one product line, by Bohemia Defense with OreOrbit data."
     mail = cfg.get("contactEmail") or "david@madali.cz"
-    subj = "mailto:%s?subject=%s" % (mail, "Intro%20call%20about%20a%20raw%20materials%20review")
+    subj = cfg.get("bookingUrl") or ("mailto:%s?subject=%s" % (mail, "Intro%20call%20about%20a%20raw%20materials%20review"))
     body = """<h1>Know which of your products stop when a border closes.</h1>
 <p class="lede">For defence, security and space manufacturers in Central Europe: a two-to-three-week review of one product line's exposure to critical raw materials, built on OreOrbit's live data and signed by an analyst.</p>
 <p class="open"><a class="cta" href="%(subj)s">Book a free 30-minute intro call</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Read a sample review (PDF, 7 pages)</a></p>
@@ -431,12 +431,11 @@ def services_page(cfg, today):
 </ul></section>
 <section><h2>What we offer</h2>
 <dl class="signals">
-<div><dt>OreOrbit<br><b>Free</b></dt><dd>The live atlas, the library of citable pages, the weekly brief and the in-browser assessment, which never sends your data anywhere.</dd></div>
-<div><dt>Readiness review<br><b>from €4,900</b></dt><dd>One product line, two to three weeks. You get the register of every part with a critical raw material and where it comes from; a rating for each part; stress tests against real export controls; options for second sources in Europe; a report management can sign, and a board presentation. It supports documentation under Article 24 of the Critical Raw Materials Act.<br><span class="small">Founding clients: the first three reviews cost €2,900, in exchange for a short testimonial and an anonymised case study.</span></dd></div>
-<div><dt>Monitoring<br><b>from €390 / month</b></dt><dd>After a review: alerts when anything changes for your materials, sites and deadlines, a short monthly note written and checked by an analyst, and a yearly update of the register.</dd></div>
-<div><dt>Briefings<br><b>from €500</b></dt><dd>A briefing for a board, an association or a ministry on critical raw materials and Europe's defence industry.</dd></div>
+<div><dt>1 · Free<br><b>€0</b></dt><dd>The interactive atlas, the quick check for your product, this week's headlines and the live evidence. With your email, also the Monday brief for your minerals and the full evidence data. No login.</dd></div>
+<div><dt>2 · Monitoring<br><b>€390 / month</b></dt><dd>An alert the day something changes for the minerals you choose: export controls, plant outages, prices and news. Deadline reminders 30, 14 and 7 days ahead, and a short analyst note every month. Start with your email on the atlas.</dd></div>
+<div><dt>3 · Readiness review<br><b>For your board</b></dt><dd>One product line in two to three weeks: the register of every part with a critical raw material and where it comes from, a rating for each part, stress tests against real export controls, the rules that decide who can supply you, and slides for your board. Scope and price are agreed in a free 30-minute intro call.</dd></div>
 </dl>
-<p class="small">Prices exclude VAT where it applies. Larger product ranges are quoted after the intro call.</p></section>
+<p class="small">Monitoring starts with your email on the atlas; David replies within one working day with a sample alert for your minerals.</p></section>
 <section><h2>How a review runs</h2><ul class="dates">
 <li><time>Day 1</time><span>A free 30-minute intro call to agree the product line and the people involved.</span></li>
 <li><time>Week 1</time><span>Two working sessions with your engineering and purchasing teams to fill the register, part by part.</span></li>
@@ -580,9 +579,9 @@ def cite_box_cs(title, path, today):
 def services_page_cs(cfg, today):
     path = "p/services-cs.html"
     title = "Služby: posouzení rizik kritických surovin pro výrobce obranné a kosmické techniky"
-    desc = "Zjistěte, které vaše výrobky se zastaví, když se zavře hranice. Posouzení závislosti jedné výrobní řady na kritických surovinách za dva až tři týdny, od 4 900 €, od Bohemia Defense s daty OreOrbit."
+    desc = "Zjistěte, které vaše výrobky se zastaví, když se zavře hranice. Atlas zdarma, monitoring vašich surovin a posouzení připravenosti jedné výrobní řady za dva až tři týdny, od Bohemia Defense s daty OreOrbit."
     mail = cfg.get("contactEmail") or "david@madali.cz"
-    subj = "mailto:%s?subject=%s" % (mail, "%C3%9Avodn%C3%AD%20hovor%20k%20posouzen%C3%AD%20surovin")
+    subj = cfg.get("bookingUrl") or ("mailto:%s?subject=%s" % (mail, "%C3%9Avodn%C3%AD%20hovor%20k%20posouzen%C3%AD%20surovin"))
     body = """<h1>Zjistěte, které vaše výrobky se zastaví, když se zavře hranice.</h1>
 <p class="lede">Pro výrobce obranné, bezpečnostní a kosmické techniky ve střední Evropě: posouzení závislosti jedné výrobní řady na kritických surovinách za dva až tři týdny, postavené na živých datech OreOrbit a podepsané analytikem.</p>
 <p class="open"><a class="cta" href="%(subj)s">Domluvit úvodní 30minutový hovor zdarma</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Ukázkové posouzení (PDF, 7 stran, anglicky)</a></p>
@@ -593,12 +592,11 @@ def services_page_cs(cfg, today):
 </ul></section>
 <section><h2>Co nabízíme</h2>
 <dl class="signals">
-<div><dt>OreOrbit<br><b>Zdarma</b></dt><dd>Živý atlas, knihovna stránek k citaci, týdenní přehled a posouzení přímo v prohlížeči, které vaše data nikam neodesílá.</dd></div>
-<div><dt>Posouzení připravenosti<br><b>od 4 900 €</b></dt><dd>Jedna výrobní řada za dva až tři týdny. Dostanete registr všech dílů s kritickou surovinou a jejich původu, hodnocení každého dílu, zátěžové testy proti skutečným vývozním kontrolám, evropské alternativní zdroje, zprávu, kterou může podepsat vedení, a prezentaci pro vedení. Slouží jako podklad pro článek 24 nařízení o kritických surovinách.<br><span class="small">Zakládající klienti: první tři posouzení za 2 900 € výměnou za krátkou referenci a anonymizovanou případovou studii.</span></dd></div>
-<div><dt>Sledování<br><b>od 390 € měsíčně</b></dt><dd>Po posouzení: upozornění na změny u vašich surovin, lokalit a termínů, krátká měsíční zpráva, kterou napíše a zkontroluje analytik, a roční aktualizace registru.</dd></div>
-<div><dt>Briefingy<br><b>od 500 €</b></dt><dd>Pro vedení firem, asociace a ministerstva o kritických surovinách a evropském obranném průmyslu.</dd></div>
+<div><dt>1 · Zdarma<br><b>0 €</b></dt><dd>Interaktivní atlas, rychlá kontrola vašeho výrobku, titulky týdne a živé důkazy. S e-mailem navíc pondělní přehled pro vaše suroviny a plná data důkazů. Bez přihlášení.</dd></div>
+<div><dt>2 · Monitoring<br><b>390 € měsíčně</b></dt><dd>Upozornění ve chvíli, kdy se u surovin, které si zvolíte, něco změní: vývozní kontroly, výpadky závodů, ceny a zprávy. Připomínky termínů 30, 14 a 7 dní předem a krátká poznámka analytika každý měsíc. Začnete e-mailem v atlasu.</dd></div>
+<div><dt>3 · Posouzení připravenosti<br><b>Pro vaše vedení</b></dt><dd>Jedna výrobní řada za dva až tři týdny: registr všech dílů s kritickou surovinou a jejich původu, hodnocení každého dílu, zátěžové testy proti skutečným vývozním kontrolám, pravidla, která rozhodují, kdo vám smí dodávat, a podklady pro vedení. Rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma.</dd></div>
 </dl>
-<p class="small">Ceny jsou bez DPH, pokud se uplatňuje. Širší sortiment naceníme po úvodním hovoru.</p></section>
+<p class="small">Monitoring začíná e-mailem v atlasu; David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny.</p></section>
 <section><h2>Jak posouzení probíhá</h2><ul class="dates">
 <li><time>Den 1</time><span>Úvodní 30minutový hovor zdarma: výrobní řada a lidé, kteří se zapojí.</span></li>
 <li><time>Týden 1</time><span>Dvě pracovní setkání s vaší konstrukcí a nákupem, při kterých díl po dílu vyplníme registr.</span></li>
