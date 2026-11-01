@@ -2068,6 +2068,37 @@ def send_mail():
     dls = [d for d in deadlines_from_page() if d.get("date", "") >= TODAY.isoformat()]
     unsub = lambda s: BASE + "unsubscribe.php?e=" + up.quote(s["email"]) + "&t=" + s.get("token", "")
     out = []
+    # 0. welcome emails the website could not send (or anyone not yet welcomed): sent here, once
+    done = set(x.lower() for x in (data.get("welcomed") or [])) | set(state.setdefault("welcomed", []))
+    def _welcome(sb, paid):
+        cs = sb.get("lang") == "cs"; mins = [m for m in (sb.get("minerals") or []) if m in MAT_NAME]
+        names = ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins) or ("všech deset surovin" if cs else "all ten minerals")
+        if paid:
+            subj = "Vítejte v OreOrbit, jsme rádi, že jste s námi" if cs else "Welcome to OreOrbit, we're glad you're here"
+            html = _mail_html(cs, "Vítejte v OreOrbit" if cs else "Welcome to OreOrbit",
+                              "Vítejte v OreOrbit. Jsme rádi, že jste s námi." if cs else "Welcome to OreOrbit. We're glad you're here.",
+                              ("Děkuji, že jste se přidal. Patříte k malému okruhu firem, které vidí změny u svých surovin dřív, než dorazí do dodavatelského řetězce. Hlídáme: " if cs else "Thank you for joining. You are part of a small circle of companies that see changes to their minerals before they reach the supply chain. We watch: ") + names + ".",
+                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ve chvíli, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás.", "Připomínky termínů 30, 14 a 7 dní předem."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you.", "Deadline reminders 30, 14 and 7 days ahead."])]),
+                               ("Osobně" if cs else "Personally", [_esc("Na tento e-mail odpovídám osobně. Chcete jiné suroviny nebo cokoli probrat? Stačí odpovědět." if cs else "I answer this email personally. Want different minerals or to talk anything through? Just reply.") + "<br><br><b>David Madali</b>"])], unsub(sb))
+        else:
+            subj = "Vítejte v pondělním přehledu OreOrbit" if cs else "Welcome to the OreOrbit Monday brief"
+            html = _mail_html(cs, "Vítejte · Pondělní přehled" if cs else "Welcome · The Monday brief",
+                              "Hotovo. První přehled přijde v pondělí." if cs else "You're in. Your first brief arrives on Monday.",
+                              ("Každé pondělí ráno dostanete týden v kritických surovinách pro: " if cs else "Every Monday morning you get the week in critical minerals for: ") + names + ".",
+                              [("Co v něm najdete" if cs else "What you'll get", [_esc(x) for x in (["Nejbližší termíny pro vaše suroviny", "Co se za týden pohnulo, se zdroji", "Odkaz na plná data v atlasu"] if cs else ["The next deadlines for your minerals", "What moved this week, with sources", "A link to the full data on the atlas"])]),
+                               ("Vaše suroviny" if cs else "Your minerals", [_esc("Jiné suroviny? V atlasu u pondělního přehledu klikněte na „změnit“ a přihlaste se znovu stejným e-mailem." if cs else "Different minerals? On the atlas, click “change” next to the Monday brief and sign up again with the same email.")])], unsub(sb))
+        return subj, html
+    for sb in subs:
+        e = (sb.get("email") or "").lower()
+        if not e:
+            continue
+        if sb.get("plan") == "brief" and e + "|brief" not in done:
+            subj, html = _welcome(sb, False); out.append((e, subj, html)); done.add(e + "|brief")
+    for e in sorted(active):
+        if e + "|paid" not in done:
+            sb = next((x for x in subs if (x.get("email") or "").lower() == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if (x.get("email") or "").lower() == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
+            subj, html = _welcome(sb, True); out.append((e, subj, html)); done.add(e + "|paid")
+    state["welcomed"] = sorted(done)[-5000:]
     # 1. the free Monday brief, once a week, to everyone who signed up for it (each for their minerals)
     latest = max(briefs, key=lambda b: str(b.get("week", ""))) if briefs else None
     if latest and latest.get("week") and latest["week"] != state.get("brief_week") and TODAY.weekday() in (0, 1, 2):
