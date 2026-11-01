@@ -2030,7 +2030,7 @@ def _mail_html(cs, kicker, title, lede, sections, unsub):
     atlas = BASE + ("?lang=cs" if cs else "")
     return ('<!doctype html><html><body style="margin:0;background:#f3f4f1"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f3f4f1"><tr><td align="center" style="padding:24px 12px">'
             '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:14px">'
-            '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:22px 28px;font:600 16px Arial,sans-serif;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span></td></tr>'
+            '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:24px 28px;font:600 16px Arial,sans-serif;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span><div style="margin-top:12px">' + "".join('<span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:%s;margin-right:4px"></span>' % c for c in ("#a78bfa", "#fb923c", "#facc15", "#94a3b8", "#22d3ee", "#4ade80", "#f472b6", "#60a5fa", "#a3e635", "#e5e7eb")) + '</div></td></tr>'
             '<tr><td style="padding:26px 28px 8px"><p style="margin:0 0 6px;font:12px Menlo,Consolas,monospace;color:#0f8f5c">%s</p>'
             '<h1 style="margin:0;font:600 24px/1.25 Arial,sans-serif;color:#050607">%s</h1><p style="margin:12px 0 0;font:15px/1.55 Arial,sans-serif;color:#3b4247">%s</p></td></tr>'
             '<tr><td style="padding:0 28px"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0">%s</table></td></tr>'
@@ -2083,7 +2083,50 @@ def send_mail():
             html = _mail_html(cs, kicker, ttl, led, [("Tento týden" if cs else "This week", items), ("Nejbližší termíny" if cs else "Next deadlines", dl)], unsub(sb))
             out.append((sb["email"], subj, html))
         state["brief_week"] = latest["week"]
-    # 2. paid monitoring: an alert only when something new happens for the client's minerals
+    # 2a. paid clients: a personal Monday edition (status, what it means, deadlines, what moved), once a week
+    if latest and latest.get("week") and latest["week"] != state.get("paid_week") and TODAY.weekday() in (0, 1, 2) and active:
+        try:
+            import oreorbit_pages as _P
+            ser = _P.dependency_series(current("live-data/live/trade.json"))
+        except Exception:
+            ser = []
+        ref = current("data/reference.json") or {}
+        last = ser[-1] if ser else None
+        for e in sorted(active):
+            sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
+            cs, mins = sb.get("lang") == "cs", (sb.get("minerals") or list(MAT_NAME.keys()))
+            status, means = [], []
+            for m in mins:
+                if m not in MAT_NAME:
+                    continue
+                nm = MAT_NAME[m][1 if cs else 0]
+                wx = (((ref.get("materials") or {}).get(m) or {}).get("worst") or {}).get("x") or {}
+                WHO_CS = {"China": "Čína", "DR Congo": "DR Kongo", "Indonesia": "Indonésie", "South Africa": "Jižní Afrika", "Australia": "Austrálie", "Russia": "Rusko", "Turkey": "Turecko", "Japan": "Japonsko", "Chile": "Chile", "Argentina": "Argentina", "Mozambique": "Mosambik", "Brazil": "Brazílie"}
+                who = str(wx.get("who", "")); who = WHO_CS.get(who, who) if cs else who
+                pct = str(wx.get("pct", "")).strip()
+                if pct and not pct.endswith("%"): pct = (pct + " %") if cs else (pct + "%")
+                lead = ("%s %s" % (pct, who)).strip() if wx.get("pct") else ""
+                eu = round(last["per"][m] * 100) if last and m in (last.get("per") or {}) else None
+                status.append("<b>%s</b>%s%s" % (_esc(nm), (" · " + _esc(("nejužší fáze: " if cs else "tightest stage: ") + lead)) if lead else "",
+                              (" · " + _esc(("Čína dodává %d %% dovozu do EU" % eu) if cs else ("China supplies %d%% of EU imports" % eu))) if eu is not None else ""))
+                soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
+                if soon:
+                    k = (dt.date.fromisoformat(soon[0]["date"]) - TODAY).days
+                    means.append(_esc(("%s: termín za %d dní. Ověřte, na kolik týdnů vám vystačí zásoby." % (nm, k)) if cs else ("%s: a deadline in %d days. Check how many weeks your stock covers." % (nm, k))))
+                elif eu is not None and eu >= 50:
+                    means.append(_esc(("%s: víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." % nm) if cs else ("%s: more than half of EU imports come from China. Keep a second source in progress." % nm)))
+            dl = ['<b>%s</b> · %s · %s' % (_esc(("za %d dní" if cs else "in %d days") % (dt.date.fromisoformat(d["date"]) - TODAY).days), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
+            wk = (TODAY - dt.timedelta(days=7)).isoformat()
+            moved = ['%s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in news if str(n.get("date") or n.get("addedAt") or "") >= wk and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
+            subj = ("OreOrbit · vaše pondělní vydání · " if cs else "OreOrbit · your Monday edition · ") + _day(latest["week"], cs)
+            html = _mail_html(cs, ("Monitoring · týden od " if cs else "Monitoring · week of ") + _day(latest["week"], cs),
+                              "Vaše suroviny tento týden" if cs else "Your minerals this week",
+                              ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
+                              [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
+                               ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved)], unsub(sb))
+            out.append((e, subj, html))
+        state["paid_week"] = latest["week"]
+    # 2b. paid monitoring: an alert only when something new happens for the client's minerals
     al = state.setdefault("alerts", {})
     for e in sorted(active):
         sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}

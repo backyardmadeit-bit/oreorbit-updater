@@ -243,7 +243,7 @@ def material_page(m, ref, live, today):
     if opts:
         body.append('<section><h2>Options for Europe</h2><ul class="plain">%s</ul></section>' % "".join("<li>%s</li>" % e(o) for o in opts))
     if news:
-        body.append('<section><h2>Recent news</h2><ul class="news">%s</ul><p class="small">Stories marked “found automatically” come from the GDELT news database and were not checked; open the source before quoting.</p></section>' % "".join(
+        body.append('<section><h2>Recent news</h2><ul class="news">%s</ul><p class="small">Stories marked “found automatically” were collected automatically and are not yet verified; open the source before quoting them.</p></section>' % "".join(
             '<li><a href="%s" rel="noopener">%s</a><span>%s, %s · %s</span></li>' % (e(x.get("url")), e(x.get("title")), e(x.get("source")), e(day(x.get("date"))),
                                                                               "found automatically" if x.get("auto") else "checked against the source") for x in news))
     qas = []
@@ -359,7 +359,7 @@ def about_page(ref, cfg, today):
     body = """<h1>About OreOrbit</h1>
 <p class="lede">Europe's defence runs on ten minerals, and for seven of them China controls at least one stage of the supply chain. OreOrbit shows where those minerals are mined and refined, how they reach Europe, and what is changing this week, from public data and satellite pictures.</p>
 <section><h2>Who is behind it</h2>
-<div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/"><b>David Madali</b></a> is a Prague-based analyst of the defence industry, critical raw materials and the space economy. He founded <a href="https://bohemiadefense.com/">Bohemia Defense</a> in 2024, an independent analysis project on Europe's defence industry, security and foreign policy, and built OreOrbit in 2026.</p>
 <p>BBC News Chinese has quoted him as an analyst (<a href="%(bbc)s" rel="noopener">July 2025</a>). His background is in economics, economic diplomacy at the Czech Ministry of Foreign Affairs and export consulting at CzechTrade, where he set up a cluster of 12 security-industry companies.</p>
 <p><a href="https://madali.cz/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali/">Founder page</a></p>
@@ -368,7 +368,8 @@ def about_page(ref, cfg, today):
 <li>A live atlas of 31 mines, refineries and magnet factories, nine trade routes and the chokepoints between them.</li>
 <li>Satellite pictures of every site, refreshed weekly: Sentinel-2 photos, ground cleared since 2018, Sentinel-1 radar and Landsat heat maps.</li>
 <li>Signals every few hours: heat at the plants, ships at the chokepoints, earthquakes and disaster alerts, conflict near the supply chain.</li>
-<li>Monthly EU import data, export-control deadlines, a stress test, and an assessment that runs in your browser and never leaves it.</li>
+<li>Monthly EU import data and export-control deadlines, a quick check of what any product depends on, and a weekly brief of what is moving.</li>
+<li>For companies: monitoring of the minerals you depend on, and a readiness review of one product line for your board. See <a href="services.html">services</a>.</li>
 <li>A <a href="index.html">library</a> of readable pages on every material and site, made to be quoted and cited.</li>
 </ul></section>
 <section><h2>How it works</h2>
@@ -392,7 +393,6 @@ def legal_page(cfg, today):
     src = [("Copernicus Sentinel-1, -2 and -5P data", "European Union, Copernicus programme; free, full and open access with attribution."),
            ("Landsat 8 and 9", "U.S. Geological Survey; public domain."),
            ("NASA FIRMS, GIBS and Worldview imagery", "NASA Earth Science Data and Information System; open data with attribution."),
-           ("Microsoft Planetary Computer and Earth Search (Element 84)", "Catalogues and processing of the satellite data above."),
            ("Copernicus DEM GLO-30", "European Space Agency and Airbus; free use with attribution."),
            ("USGS Mineral Commodity Summaries and earthquake feed", "U.S. Geological Survey; public domain."),
            ("IEA Global Critical Minerals Outlook", "International Energy Agency; figures quoted with attribution."),
@@ -402,9 +402,7 @@ def legal_page(cfg, today):
            ("GDACS", "Global Disaster Alert and Coordination System (European Commission and United Nations)."),
            ("IMF PortWatch", "International Monetary Fund and University of Oxford."),
            ("FRED", "Federal Reserve Bank of St. Louis, with the IMF as the source of commodity prices."),
-           ("CelesTrak", "Satellite orbital elements."),
-           ("AISStream.io", "Live ship positions."),
-           ("GDELT Project", "Open news index; headlines link to the original publishers.")]
+           ]
     body = """<h1>Imprint, privacy and data licences</h1>
 <section><h2>Operator</h2><p>%(who)s. Contact: <a href="mailto:%(mail)s">%(mail)s</a>.</p></section>
 <section><h2>Privacy</h2><p>OreOrbit uses no cookies and no trackers. It counts page views and button clicks as anonymous daily totals, without storing IP addresses or anything else about visitors, and skips browsers that ask not to be tracked. Your settings (language, sound, chosen materials) stay in your own browser's storage on your device. The only thing ever sent is your email address, and only when you sign up for the Monday brief or monitoring (see below). Like every website, the hosting server keeps standard access logs for security and operation.</p></section>
@@ -445,14 +443,14 @@ def services_page(cfg, today):
 </ul></section>
 <section><h2>Your data</h2><p>Your register stays yours. We sign a non-disclosure agreement on request, the register can be built in your browser so that it never leaves your premises, and nothing about your company is ever published. Anonymised, aggregated figures are only used with your written consent.</p></section>
 <section><h2>What it is, and what it is not</h2><p>A review is an independent analysis of supply-chain risk, from public data and the information you provide. It supports the documentation the Critical Raw Materials Act asks for, but it is not legal advice or a certification; confirm your legal obligations with counsel.</p></section>
-<section><h2>Who does the work</h2><div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<section><h2>Who does the work</h2><div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/"><b>David Madali</b></a>, founder of <a href="https://bohemiadefense.com/">Bohemia Defense</a> and creator of OreOrbit. An analyst of the defence industry, critical raw materials and the space economy, quoted by BBC News Chinese, with a background in economic diplomacy at the Czech Ministry of Foreign Affairs and export consulting at CzechTrade.</p>
 <p><a class="cta" href="%(subj)s">Book a free 30-minute intro call</a></p></div></div></section>""" % {"subj": e(subj)}
     ld = [{"@type": "Service", "@id": BASE + path + "#service", "name": "Critical raw materials supply-chain risk review", "serviceType": "Supply-chain risk assessment",
            "description": desc, "provider": {"@id": ORG["@id"]}, "areaServed": "Europe", "url": BASE + path,
-           "offers": [{"@type": "Offer", "name": "Readiness review, one product line", "price": "4900", "priceCurrency": "EUR", "priceSpecification": {"@type": "PriceSpecification", "minPrice": 4900, "priceCurrency": "EUR"}},
-                      {"@type": "Offer", "name": "Monitoring", "price": "390", "priceCurrency": "EUR", "priceSpecification": {"@type": "UnitPriceSpecification", "price": 390, "priceCurrency": "EUR", "unitText": "month"}},
-                      {"@type": "Offer", "name": "Briefing", "price": "500", "priceCurrency": "EUR"}]}]
+           "offers": [{"@type": "Offer", "name": "OreOrbit atlas and Monday brief", "price": "0", "priceCurrency": "EUR"},
+                      {"@type": "Offer", "name": "Monitoring of your minerals", "price": "390", "priceCurrency": "EUR", "priceSpecification": {"@type": "UnitPriceSpecification", "price": 390, "priceCurrency": "EUR", "unitText": "month"}},
+                      {"@type": "Offer", "name": "Readiness review, one product line", "description": "Scope and price agreed in a free 30-minute intro call"}]}]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)], alt="p/services-cs.html")
 
 
@@ -606,12 +604,14 @@ def services_page_cs(cfg, today):
 </ul></section>
 <section><h2>Vaše data</h2><p>Váš registr patří vám. Na požádání podepíšeme dohodu o mlčenlivosti, registr lze vyplnit přímo ve vašem prohlížeči, takže neopustí vaši firmu, a nic o vaší firmě nikdy nezveřejníme. Anonymizované souhrnné údaje použijeme jen s vaším písemným souhlasem.</p></section>
 <section><h2>Co to je a co ne</h2><p>Posouzení je nezávislá analýza rizik dodavatelského řetězce z veřejných dat a informací, které nám poskytnete. Slouží jako podklad pro dokumentaci podle nařízení o kritických surovinách, není ale právní radou ani certifikací; své právní povinnosti si ověřte s právníkem.</p></section>
-<section><h2>Kdo práci dělá</h2><div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<section><h2>Kdo práci dělá</h2><div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/cs/"><b>David Madali</b></a>, zakladatel <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a> a autor OreOrbit. Analytik obranného průmyslu, kritických surovin a kosmické ekonomiky, citovaný čínskou službou BBC News, se zkušenostmi z ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a z exportního poradenství v CzechTrade.</p>
 <p><a class="cta" href="%(subj)s">Domluvit úvodní 30minutový hovor zdarma</a></p></div></div></section>""" % {"subj": e(subj)}
     ld = [{"@type": "Service", "@id": BASE + path + "#service", "name": "Posouzení rizik kritických surovin v dodavatelském řetězci", "inLanguage": "cs", "description": desc,
            "provider": {"@id": ORG["@id"]}, "areaServed": "Europe", "url": BASE + path,
-           "offers": [{"@type": "Offer", "name": "Posouzení připravenosti", "price": "4900", "priceCurrency": "EUR"}, {"@type": "Offer", "name": "Sledování", "price": "390", "priceCurrency": "EUR"}]}]
+           "offers": [{"@type": "Offer", "name": "Atlas OreOrbit a pondělní přehled", "price": "0", "priceCurrency": "EUR"},
+                      {"@type": "Offer", "name": "Monitoring vašich surovin", "price": "390", "priceCurrency": "EUR", "priceSpecification": {"@type": "UnitPriceSpecification", "price": 390, "priceCurrency": "EUR", "unitText": "měsíc"}},
+                      {"@type": "Offer", "name": "Posouzení připravenosti jedné výrobní řady", "description": "Rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma"}]}]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Služby", path)], lang="cs", alt="p/services.html")
 
 
@@ -623,7 +623,7 @@ def about_page_cs(cfg, today):
     body = """<h1>O projektu OreOrbit</h1>
 <p class="lede">Obrana Evropy stojí na deseti surovinách a u sedmi z nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. OreOrbit ukazuje, kde se tyto suroviny těží a zpracovávají, jak se dostávají do Evropy a co se tento týden mění, z veřejných dat a satelitních snímků.</p>
 <section><h2>Kdo za tím stojí</h2>
-<div class="person"><img src="../img/david-madali.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
+<div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/cs/"><b>David Madali</b></a> je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. V roce 2024 založil <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a>, nezávislý analytický projekt o evropském obranném průmyslu, bezpečnosti a zahraniční politice, a v roce 2026 vytvořil OreOrbit.</p>
 <p>Jako analytika ho citovala čínská služba BBC News (<a href="%(bbc)s" rel="noopener">červenec 2025</a>). Má zkušenosti z ekonomie, ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a exportního poradenství v CzechTrade, kde založil klastr 12 firem z bezpečnostního průmyslu.</p>
 <p><a href="https://madali.cz/cs/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali-cz/">Stránka zakladatele</a></p>
@@ -632,7 +632,8 @@ def about_page_cs(cfg, today):
 <li>Živý atlas 31 dolů, rafinerií a továren na magnety, devíti obchodních tras a úzkých míst mezi nimi.</li>
 <li>Satelitní snímky každé lokality každý týden: fotografie Sentinel-2, odlesněná plocha od roku 2018, radar Sentinel-1 a tepelné mapy Landsat.</li>
 <li>Signály každých pár hodin: teplo v závodech, lodě v úžinách, zemětřesení a výstrahy, konflikty u dodavatelského řetězce.</li>
-<li>Měsíční data o dovozu do EU, termíny vývozních kontrol, zátěžový test a posouzení, které běží ve vašem prohlížeči a nikam neodchází.</li>
+<li>Měsíční data o dovozu do EU a termíny vývozních kontrol, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a týdenní přehled toho, co se hýbe.</li>
+<li>Pro firmy: monitoring surovin, na kterých závisíte, a posouzení připravenosti jedné výrobní řady pro vaše vedení. Viz <a href="services-cs.html">služby</a>.</li>
 <li><a href="index.html">Knihovna</a> stránek o každé surovině a lokalitě k citaci (anglicky) a měsíční <a href="dependency-index-cs.html">Index závislosti</a>.</li>
 </ul></section>
 <section><h2>Jak to funguje</h2>
@@ -1039,6 +1040,15 @@ def build(ref, live, cfg, today):
                   '<li><a href="briefs.html">Weekly briefs</a><span>Every Monday, the week in data</span></li>'
                   '<li><a href="dependency-index.html">OreOrbit Dependency Index</a><span>The monthly number, with every month on its own page</span></li></ul></section>')
         out["p/index.html"] = out["p/index.html"].replace('<ul class="lib">', guides + '<h2>Materials and sites</h2><ul class="lib">', 1)
+    price = str(cfg.get("monitoringPrice") or "49").strip()
+    for k in ("p/services.html", "p/services-cs.html", "p/about.html", "p/about-cs.html"):
+        if k in out:
+            h = out[k].replace("€390 / month", "€%s / month" % price).replace("390 € měsíčně", "%s € měsíčně" % price)
+            h = h.replace('"price": "390"', '"price": "%s"' % price).replace('"price": 390', '"price": %s' % price)
+            h = h.replace("and a short analyst note every month", "and a personal Monday edition for your minerals").replace("a krátká poznámka analytika každý měsíc", "a osobní pondělní vydání pro vaše suroviny")
+            h = h.replace("Monitoring starts with your email on the atlas; David replies within one working day with a sample alert for your minerals.", "Monitoring starts on the atlas: choose your minerals, pay by card, and it runs from the same day. Cancel any month.")
+            h = h.replace("Monitoring začíná e-mailem v atlasu; David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny.", "Monitoring spustíte v atlasu: zvolíte suroviny, zaplatíte kartou a běží ještě týž den. Zrušit ho můžete kdykoli.")
+            out[k] = h
     ep, eh = embed_page(live, today)
     if eh:
         out[ep] = eh
