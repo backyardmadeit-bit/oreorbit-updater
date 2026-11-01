@@ -2047,6 +2047,15 @@ def _mins_ok(item_mins, mins):
     return not mins or not item_mins or any(m in mins for m in item_mins)
 
 
+def _kind(subj):
+    s = subj.lower()
+    return "welcome" if ("welcome" in s or "vítejte" in s) else "edition" if ("edition" in s or "vydání" in s) else "alert" if ("alert" in s or "upozornění" in s or "reminder" in s or "připomínka" in s) else "report" if "delivery" in s else "brief"
+
+def _deliv(state, to, subj, ok, err=""):
+    lg = state.setdefault("log", [])
+    lg.append({"d": iso(), "e": (to or "").lower(), "k": _kind(subj), "ok": 1 if ok else 0, **({"err": err} if err else {})})
+    del lg[:-1500]
+
 def send_mail():
     host, user, pw = os.environ.get("SMTP_HOST", "").strip(), os.environ.get("SMTP_USER", "").strip(), os.environ.get("SMTP_PASS", "")
     if not (host and user and pw):
@@ -2179,6 +2188,22 @@ def send_mail():
                               [("Nové zprávy" if cs else "New", items), ("Blíží se termín" if cs else "Deadline coming up", due)], unsub(sb))
             out.append((e, subj, html))
         st["since"] = TODAY.isoformat()
+    wk = (TODAY - dt.timedelta(days=TODAY.weekday())).isoformat()
+    if TODAY.weekday() == 0 and active and state.get("report_week") != wk:
+        lg = state.get("log") or []
+        since = (TODAY - dt.timedelta(days=7)).isoformat()
+        rows = []
+        for e in sorted(active):
+            mine = [x for x in lg if x.get("e") == e]
+            last = max((x["d"] for x in mine if x.get("ok")), default="")
+            n7 = sum(1 for x in mine if x.get("ok") and x["d"] >= since)
+            fail = sum(1 for x in mine if not x.get("ok") and x["d"] >= since)
+            flag = "⚠️ " if (not last or last < (TODAY - dt.timedelta(days=8)).isoformat() or fail) else "✓ "
+            rows.append(_esc("%s%s · last email %s · %d in 7 days%s" % (flag, e, last[:10] or "never", n7, (" · %d failed" % fail) if fail else "")))
+        out.append(("david@madali.cz", "OreOrbit · delivery report · %d paying clients" % len(active),
+                    _mail_html(False, "Internal · delivery report", "Did every paying client get their emails?", "Week of %s. A ⚠️ means no email in 8 days or a failed send: check it before the client notices." % wk,
+                               [("Paying clients", rows)], BASE)))
+        state["report_week"] = wk
     if not out:
         _subs_api(state)
         return "nothing to send (%d subscribers, %d monitoring clients)" % (len(subs), len(active))
@@ -2196,9 +2221,11 @@ def send_mail():
                 m.add_alternative(html, subtype="html")
                 smtp.send_message(m)
                 sent += 1
+                _deliv(state, to, subj, True)
                 time.sleep(1.2)          # gentle with the mail server
             except Exception as ex:
                 log("mail      could not send to one address: %s" % str(ex)[:120])
+                _deliv(state, to, subj, False, str(ex)[:100])
     _subs_api(state)
     return "ok (%d of %d emails sent)" % (sent, len(out))
 
