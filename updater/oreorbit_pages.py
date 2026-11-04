@@ -15,9 +15,9 @@ PERSON = {"@id": "https://madali.cz/#person", "@type": "Person", "name": "David 
 ORG = {"@id": "https://bohemiadefense.com/#organization", "@type": "Organization", "name": "Bohemia Defense", "url": "https://bohemiadefense.com/"}
 ATLAS = {"@id": "https://bohemiadefense.com/atlas/#oreorbit", "@type": "WebApplication", "name": "OreOrbit", "url": BASE}
 SLUG = {"ree": "rare-earths", "ti": "titanium", "w": "tungsten", "sb": "antimony", "ga": "gallium", "ge": "germanium",
-        "li": "lithium", "co": "cobalt", "ni": "nickel", "gr": "graphite"}
+        "li": "lithium", "co": "cobalt", "ni": "nickel", "gr": "graphite", "mg": "magnesium", "mn": "manganese"}
 COL = {"ree": "#a78bfa", "ti": "#fb923c", "w": "#facc15", "sb": "#a9b8cc", "ga": "#22d3ee", "ge": "#4ade80",
-       "li": "#f472b6", "co": "#60a5fa", "ni": "#a3e635", "gr": "#e4e4e7"}
+       "li": "#f472b6", "co": "#60a5fa", "ni": "#a3e635", "gr": "#e4e4e7", "mg": "#2dd4bf", "mn": "#e879f9"}
 STAGE_NAME = {"mine": "Mining", "refine": "Refining", "part": "Component"}
 SITE_STAGE = {"Mine": "mine", "Processing": "processing plant", "Magnets": "magnet factory", "Planned": "planned project"}
 MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -456,6 +456,9 @@ def services_page(cfg, today):
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)], alt="p/services-cs.html")
 
 
+INDEX_TEN = ("ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr")
+
+
 def dependency_series(trade):
     """The OreOrbit Dependency Index, month by month: China's share of the value of EU imports from outside the EU,
     for each of the ten materials (all tracked products of a material added up), averaged with equal weight per material."""
@@ -475,10 +478,12 @@ def dependency_series(trade):
                 a[1] += float(ext[i] or 0)
     out = []
     for k in sorted(per):
-        shares = {m: v[0] / v[1] for m, v in per[k].items() if v[1] > 0}
+        every = {m: v[0] / v[1] for m, v in per[k].items() if v[1] > 0}
+        shares = {m: x for m, x in every.items() if m in INDEX_TEN}           # the index keeps its original ten, so months stay comparable
+        extra = {m: x for m, x in every.items() if m not in INDEX_TEN}       # magnesium, manganese and any later additions
         if len(shares) >= 8:
             out.append({"month": k, "value": sum(shares.values()) / len(shares), "n": len(shares),
-                        "over50": sum(1 for x in shares.values() if x > 0.5), "per": shares})
+                        "over50": sum(1 for x in shares.values() if x > 0.5), "per": shares, **({"extra": extra} if extra else {})})
     return out
 
 
@@ -559,7 +564,7 @@ def dependency_page(ref, live, today):
 MON_CS = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"]
 MONTH_CS_NOM = ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"]
 MONTH_CS_LOC = ["lednu", "únoru", "březnu", "dubnu", "květnu", "červnu", "červenci", "srpnu", "září", "říjnu", "listopadu", "prosinci"]
-MAT_CS = {"ree": "Vzácné zeminy", "ti": "Titan", "w": "Wolfram", "sb": "Antimon", "ga": "Galium", "ge": "Germanium", "li": "Lithium", "co": "Kobalt", "ni": "Nikl", "gr": "Grafit"}
+MAT_CS = {"ree": "Vzácné zeminy", "ti": "Titan", "w": "Wolfram", "sb": "Antimon", "ga": "Galium", "ge": "Germanium", "li": "Lithium", "co": "Kobalt", "ni": "Nikl", "gr": "Grafit", "mg": "Hořčík", "mn": "Mangan"}
 
 
 def day_cs(d):

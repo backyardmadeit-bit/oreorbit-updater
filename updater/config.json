@@ -278,6 +278,114 @@
       "lng": 21.63,
       "m": "gr",
       "stage": "Planned"
+    },
+    {
+      "id": "fugu-mg",
+      "name": "Fugu and Yulin smelters",
+      "country": "China",
+      "lat": 39.03,
+      "lng": 111.07,
+      "m": "mg",
+      "stage": "Processing"
+    },
+    {
+      "id": "dsm-mg",
+      "name": "Dead Sea Magnesium",
+      "country": "Israel",
+      "lat": 31.03,
+      "lng": 35.39,
+      "m": "mg",
+      "stage": "Processing"
+    },
+    {
+      "id": "rima-mg",
+      "name": "RIMA magnesium",
+      "country": "Brazil",
+      "lat": -17.11,
+      "lng": -43.81,
+      "m": "mg",
+      "stage": "Processing"
+    },
+    {
+      "id": "solikamsk-mg",
+      "name": "Solikamsk magnesium works",
+      "country": "Russia",
+      "lat": 59.63,
+      "lng": 56.77,
+      "m": "mg",
+      "stage": "Processing"
+    },
+    {
+      "id": "uktmp-mg",
+      "name": "Ust-Kamenogorsk titanium-magnesium plant",
+      "country": "Kazakhstan",
+      "lat": 49.98,
+      "lng": 82.65,
+      "m": "mg",
+      "stage": "Processing"
+    },
+    {
+      "id": "usmag-mg",
+      "name": "US Magnesium (idle)",
+      "country": "United States",
+      "lat": 40.88,
+      "lng": -112.74,
+      "m": "mg",
+      "stage": "Processing"
+    },
+    {
+      "id": "kalahari-mn",
+      "name": "Kalahari Manganese Field",
+      "country": "South Africa",
+      "lat": -27.2,
+      "lng": 22.95,
+      "m": "mn",
+      "stage": "Mine"
+    },
+    {
+      "id": "moanda-mn",
+      "name": "Moanda manganese mine",
+      "country": "Gabon",
+      "lat": -1.56,
+      "lng": 13.27,
+      "m": "mn",
+      "stage": "Mine"
+    },
+    {
+      "id": "nsuta-mn",
+      "name": "Nsuta manganese mine",
+      "country": "Ghana",
+      "lat": 5.28,
+      "lng": -1.97,
+      "m": "mn",
+      "stage": "Mine"
+    },
+    {
+      "id": "groote-mn",
+      "name": "Groote Eylandt",
+      "country": "Australia",
+      "lat": -13.97,
+      "lng": 136.45,
+      "m": "mn",
+      "stage": "Mine"
+    },
+    {
+      "id": "songtao-mn",
+      "name": "Manganese Triangle refineries",
+      "country": "China",
+      "lat": 28.17,
+      "lng": 109.2,
+      "m": "mn",
+      "stage": "Processing"
+    },
+    {
+      "id": "chvaletice-mn",
+      "name": "Chvaletice manganese project",
+      "country": "Czechia",
+      "lat": 50.03,
+      "lng": 15.43,
+      "m": "mn",
+      "stage": "Planned"
     }
   ],
   "sats": [
@@ -528,7 +636,8 @@
       "id": "rot",
       "name": "Rotterdam approaches",
       "mins": [
-        "eu"
+        "eu",
+        "mg"
       ]
     },
     {
@@ -634,7 +743,8 @@
       "mins": [
         "ree",
         "ni",
-        "li"
+        "li",
+        "mg"
       ]
     },
     {
@@ -651,7 +761,42 @@
         ]
       ],
       "mins": [
-        "eu"
+        "eu",
+        "mg"
+      ]
+    },
+    {
+      "id": "owe",
+      "name": "Owendo",
+      "bbox": [
+        [
+          0.2,
+          9.42
+        ],
+        [
+          0.42,
+          9.6
+        ]
+      ],
+      "mins": [
+        "mn"
+      ]
+    },
+    {
+      "id": "tak",
+      "name": "Takoradi",
+      "bbox": [
+        [
+          4.85,
+          -1.8
+        ],
+        [
+          4.95,
+          -1.7
+        ]
+      ],
+      "mins": [
+        "mn"
       ]
     }
   ],

@@ -897,6 +897,8 @@ TRADE_CODES = {
     "sb": [("811010", "Unwrought antimony"), ("282580", "Antimony oxides")],
     "ti": [("810820", "Unwrought titanium (sponge)"), ("261400", "Titanium ores")],
     "w": [("810194", "Unwrought tungsten"), ("261100", "Tungsten ores")],
+    "mg": [("810411", "Unwrought magnesium, 99.8% or more"), ("810419", "Other unwrought magnesium")],
+    "mn": [("811100", "Manganese metal and articles"), ("260200", "Manganese ores")],
 }
 
 
@@ -1612,15 +1614,18 @@ def feed_radar(prev):
 
 MAT_NAME = {"ree": ("Rare earths", "Vzácné zeminy"), "ti": ("Titanium", "Titan"), "w": ("Tungsten", "Wolfram"), "sb": ("Antimony", "Antimon"),
             "ga": ("Gallium", "Galium"), "ge": ("Germanium", "Germanium"), "li": ("Lithium", "Lithium"), "co": ("Cobalt", "Kobalt"),
-            "ni": ("Nickel", "Nikl"), "gr": ("Graphite", "Grafit")}
+            "ni": ("Nickel", "Nikl"), "gr": ("Graphite", "Grafit"), "mg": ("Magnesium", "Hořčík"), "mn": ("Manganese", "Mangan")}
 NEWS_Q = {"ree": '("rare earth" OR "rare earths" OR neodymium OR dysprosium)', "ti": '("titanium sponge" OR "titanium supply" OR "titanium mine" OR "titanium export")',
           "w": "tungsten", "sb": "antimony", "ga": "gallium", "ge": "germanium",
           "li": '("lithium mine" OR "lithium supply" OR "lithium refinery" OR "lithium price" OR "lithium export")',
           "co": '("cobalt export" OR "cobalt supply" OR "cobalt mine" OR "cobalt price" OR "cobalt quota")',
-          "ni": '("nickel mine" OR "nickel smelter" OR "nickel ore" OR "nickel price" OR "nickel supply")', "gr": "graphite"}
+          "ni": '("nickel mine" OR "nickel smelter" OR "nickel ore" OR "nickel price" OR "nickel supply")', "gr": "graphite",
+          "mg": '("magnesium metal" OR "magnesium ingot" OR "magnesium smelter" OR "magnesium price" OR "magnesium supply")', "mn": '("manganese ore" OR "manganese mine" OR "manganese sulphate" OR "manganese sulfate" OR "electrolytic manganese")'}
 NEWS_KW = {"ree": r"rare[ -]?earth|neodymium|dysprosium|terbium|praseodymium", "ti": r"titanium", "w": r"tungsten", "sb": r"antimony",
-           "ga": r"gallium", "ge": r"germanium", "li": r"lithium", "co": r"cobalt", "ni": r"nickel", "gr": r"graphite"}
-NEWS_SPAM = (r"market (size|share|report|research|analysis|outlook|growth|trends|insights)|\bCAGR\b|forecast (to|till|period)|\b20\d\d\s*[-–]\s*20\d\d\b|"
+           "ga": r"gallium", "ge": r"germanium", "li": r"lithium", "co": r"cobalt", "ni": r"nickel", "gr": r"graphite",
+           "mg": r"magnesium", "mn": r"manganese"}
+NEWS_SPAM = (r"\bsupplements?\b|deficiency|vitamin|\bsleep\b|\bdiet\b|"
+             r"market (size|share|report|research|analysis|outlook|growth|trends|insights)|\bCAGR\b|forecast (to|till|period)|\b20\d\d\s*[-–]\s*20\d\d\b|"
              r"press release|sponsored|price target|stock (price|forecast|analysis)|shares? (rise|fall|jump|drop|surge|slump|soar|plunge)|\bETF\b|dividend|horoscope")
 NEWS_BLOCK = ("openpr.", "einpresswire.", "globenewswire.", "prnewswire.", "digitaljournal.", "marketsandmarkets.", "taiwannews.", "newstrail.", "whatech.",
               "benzinga.", "fool.com", "zacks.", "marketbeat.", "tipranks.", "investorsobserver.", "stocktitan.")
@@ -1631,6 +1636,7 @@ NEWS_GROUPS = [   # GDELT refuses long questions: about five terms each
     '(antimony OR gallium OR germanium OR "titanium sponge" OR graphite)',
     '("lithium mine" OR "lithium supply" OR "lithium price" OR "lithium refinery" OR "lithium export")',
     '("nickel mine" OR "nickel smelter" OR "nickel price" OR "cobalt price" OR "cobalt export")',
+    '("magnesium metal" OR "magnesium smelter" OR "magnesium price" OR "manganese ore" OR "electrolytic manganese")',
 ]
 
 
@@ -2253,7 +2259,9 @@ def send_mail():
                 pct = str(wx.get("pct", "")).strip()
                 if pct and not pct.endswith("%"): pct = (pct + " %") if cs else (pct + "%")
                 lead = ("%s %s" % (pct, who)).strip() if wx.get("pct") else ""
-                eu = round(last["per"][m] * 100) if last and m in (last.get("per") or {}) else None
+                _sh = ((last or {}).get("per") or {}).get(m)
+                if _sh is None: _sh = ((last or {}).get("extra") or {}).get(m)
+                eu = round(_sh * 100) if _sh is not None else None
                 status.append("<b>%s</b>%s%s" % (_esc(nm), (" · " + _esc(("nejužší fáze: " if cs else "tightest stage: ") + lead)) if lead else "",
                               (" · " + _esc(("Čína dodává %d %% dovozu do EU" % eu) if cs else ("China supplies %d%% of EU imports" % eu))) if eu is not None else ""))
                 soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
