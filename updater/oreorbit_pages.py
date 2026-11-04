@@ -471,8 +471,8 @@ def services_page(cfg, today):
 </ul></section>
 <section><h2>What we offer</h2>
 <dl class="signals">
-<div><dt>1 · Free<br><b>€0</b></dt><dd>The interactive atlas, the quick check for your product, this week's headlines and the live evidence. With your email, also the Monday brief for your minerals and the full evidence data. No login.</dd></div>
-<div><dt>2 · Monitoring<br><b>€390 / month</b></dt><dd>A same-day alert when something changes for the minerals you choose: export controls, plant outages, prices and news. Deadline reminders 30, 14 and 7 days ahead, and a short analyst note every month. Start with your email on the atlas.</dd></div>
+<div><dt>1 · Free<br><b>€0</b></dt><dd>The interactive atlas, the quick check for your product, this week's headlines and the live evidence. With your email, also the Monday brief for your minerals and all live-data panels in full. No login.</dd></div>
+<div><dt>2 · Monitoring<br><b>€390 / month</b></dt><dd>A same-day alert when something changes for the minerals you choose: export controls, plant outages, prices and news. A personal Monday edition, deadline reminders 30, 14 and 7 days ahead, alerts when a site for your minerals goes quiet, starts up or shows a sulphur dioxide spike, and every Monday a data file (CSV) with the history behind it: monthly EU imports and daily heat and SO2 at the sites. Start on the atlas.</dd></div>
 <div><dt>3 · Readiness review<br><b>For your board</b></dt><dd>One product line in two to three weeks: the register of every part with a critical raw material and where it comes from, a rating for each part, stress tests against real export controls, the rules that decide who can supply you, and slides for your board. Scope and price are agreed in a free 30-minute intro call.</dd></div>
 </dl>
 <p class="small">Monitoring starts with your email on the atlas; David replies within one working day with a sample alert for your minerals.</p></section>
@@ -637,8 +637,8 @@ def services_page_cs(cfg, today):
 </ul></section>
 <section><h2>Co nabízíme</h2>
 <dl class="signals">
-<div><dt>1 · Zdarma<br><b>0 €</b></dt><dd>Interaktivní atlas, rychlá kontrola vašeho výrobku, titulky týdne a živé důkazy. S e-mailem navíc pondělní přehled pro vaše suroviny a plná data důkazů. Bez přihlášení.</dd></div>
-<div><dt>2 · Monitoring<br><b>390 € měsíčně</b></dt><dd>Upozornění ještě v den, kdy se u surovin, které si zvolíte, něco změní: vývozní kontroly, výpadky závodů, ceny a zprávy. Připomínky termínů 30, 14 a 7 dní předem a krátká poznámka analytika každý měsíc. Začnete e-mailem v atlasu.</dd></div>
+<div><dt>1 · Zdarma<br><b>0 €</b></dt><dd>Interaktivní atlas, rychlá kontrola vašeho výrobku, titulky týdne a živé důkazy. S e-mailem navíc pondělní přehled pro vaše suroviny a všechny panely živých dat v plném rozsahu. Bez přihlášení.</dd></div>
+<div><dt>2 · Monitoring<br><b>390 € měsíčně</b></dt><dd>Upozornění ještě v den, kdy se u surovin, které si zvolíte, něco změní: vývozní kontroly, výpadky závodů, ceny a zprávy. Osobní pondělní vydání, připomínky termínů 30, 14 a 7 dní předem, upozornění, když lokalita vašich surovin ztichne, rozjede se nebo u ní vyskočí oxid siřičitý, a každé pondělí datový soubor (CSV) s historií: měsíční dovoz do EU a denní teplo a SO2 u lokalit. Začnete v atlasu.</dd></div>
 <div><dt>3 · Posouzení připravenosti<br><b>Pro vaše vedení</b></dt><dd>Jedna výrobní řada za dva až tři týdny: registr všech dílů s kritickou surovinou a jejich původu, hodnocení každého dílu, zátěžové testy proti skutečným vývozním kontrolám, pravidla, která rozhodují, kdo vám smí dodávat, a podklady pro vedení. Rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma.</dd></div>
 </dl>
 <p class="small">Monitoring začíná e-mailem v atlasu; David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny.</p></section>
@@ -1104,7 +1104,6 @@ def build(ref, live, cfg, today):
         if k in out:
             h = out[k].replace("€390 / month", "€%s / month" % price).replace("390 € měsíčně", "%s € měsíčně" % price)
             h = h.replace('"price": "390"', '"price": "%s"' % price).replace('"price": 390', '"price": %s' % price)
-            h = h.replace("and a short analyst note every month", "and a personal Monday edition for your minerals").replace("a krátká poznámka analytika každý měsíc", "a osobní pondělní vydání pro vaše suroviny")
             h = h.replace("Monitoring starts with your email on the atlas; David replies within one working day with a sample alert for your minerals.", "Monitoring starts on the atlas: choose your minerals, pay by card, and it runs from the same day. Cancel anytime. Not seeing the value? Ask within the first month and we refund you in full.")
             h = h.replace("Monitoring začíná e-mailem v atlasu; David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny.", "Monitoring spustíte v atlasu: zvolíte suroviny, zaplatíte kartou a běží ještě týž den. Zrušit ho můžete kdykoli. Nevidíte přínos? Během prvního měsíce vám na požádání vrátíme peníze.")
             out[k] = h

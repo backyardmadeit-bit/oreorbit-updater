@@ -33,7 +33,7 @@ Robot: GitHub repo `oreorbit-updater` (Python), workflow `.github/workflows/upda
 - `index.html` — page shell, CSS variables (mineral colours `--ree … --mn`), static SEO copy. Script tags carry `?v=` cache-busters: **bump them on every change**.
 - `index.php` — serves `index.html` with a server-rendered news/brief block for crawlers; sends `Cache-Control: no-store`.
 - `atlas-main.js` — core: data tables (`GROUPS/ORDER, PIN, MATERIALS, STAGES, STRATEGIC, SYSTEMS, SITES, ROUTES, PROD, CENTROID, ELEM, DEADLINES, CS` dictionary), globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base. `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
-- `atlas-v2.js` — layered additions `v20 … v44` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel). Footer shows `build NN` (currently **44**). `?debug=1` shows a diagnostics panel; errors are counted via `count.php`.
+- `atlas-v2.js` — layered additions `v20 … v45` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel). Footer shows `build NN` (currently **45**). `?debug=1` shows a diagnostics panel; errors are counted via `count.php`.
 - `atlas-v2.css` — styles, appended per version.
 - `config.js` — public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
 - `data/reference.json` — **single source of truth for the library pages**: `materials{info,stages,worst,deadlines,euSp,rir}`, `sites` (43), `order` (12), `routes` (11 ids, must match `ROUTES` in `atlas-main.js`; the scan fails otherwise), `scenarios`, `online`. Keep it in sync with `atlas-main.js` (extract via node, see Phase 4 history).
@@ -55,7 +55,7 @@ Mg and Mn were added in Nov 2026 (USGS MCS 2026: Mg China 86% of primary metal; 
 Counts today: **12 minerals, 43 sites, 11 trade routes**. "Nine of the twelve" have a stage where one country holds >65%.
 
 ## Business model
-Free (atlas, quick check, This week, Monday brief by email) · **Monitoring €49/month** (Stripe, cancel anytime, 30-day money-back on request, refunds manual in Stripe) · Readiness review (tailored, via 30-min call).
+Free (atlas, quick check, This week; with an email: Monday brief + all live-data panels in full) · **Monitoring €49/month** (Stripe, cancel anytime, 30-day money-back on request, refunds manual in Stripe): same-day alerts, personal Monday edition, deadline reminders, **site alerts** (`_site_events`: heat quiet 7 days after 4+ hot days / start-up / first SO2 > 2 DU in 30 days, for the sites of the client's minerals) and **a weekly CSV attached to the Monday edition** (`_data_csv`: monthly EU imports, daily heat and SO2 per site) · Readiness review (tailored, via 30-min call). Price comes from `config.js` everywhere (services pages are patched in `build()`; never type a price).
 Flow: plans → `go-pay.php` → Stripe → webhook → `monitoring-active.txt` + welcome → robot emails. Cancellation: Stripe portal → webhook removes client.
 
 ## Brand & copy rules (brand book v1.1)
@@ -84,7 +84,7 @@ Flow: plans → `go-pay.php` → Stripe → webhook → `monitoring-active.txt` 
 ## Open tasks (from the last brief)
 1. ~~**Funnel**~~ done in build 43: quick check result → primary CTA "Get alerts for these N minerals" (`.qc-mon`, sets the plan via `window.ooMonSet`, scrolls to `#teams .pl3-b`, counts `act:qc-mon`), full review secondary, call as a text link.
 2. ~~**Validation**~~ done in build 44: "Other minerals" = chips from `data/other-minerals.json` with autocomplete, inline error and payment blocked for unknown words, tracked names added to the selection; same allow-list in `go-pay.php`/webhook; robot shows "no news found in the last 14 days" per quiet term in the paid Monday edition and lists quiet terms in David's delivery report (`state.other[term].first/hit`).
-3. **Free vs paid:** define "full evidence data" (history + CSV + per-site alerts for paid) and update plans, services pages and emails consistently.
+3. ~~**Free vs paid**~~ done in build 45 (see Business model). Dead code in atlas-v2.js v25/v26 still has old €390 / analyst-note copy (not rendered; v27 `.pl3` replaces it).
 4. **Globe:** ship visibility (renderOrder, size with zoom, neutral high-contrast colour), site labels at lower zoom with collision handling (currently `cam.dist < 1.9` with a filter or `< 1.55`), imagery fallback (relax cloud cover, Sentinel-1 radar, "last clear view" date).
 5. **Content automation:** done for the robot (build 43+): library index, About EN/CS, social cards, brief lede, welcome fallbacks and `mail-lib.php` compute counts (`oreorbit_pages.counts()`, `w_en()`, `w_cs()`); consistency scan runs in CI. Still static (guarded by the scan, not computed): atlas `index.html`/`index.php` SEO copy and the atlas JS strings.
 6. **Higher-value services:** data API/feed, multi-seat team alerts, BOM screening (see brief).
