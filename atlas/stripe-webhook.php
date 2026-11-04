@@ -42,7 +42,9 @@ if ($type === 'checkout.session.completed') {
             $parts = explode('|', (string) hex2bin($crid));
             $allowed = ['ree', 'ti', 'w', 'sb', 'ga', 'ge', 'li', 'co', 'ni', 'gr', 'mg', 'mn'];
             $cm = array_values(array_intersect(array_filter(explode(',', $parts[0] ?? '')), $allowed));
-            $co = substr(preg_replace('/[^a-z0-9 ,\-]/', '', (string) ($parts[1] ?? '')), 0, 40);
+            require_once __DIR__ . '/other-lib.php';
+            $co = implode(',', oo_other_ids((string) ($parts[1] ?? '')));   /* allow-listed ids, e.g. "cu,sn" */
+            if ($co === '') { $co = substr(preg_replace('/[^a-z0-9 ,\-]/', '', (string) ($parts[1] ?? '')), 0, 40); }   /* a checkout started before the allow-list: kept as typed */
             $cl = ($parts[2] ?? '') === 'cs' ? 'cs' : 'en';
             if ($cm || $co) { $mins = $cm; $lang = $cl; }
             if (($f = @fopen($dir . '/subscribers.csv', 'a'))) { flock($f, LOCK_EX); fputcsv($f, [date('c'), 'monitoring', $email, implode(' ', $mins), '', $lang, $co], ',', '"', ''); flock($f, LOCK_UN); fclose($f); }

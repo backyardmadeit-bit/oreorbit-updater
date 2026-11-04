@@ -1,0 +1,485 @@
+{
+ "_about": "Minerals a monitoring client can add beyond the tracked ones. Read by the atlas (autocomplete), go-pay.php and stripe-webhook.php (only these ids are accepted) and the robot (news query q). Keep ids lowercase a-z, at most 3 per client.",
+ "max": 3,
+ "tracked": {
+  "ree": [
+   "rare earths",
+   "rare earth",
+   "rare-earth elements",
+   "ree",
+   "neodymium",
+   "nd",
+   "praseodymium",
+   "dysprosium",
+   "terbium",
+   "samarium",
+   "vzácné zeminy",
+   "neodym",
+   "dysprosium",
+   "terbium",
+   "samarium"
+  ],
+  "ti": [
+   "titanium",
+   "ti",
+   "titan"
+  ],
+  "w": [
+   "tungsten",
+   "wolfram"
+  ],
+  "sb": [
+   "antimony",
+   "sb",
+   "antimon"
+  ],
+  "mg": [
+   "magnesium",
+   "mg",
+   "hořčík"
+  ],
+  "mn": [
+   "manganese",
+   "mn",
+   "mangan"
+  ],
+  "ga": [
+   "gallium",
+   "ga",
+   "galium"
+  ],
+  "ge": [
+   "germanium",
+   "ge"
+  ],
+  "li": [
+   "lithium",
+   "li"
+  ],
+  "co": [
+   "cobalt",
+   "kobalt"
+  ],
+  "ni": [
+   "nickel",
+   "nikl"
+  ],
+  "gr": [
+   "graphite",
+   "grafit",
+   "natural graphite",
+   "přírodní grafit"
+  ]
+ },
+ "other": [
+  {
+   "id": "al",
+   "en": "Aluminium",
+   "cs": "Hliník",
+   "q": [
+    "aluminium",
+    "bauxite"
+   ],
+   "aka": [
+    "aluminum",
+    "al",
+    "bauxite",
+    "bauxit",
+    "hliník"
+   ]
+  },
+  {
+   "id": "as",
+   "en": "Arsenic",
+   "cs": "Arsen",
+   "q": [
+    "arsenic"
+   ],
+   "aka": [
+    "arsen"
+   ]
+  },
+  {
+   "id": "ba",
+   "en": "Baryte",
+   "cs": "Baryt",
+   "q": [
+    "baryte",
+    "barite"
+   ],
+   "aka": [
+    "barite",
+    "ba",
+    "baryt",
+    "barium"
+   ]
+  },
+  {
+   "id": "be",
+   "en": "Beryllium",
+   "cs": "Beryllium",
+   "q": [
+    "beryllium"
+   ],
+   "aka": []
+  },
+  {
+   "id": "bi",
+   "en": "Bismuth",
+   "cs": "Bismut",
+   "q": [
+    "bismuth"
+   ],
+   "aka": [
+    "bi",
+    "bismut"
+   ]
+  },
+  {
+   "id": "b",
+   "en": "Boron",
+   "cs": "Bor",
+   "q": [
+    "boron",
+    "borates"
+   ],
+   "aka": [
+    "borates",
+    "borate",
+    "bor",
+    "boritany"
+   ]
+  },
+  {
+   "id": "cd",
+   "en": "Cadmium",
+   "cs": "Kadmium",
+   "q": [
+    "cadmium"
+   ],
+   "aka": [
+    "cd",
+    "kadmium"
+   ]
+  },
+  {
+   "id": "cr",
+   "en": "Chromium",
+   "cs": "Chrom",
+   "q": [
+    "chromium",
+    "chrome ore"
+   ],
+   "aka": [
+    "chrome",
+    "cr",
+    "chrom"
+   ]
+  },
+  {
+   "id": "cu",
+   "en": "Copper",
+   "cs": "Měď",
+   "q": [
+    "copper"
+   ],
+   "aka": [
+    "cu",
+    "měď"
+   ]
+  },
+  {
+   "id": "f",
+   "en": "Fluorspar",
+   "cs": "Kazivec",
+   "q": [
+    "fluorspar",
+    "fluorite"
+   ],
+   "aka": [
+    "fluorite",
+    "fluorit",
+    "kazivec",
+    "fluor"
+   ]
+  },
+  {
+   "id": "hf",
+   "en": "Hafnium",
+   "cs": "Hafnium",
+   "q": [
+    "hafnium"
+   ],
+   "aka": [
+    "hf"
+   ]
+  },
+  {
+   "id": "he",
+   "en": "Helium",
+   "cs": "Helium",
+   "q": [
+    "helium"
+   ],
+   "aka": []
+  },
+  {
+   "id": "in",
+   "en": "Indium",
+   "cs": "Indium",
+   "q": [
+    "indium"
+   ],
+   "aka": []
+  },
+  {
+   "id": "ir",
+   "en": "Iridium",
+   "cs": "Iridium",
+   "q": [
+    "iridium"
+   ],
+   "aka": [
+    "ir"
+   ]
+  },
+  {
+   "id": "mo",
+   "en": "Molybdenum",
+   "cs": "Molybden",
+   "q": [
+    "molybdenum"
+   ],
+   "aka": [
+    "mo",
+    "molybden",
+    "moly"
+   ]
+  },
+  {
+   "id": "nb",
+   "en": "Niobium",
+   "cs": "Niob",
+   "q": [
+    "niobium"
+   ],
+   "aka": [
+    "nb",
+    "niob",
+    "columbium"
+   ]
+  },
+  {
+   "id": "pd",
+   "en": "Palladium",
+   "cs": "Palladium",
+   "q": [
+    "palladium"
+   ],
+   "aka": [
+    "pd"
+   ]
+  },
+  {
+   "id": "p",
+   "en": "Phosphate rock",
+   "cs": "Fosfáty",
+   "q": [
+    "phosphate rock",
+    "phosphorus"
+   ],
+   "aka": [
+    "phosphate",
+    "phosphorus",
+    "fosfát",
+    "fosfáty",
+    "fosfor"
+   ]
+  },
+  {
+   "id": "pt",
+   "en": "Platinum",
+   "cs": "Platina",
+   "q": [
+    "platinum"
+   ],
+   "aka": [
+    "pt",
+    "platina",
+    "pgm",
+    "platinum group metals",
+    "platinové kovy"
+   ]
+  },
+  {
+   "id": "re",
+   "en": "Rhenium",
+   "cs": "Rhenium",
+   "q": [
+    "rhenium"
+   ],
+   "aka": []
+  },
+  {
+   "id": "rh",
+   "en": "Rhodium",
+   "cs": "Rhodium",
+   "q": [
+    "rhodium"
+   ],
+   "aka": [
+    "rh"
+   ]
+  },
+  {
+   "id": "sc",
+   "en": "Scandium",
+   "cs": "Skandium",
+   "q": [
+    "scandium"
+   ],
+   "aka": [
+    "sc",
+    "skandium"
+   ]
+  },
+  {
+   "id": "se",
+   "en": "Selenium",
+   "cs": "Selen",
+   "q": [
+    "selenium"
+   ],
+   "aka": [
+    "selen"
+   ]
+  },
+  {
+   "id": "si",
+   "en": "Silicon metal",
+   "cs": "Křemík",
+   "q": [
+    "silicon metal",
+    "polysilicon"
+   ],
+   "aka": [
+    "silicon",
+    "polysilicon",
+    "křemík",
+    "polykrystalický křemík"
+   ]
+  },
+  {
+   "id": "ag",
+   "en": "Silver",
+   "cs": "Stříbro",
+   "q": [
+    "silver"
+   ],
+   "aka": [
+    "ag",
+    "stříbro"
+   ]
+  },
+  {
+   "id": "sr",
+   "en": "Strontium",
+   "cs": "Stroncium",
+   "q": [
+    "strontium"
+   ],
+   "aka": [
+    "sr",
+    "stroncium"
+   ]
+  },
+  {
+   "id": "ta",
+   "en": "Tantalum",
+   "cs": "Tantal",
+   "q": [
+    "tantalum",
+    "coltan"
+   ],
+   "aka": [
+    "ta",
+    "tantal",
+    "coltan",
+    "koltan"
+   ]
+  },
+  {
+   "id": "te",
+   "en": "Tellurium",
+   "cs": "Tellur",
+   "q": [
+    "tellurium"
+   ],
+   "aka": [
+    "te",
+    "tellur"
+   ]
+  },
+  {
+   "id": "sn",
+   "en": "Tin",
+   "cs": "Cín",
+   "q": [
+    "tin"
+   ],
+   "aka": [
+    "sn",
+    "cín"
+   ]
+  },
+  {
+   "id": "u",
+   "en": "Uranium",
+   "cs": "Uran",
+   "q": [
+    "uranium"
+   ],
+   "aka": [
+    "uran"
+   ]
+  },
+  {
+   "id": "v",
+   "en": "Vanadium",
+   "cs": "Vanad",
+   "q": [
+    "vanadium"
+   ],
+   "aka": [
+    "vanad"
+   ]
+  },
+  {
+   "id": "zn",
+   "en": "Zinc",
+   "cs": "Zinek",
+   "q": [
+    "zinc"
+   ],
+   "aka": [
+    "zn",
+    "zinek"
+   ]
+  },
+  {
+   "id": "zr",
+   "en": "Zirconium",
+   "cs": "Zirkonium",
+   "q": [
+    "zirconium",
+    "zircon"
+   ],
+   "aka": [
+    "zr",
+    "zircon",
+    "zirkon",
+    "zirkonium"
+   ]
+  }
+ ]
+}

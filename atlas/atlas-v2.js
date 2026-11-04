@@ -1727,13 +1727,15 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const keys = () => [...(PK() || pk).querySelectorAll(".chip2[data-my]")].map((b) => [b.dataset.my, b.textContent.trim()]);
       const cur = () => own || [...(PK() || pk).querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.dataset.my);
       window.ooMonMins = () => cur();
-      window.ooMonSet = (list) => { const k = keys().map(([x]) => x), want = k.filter((x) => (list || []).includes(x)); if (!want.length) return; own = want; box.hidden = true; draw(); };   // v43: set from the quick check
+      window.ooMonDraw = () => draw();
+      window.ooMonSet = (list, keepOpen) => { const k = keys().map(([x]) => x), want = k.filter((x) => (list || []).includes(x)); if (!want.length) return; own = want; if (!keepOpen) box.hidden = true; draw(); };   // v43: set from the quick check
       const line = document.createElement("p"); line.className = "wk3-m mon-for";
       const box = document.createElement("div"); box.className = "wk3-pick"; box.hidden = true;
       const form = cell.querySelector(".oo-sub"); cell.insertBefore(line, form); cell.insertBefore(box, form);
       const draw = () => {
         const sel = cur(), names = keys().filter(([k]) => sel.includes(k)).map(([, n]) => n);
-        line.innerHTML = `${esc(T("Watch: ", "Hlídat: "))}<span>${esc(names.length ? names.join(", ") : T("all twelve minerals", "všech dvanáct surovin"))}</span> · <button type="button" class="wk3-ch">${esc(box.hidden ? T("change", "změnit") : T("done", "hotovo"))}</button>`;
+        const oth = window.ooMonOtherNames ? window.ooMonOtherNames() : [];
+        line.innerHTML = `${esc(T("Watch: ", "Hlídat: "))}<span>${esc((names.length ? names.join(", ") : T("all twelve minerals", "všech dvanáct surovin")) + (oth.length ? " + " + oth.join(", ") : ""))}</span> · <button type="button" class="wk3-ch">${esc(box.hidden ? T("change", "změnit") : T("done", "hotovo"))}</button>`;
         box.innerHTML = keys().map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${sel.includes(k)}">${esc(n)}</button>`).join("");
       };
       document.addEventListener("click", (ev) => {
@@ -1768,7 +1770,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 43"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 44"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1819,7 +1821,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 43 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 44 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1854,13 +1856,92 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `<p class="pl3-man">${esc(T("Already a client?", "Už jste klient?"))} <a href="manage.php">${esc(T("Manage or cancel your subscription", "Spravovat nebo zrušit předplatné"))} →</a></p>`;
       row.after(g);
     }
-    /* any mineral beyond the ten: typed in, watched in the news for this client */
+    /* v44: minerals beyond the tracked ones, from an allow-list (data/other-minerals.json, the same file go-pay.php
+       and the robot read): autocomplete, up to three chips, an inline error for anything not on the list */
     const col = document.querySelector(".pl3-b"), forL = col && col.querySelector(".mon-for");
     if (col && forL && !col.querySelector(".mon-other")) {
-      const w = document.createElement("label"); w.className = "mon-other";
-      w.innerHTML = `<span>${esc(T("Other minerals (optional)", "Další suroviny (nepovinné)"))}</span><input type="text" maxlength="80" autocomplete="off" placeholder="${esc(T("e.g. magnesium, manganese, copper", "např. hořčík, mangan, měď"))}">`;
+      const w = document.createElement("div"); w.className = "mon-other";
+      w.innerHTML = `<label for="mo-in">${esc(T("Other minerals (optional, up to three)", "Další suroviny (nepovinné, nejvýš tři)"))}</label>` +
+        `<div class="mo-box"><span class="mo-chips"></span><input id="mo-in" type="text" maxlength="40" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mo-list" placeholder="${esc(T("e.g. copper, tin, niobium", "např. měď, cín, niob"))}"><div class="mo-list" id="mo-list" role="listbox" hidden></div></div>` +
+        `<p class="mo-msg" role="status" aria-live="polite"></p>`;
       const pk = col.querySelector(".wk3-pick"); (pk || forL).after(w);
-      window.ooMonOther = () => (w.querySelector("input").value || "").trim();
+      const inp = w.querySelector("input"), chips = w.querySelector(".mo-chips"), list = w.querySelector(".mo-list"), msg = w.querySelector(".mo-msg");
+      let LIST = null, MAX = 3, TRK = {}, chosen = [], opts = [], act = -1;
+      const norm = (x) => String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+      const nm = (o) => (CS ? o.cs : o.en);
+      const keysOf = (o) => [o.id, o.en, o.cs].concat(o.aka || []).map(norm);
+      const trName = (k) => { try { return O.mName(k); } catch (e) { return k; } };
+      fetch("data/other-minerals.json?v=1").then((r) => r.json()).then((j) => {
+        LIST = Array.isArray(j.other) ? j.other : []; MAX = j.max || 3;
+        Object.keys(j.tracked || {}).forEach((k) => (j.tracked[k] || []).concat([k]).forEach((a) => { TRK[norm(a)] = k; }));
+      }).catch(() => { LIST = []; });
+      const say = (t, bad) => { msg.textContent = t || ""; msg.classList.toggle("bad", !!bad); inp.setAttribute("aria-invalid", bad ? "true" : "false"); };
+      const redraw = () => {
+        chips.innerHTML = chosen.map((id) => { const o = LIST.find((x) => x.id === id); return o ? `<button type="button" class="mo-chip" data-id="${id}" aria-label="${esc(T("Remove ", "Odebrat ") + nm(o))}">${esc(nm(o))}<i aria-hidden="true">×</i></button>` : ""; }).join("");
+        inp.placeholder = chosen.length >= MAX ? "" : T("e.g. copper, tin, niobium", "např. měď, cín, niob");
+        if (window.ooMonDraw) window.ooMonDraw();
+      };
+      const close = () => { list.hidden = true; inp.setAttribute("aria-expanded", "false"); inp.removeAttribute("aria-activedescendant"); opts = []; act = -1; };
+      const open = () => {
+        const n = norm(inp.value); opts = [];
+        if (n.length >= 2 && LIST) {
+          const hit = (k) => k.startsWith(n) || (n.length >= 3 && k.includes(n));
+          const seen = new Set();
+          Object.keys(TRK).forEach((a) => { const k = TRK[a]; if (hit(a) && !seen.has(k)) { seen.add(k); opts.push({ tracked: k }); } });
+          LIST.forEach((o) => { if (!chosen.includes(o.id) && keysOf(o).some(hit)) opts.push({ o }); });
+          opts = opts.slice(0, 7);
+        }
+        if (!opts.length) { close(); return; }
+        act = 0;
+        list.innerHTML = opts.map((x, i) => `<div role="option" id="mo-o${i}" class="mo-opt" data-i="${i}" aria-selected="${i === act}">${x.o ? esc(nm(x.o)) : esc(trName(x.tracked)) + ` <small>${esc(T("already tracked", "už sledujeme"))}</small>`}</div>`).join("");
+        list.hidden = false; inp.setAttribute("aria-expanded", "true"); inp.setAttribute("aria-activedescendant", "mo-o0");
+      };
+      const mark = () => list.querySelectorAll(".mo-opt").forEach((el, i) => { el.setAttribute("aria-selected", String(i === act)); if (i === act) inp.setAttribute("aria-activedescendant", el.id); });
+      const addTracked = (k) => {
+        const cur = window.ooMonMins ? window.ooMonMins() : [];
+        if (window.ooMonSet) window.ooMonSet(cur.includes(k) ? cur : cur.concat([k]), true);   // the picker stays open while typing
+        say(T("Monitoring always covers " + trName(k) + ". Added to your selection above.", "Surovinu „" + trName(k) + "“ monitoring sleduje vždy. Přidali jsme ji do vašeho výběru výše."));
+      };
+      const take = (x) => {
+        inp.value = ""; close();
+        if (x.tracked) { addTracked(x.tracked); return true; }
+        if (chosen.includes(x.o.id)) { say(""); return true; }
+        if (chosen.length >= MAX) { say(T("Up to three other minerals. Remove one first.", "Nejvýš tři další suroviny. Nejdřív jednu odeberte."), true); return false; }
+        chosen.push(x.o.id); redraw(); say(""); ooHit("act:mon-other"); return true;
+      };
+      const unknown = (t) => say(T("We do not cover “" + t + "” yet. Pick one from the list, or write to david@madali.cz and we will look at it.",
+                                  "„" + t + "“ zatím nesledujeme. Vyberte surovinu ze seznamu, nebo napište na david@madali.cz a podíváme se na to."), true);
+      const resolve = (t) => { const n = norm(t); if (!n) return null; if (TRK[n]) return { tracked: TRK[n] }; const o = (LIST || []).find((x) => keysOf(x).includes(n)); return o ? { o } : null; };
+      /* commits what is typed; false (and an error under the field) when something is not on the list */
+      const commit = () => {
+        const parts = inp.value.split(/[,;]+/).map((x) => x.trim()).filter(Boolean);
+        if (!parts.length) { inp.value = ""; return true; }
+        const bad = [];
+        parts.forEach((t) => { const r = resolve(t); if (!r) bad.push(t); else if (!take(r)) bad.push(t); });
+        if (bad.length) { inp.value = bad.join(", "); if (!msg.classList.contains("bad")) unknown(bad[0]); return false; }
+        return true;
+      };
+      inp.addEventListener("input", () => { if (msg.classList.contains("bad")) say(""); if (/[,;]/.test(inp.value)) { commit(); return; } open(); });
+      inp.addEventListener("keydown", (ev) => {
+        if (ev.key === "ArrowDown" && opts.length) { ev.preventDefault(); act = (act + 1) % opts.length; mark(); }
+        else if (ev.key === "ArrowUp" && opts.length) { ev.preventDefault(); act = (act - 1 + opts.length) % opts.length; mark(); }
+        else if (ev.key === "Enter") { ev.preventDefault(); if (!list.hidden && opts[act]) take(opts[act]); else commit(); }
+        else if (ev.key === "Escape") { close(); }
+        else if (ev.key === "Backspace" && !inp.value && chosen.length) { chosen.pop(); redraw(); }
+      });
+      inp.addEventListener("blur", () => setTimeout(() => { if (!w.contains(document.activeElement)) { close(); if (inp.value.trim()) commit(); } }, 150));
+      list.addEventListener("mousedown", (ev) => { const el = ev.target.closest(".mo-opt"); if (!el) return; ev.preventDefault(); take(opts[+el.dataset.i]); inp.focus(); });
+      chips.addEventListener("click", (ev) => { const b = ev.target.closest(".mo-chip"); if (!b) return; chosen = chosen.filter((x) => x !== b.dataset.id); redraw(); say(""); inp.focus(); });
+      window.ooMonOther = () => chosen.join(",");
+      window.ooMonOtherNames = () => chosen.map((id) => { const o = (LIST || []).find((x) => x.id === id); return o ? nm(o) : id; });
+      /* before payment: anything still typed must be on the list; the field opens and explains if not */
+      window.ooMonOtherCheck = () => {
+        if (!inp.value.trim()) return true;
+        if (commit()) return true;
+        const box = col.querySelector(".wk3-pick"); if (box && box.hidden) { const ch = col.querySelector(".mon-for .wk3-ch"); if (ch) ch.click(); }
+        setTimeout(() => { try { inp.focus(); w.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} }, 60);
+        return false;
+      };
     }
   }
   try { v38(); } catch (e) { window.ooErrs && window.ooErrs.push("v38: " + e.message); }
@@ -1878,6 +1959,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     cell.append(b, note);
     b.addEventListener("click", (ev) => {
       ev.preventDefault();
+      if (window.ooMonOtherCheck && !window.ooMonOtherCheck()) { ooHit("act:mon-other-bad"); return; }
       const mins = (window.ooMonMins ? window.ooMonMins() : []).join(",");
       const other = window.ooMonOther ? window.ooMonOther() : "";
       ooHit("act:to-pay");
