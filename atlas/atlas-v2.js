@@ -672,9 +672,27 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           return { m, name: O.mName(m), use: p[2][m], color: col, pct: x ? x.pct : null,
             share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}` : T("China leads (no public world total)", "Vede Čína (veřejný světový údaj neexistuje)"),
             imp: imp && imp.tp ? `${imp.tp.pct}% ${T("from", "z")} ${land(imp.tp.cc)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
+      // v43 funnel: 1. monitoring for exactly these minerals, 2. the full review, 3. a call (as a text link)
+      const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
+      const BK43 = O.safeUrl ? (O.safeUrl(C43.bookingUrl) || "mailto:david@madali.cz") : (C43.bookingUrl || "mailto:david@madali.cz");
+      const n43 = ms.length, csW = n43 >= 2 && n43 <= 4 ? "tyto " + n43 + " suroviny" : "těchto " + n43 + " surovin";
       out.innerHTML = `<p class="qc-sum">${sum}</p>${dl}<div class="qc-rows">${rows}</div>
-        <div class="qc-ctas"><a class="btn" href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Get a full review of your product line", "Plné posouzení vaší výrobní řady")}</a><a class="btn ghost" href="#assess">${T("List your own parts", "Zadat vlastní díly")}</a><a class="btn ghost" href="oreorbit-sample-assessment.pdf">${T("Sample review (PDF)", "Ukázkové posouzení (PDF)")}</a><button type="button" class="btn ghost qc-pdf">${T("Download my result (PDF)", "Stáhnout výsledek (PDF)")}</button></div>`;
+        <div class="qc-ctas"><a class="btn qc-mon" href="#teams">${esc(T("Get alerts for these " + n43 + " minerals", "Hlídat " + csW))}</a><a class="btn ghost" href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Full review of your product line", "Plné posouzení vaší výrobní řady")}</a><button type="button" class="btn ghost qc-pdf">${T("Download my result (PDF)", "Stáhnout výsledek (PDF)")}</button></div>
+        <p class="qc-cta-note">${esc(T("Monitoring: an email the same day something changes for these minerals, €" + PR43 + " a month, cancel anytime.", "Monitoring: e-mail ještě týž den, kdy se u těchto surovin něco změní, " + PR43 + " € měsíčně, zrušíte kdykoli."))} ${esc(T("Not sure yet?", "Ještě si nejste jistí?"))} <a href="${esc(BK43)}" target="_blank" rel="noopener">${esc(T("Book a 30-minute call", "Domluvte si 30minutový hovor"))}</a></p>`;
       out.querySelector(".qc-pdf").addEventListener("click", printResult);
+      out.querySelector(".qc-mon").addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ooHit("act:qc-mon");
+        try { const s = snd(); if (s) s.tick(); } catch (e) {}
+        if (window.ooMonSet) window.ooMonSet(ms);   // the plan's "Watch:" line takes exactly this product's minerals
+        const col = document.querySelector("#teams .pl3-b"), card = col || document.querySelector("#teams .pl3") || document.getElementById("teams");
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "start" });   // the monitoring card's top, below the fixed header (scroll-margin in CSS)
+          if (col) { col.classList.remove("qc-hl"); void col.offsetWidth; col.classList.add("qc-hl"); setTimeout(() => col.classList.remove("qc-hl"), 2600); }
+          const pay = document.querySelector("#teams .pl3-pay"); if (pay) setTimeout(() => { try { pay.focus({ preventScroll: true }); } catch (e) {} }, 700);
+        }
+        try { history.replaceState(null, "", "#teams"); } catch (e) {}
+      });
       out.querySelectorAll(".qc-row").forEach((r) => r.addEventListener("click", () => { const s = snd(); if (s) s.tick(); O.showMaterial(r.dataset.m); }));
       const s = quiet ? null : snd();
       if (s) ms.forEach((m, i) => setTimeout(() => { const f = 330 * Math.pow(2, PENT[O.ORDER.indexOf(m)] / 12); s.blip(f, f, 0.16, 0.035, "triangle"); }, 90 * i));
@@ -1709,6 +1727,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const keys = () => [...(PK() || pk).querySelectorAll(".chip2[data-my]")].map((b) => [b.dataset.my, b.textContent.trim()]);
       const cur = () => own || [...(PK() || pk).querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.dataset.my);
       window.ooMonMins = () => cur();
+      window.ooMonSet = (list) => { const k = keys().map(([x]) => x), want = k.filter((x) => (list || []).includes(x)); if (!want.length) return; own = want; box.hidden = true; draw(); };   // v43: set from the quick check
       const line = document.createElement("p"); line.className = "wk3-m mon-for";
       const box = document.createElement("div"); box.className = "wk3-pick"; box.hidden = true;
       const form = cell.querySelector(".oo-sub"); cell.insertBefore(line, form); cell.insertBefore(box, form);
@@ -1749,7 +1768,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 42"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 43"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1800,7 +1819,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 42 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 43 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
