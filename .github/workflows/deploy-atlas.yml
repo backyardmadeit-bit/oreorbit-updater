@@ -1,0 +1,73 @@
+name: Deploy atlas
+
+# PR:    connects to WEDOS read-only and lists what the merge would upload.
+# main:  uploads the atlas files changed by the push. Never deletes on the server.
+# Manual run with "full" uploads every tracked atlas file (still skipping protected paths).
+
+on:
+  push:
+    branches: [main]
+    paths: ["atlas/**", ".github/workflows/deploy-atlas.yml", ".github/scripts/deploy-atlas.sh"]
+  pull_request:
+    paths: ["atlas/**", ".github/workflows/deploy-atlas.yml", ".github/scripts/deploy-atlas.sh"]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Upload every atlas file, not only the changed ones"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-atlas-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Syntax check (JS)
+        run: for f in atlas/*.js; do node --check "$f"; done
+
+      - name: Install lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp >/dev/null
+
+      - name: Work out what to upload
+        id: range
+        env:
+          EVENT: ${{ github.event_name }}
+          FULL: ${{ inputs.full }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            echo "range=$(git merge-base "$PR_BASE" HEAD) HEAD" >> "$GITHUB_OUTPUT"
+            echo "mode=check" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT" = "workflow_dispatch" ] && [ "$FULL" = "true" ]; then
+            echo "range=all" >> "$GITHUB_OUTPUT"; echo "mode=deploy" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT" = "workflow_dispatch" ] || [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "range=HEAD~1 HEAD" >> "$GITHUB_OUTPUT"; echo "mode=deploy" >> "$GITHUB_OUTPUT"
+          else
+            echo "range=$BEFORE HEAD" >> "$GITHUB_OUTPUT"; echo "mode=deploy" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ${{ steps.range.outputs.mode == 'check' && 'Check FTP access (read-only)' || 'Upload to WEDOS' }}
+        env:
+          MODE: ${{ steps.range.outputs.mode }}
+          RANGE: ${{ steps.range.outputs.range }}
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.FTP_PASS }}
+          FTP_VERIFY_CERT: ${{ vars.FTP_VERIFY_CERT || 'yes' }}
+        run: |
+          for v in FTP_HOST FTP_USER LFTP_PASSWORD; do
+            [ -n "${!v}" ] || { echo "::error::Secret for $v is missing"; exit 1; }
+          done
+          .github/scripts/deploy-atlas.sh
