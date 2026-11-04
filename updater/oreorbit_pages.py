@@ -366,7 +366,7 @@ def about_page(ref, cfg, today):
 <p><a href="https://madali.cz/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali/">Founder page</a></p>
 </div></div></section>
 <section><h2>What it is</h2><ul class="plain">
-<li>A live atlas of 31 mines, refineries and magnet factories, nine trade routes and the chokepoints between them.</li>
+<li>A live atlas of 43 mines, refineries and magnet factories, eleven trade routes and the chokepoints between them.</li>
 <li>Satellite pictures of every site, refreshed weekly: Sentinel-2 photos, ground cleared since 2018, Sentinel-1 radar and Landsat heat maps.</li>
 <li>Signals every few hours: heat at the plants, ships at the chokepoints, earthquakes and disaster alerts, conflict near the supply chain.</li>
 <li>Monthly EU import data and export-control deadlines, a quick check of what any product depends on, and a weekly brief of what is moving.</li>
@@ -636,7 +636,7 @@ def about_page_cs(cfg, today):
 <p><a href="https://madali.cz/cs/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali-cz/">Stránka zakladatele</a></p>
 </div></div></section>
 <section><h2>Co to je</h2><ul class="plain">
-<li>Živý atlas 31 dolů, rafinerií a továren na magnety, devíti obchodních tras a úzkých míst mezi nimi.</li>
+<li>Živý atlas 43 dolů, rafinerií a továren na magnety, jedenácti obchodních tras a úzkých míst mezi nimi.</li>
 <li>Satelitní snímky každé lokality každý týden: fotografie Sentinel-2, odlesněná plocha od roku 2018, radar Sentinel-1 a tepelné mapy Landsat.</li>
 <li>Signály každých pár hodin: teplo v závodech, lodě v úžinách, zemětřesení a výstrahy, konflikty u dodavatelského řetězce.</li>
 <li>Měsíční data o dovozu do EU a termíny vývozních kontrol, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a týdenní přehled toho, co se hýbe.</li>
@@ -682,7 +682,7 @@ def dependency_page_cs(ref, live, today):
     body = """<article style="--c:#3ddc97">
 <p class="kicker"><i></i>Měsíčně · data Eurostatu za %(nom)s</p>
 <h1>Index závislosti OreOrbit</h1>
-<p class="lede">Podíl Číny na tom, co EU dováží ze zemí mimo EU, napříč deseti kritickými surovinami, na kterých stojí evropský obranný průmysl. Každá surovina má stejnou váhu.</p>
+<p class="lede">Podíl Číny na tom, co EU dováží ze zemí mimo EU, napříč deseti surovinami indexu, na kterých stojí evropský obranný průmysl. Každá surovina má stejnou váhu.</p>
 <dl class="figs"><div><dt>%(v)d %%</dt><dd>podíl Číny, %(nom)s</dd></div><div><dt>%(dm)s</dt><dd>změna proti předchozímu měsíci</dd></div><div><dt>%(dy)s</dt><dd>změna proti stejnému měsíci před rokem</dd></div><div><dt>%(over)d z %(n)d</dt><dd>surovin, u kterých Čína dodala víc než polovinu</dd></div></dl>
 <section><h2>Měsíc po měsíci</h2>%(chart)s<p class="small">Průměr podílů Číny na hodnotě dovozu do EU ze zemí mimo EU, se stejnou vahou pro každou surovinu. Zdroj: Eurostat Comext, přes OreOrbit.</p><button type="button" class="dl" data-label="Stáhnout graf (SVG)" hidden>Stáhnout graf (SVG)</button></section>
 <section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
