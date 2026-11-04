@@ -27,6 +27,7 @@ import csv
 import datetime as dt
 import hashlib
 import io
+import re
 import json
 import math
 import os
@@ -279,6 +280,11 @@ def feed_hazards(prev):
     out.update({"fetchedAt": iso(), "quakes": quakes[:150], "sources": ["USGS", "GDACS"]})
     note = "ok (%d quakes M5+)" % len(quakes)
     try:
+        out["rivers"], rn = river_levels(prev.get("rivers") or [])
+        note += ", %s" % rn
+    except Exception as e:
+        note += ", rivers kept from last run (%s)" % str(e)[:120]
+    try:
         alerts, how = gdacs_alerts((TODAY - dt.timedelta(days=10)).isoformat())
         out["alerts"] = alerts
         out["gdacsAt"] = iso()
@@ -287,6 +293,39 @@ def feed_hazards(prev):
         note += ", GDACS kept from last run (%s)" % str(e)[:400]
     return out, note
 
+
+RIVERS = [  # the inland routes that carry ores, metals and parts into Central European industry
+    {"id": "kaub", "station": "KAUB", "name": "Kaub", "river": "Rhine", "river_cs": "Rýn", "lat": 50.085, "lng": 7.765},
+    {"id": "duisburg", "station": "DUISBURG-RUHRORT", "name": "Duisburg", "river": "Rhine", "river_cs": "Rýn", "lat": 51.455, "lng": 6.73},
+    {"id": "dresden", "station": "DRESDEN", "name": "Dresden", "river": "Elbe", "river_cs": "Labe", "lat": 51.054, "lng": 13.739},
+]
+
+def river_levels(prev):
+    """Current water level at each gauge and whether it is below mean low water or above mean high water."""
+    old = {r.get("id"): r for r in prev if isinstance(r, dict)}
+    out, ok = [], 0
+    for r in RIVERS:
+        try:
+            j = jget("https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/%s/W/currentmeasurement.json" % urllib.parse.quote(r["station"]))
+            st = str(j.get("stateMnwMhw") or "unknown").lower()
+            out.append(dict(r, cm=round(float(j["value"])), state=st if st in ("low", "normal", "high") else "unknown", t=j.get("timestamp"),
+                            url="https://www.pegelonline.wsv.de/gast/stammdaten?pegelnr=" + urllib.parse.quote(r["station"])))
+            ok += 1
+        except Exception:
+            if r["id"] in old:
+                out.append(old[r["id"]])
+    return out, "%d of %d river gauges" % (ok, len(RIVERS))
+
+def river_lines(cs, only_unusual=True):
+    """For the emails: the gauges that are low or high (a line each)."""
+    rv = (current("live-data/live/hazards.json") or {}).get("rivers") or []
+    lines = []
+    for r in rv:
+        if only_unusual and r.get("state") not in ("low", "high"):
+            continue
+        what = {"low": ("nízká voda: lodě vezou méně nákladu" if cs else "low water: barges carry less cargo"), "high": ("vysoká voda: plavba může být omezená" if cs else "high water: shipping may be restricted")}.get(r.get("state"), "")
+        lines.append(_esc("%s, %s: %s cm%s" % ((r.get("river_cs") if cs else r.get("river")) or "", r.get("name", ""), r.get("cm", "?"), (" · " + what) if what else "")))
+    return lines
 
 def feed_scenes(prev):
     prev = prev or {}
@@ -1691,6 +1730,23 @@ def feed_news(prev):
             feeds_ok += 1
         except Exception as e:
             errors.append("%s %s" % (dom, why(e)[:60]))
+    # US export rules (BIS) from the Federal Register: rules that name one of the minerals, with the date they take effect
+    try:
+        since = (TODAY - dt.timedelta(days=21)).isoformat()
+        q = urllib.parse.urlencode([("conditions[agencies][]", "industry-and-security-bureau"), ("conditions[publication_date][gte]", since), ("order", "newest"), ("per_page", "40"),
+                                    ("fields[]", "title"), ("fields[]", "abstract"), ("fields[]", "html_url"), ("fields[]", "publication_date"), ("fields[]", "effective_on"), ("fields[]", "type")])
+        for d in (jget("https://www.federalregister.gov/api/v1/documents.json?" + q).get("results") or []):
+            title, url, day = (d.get("title") or "").strip(), d.get("html_url") or "", d.get("publication_date") or ""
+            mats = [k for k, kw in NEWS_KW.items() if re.search(kw, title + " " + (d.get("abstract") or ""), re.I)]
+            if not title or not mats or not url.startswith("https://") or url in have_url:
+                continue
+            eff = d.get("effective_on")
+            items.append({"id": "%s-fr-%s" % (day, hashlib.md5(url.encode()).hexdigest()[:8]), "date": day, "url": url, "source": "US Federal Register (BIS)",
+                          "title": ("US export rule: %s%s" % (title[:180], (" (takes effect %s)" % eff) if eff else ""))[:220], "materials": mats, "lang": "en", "auto": True, "foundAt": TODAY.isoformat(),
+                          **({"effective": eff} if eff else {})})
+            have_url.add(url); added += 1
+    except Exception as e:
+        errors.append("federalregister %s" % why(e)[:60])
     answered += feeds_ok
     first = int(time.time() // 3600) % len(NEWS_GROUPS)          # a different first question each run
     for k in range(min(2, len(NEWS_GROUPS))):
@@ -2169,7 +2225,8 @@ def send_mail():
             subj = ("OreOrbit · pondělní přehled · " if cs else "OreOrbit · Monday brief · ") + _day(latest["week"], cs)
             ttl = (latest.get("title_cs") or ("Týden v datech, " + _day(latest["week"], True))) if cs else (latest.get("title") or subj)
             led = (latest.get("lede_cs") or "Hlavní změny týdne u vašich surovin, z dat OreOrbit a zpráv týdne.") if cs else (latest.get("lede") or "")
-            html = _mail_html(cs, kicker, ttl, led, [("Tento týden" if cs else "This week", items), ("Nejbližší termíny" if cs else "Next deadlines", dl)], unsub(sb))
+            html = _mail_html(cs, kicker, ttl, led, [("Tento týden" if cs else "This week", items), ("Nejbližší termíny" if cs else "Next deadlines", dl),
+                                                     ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs))], unsub(sb))
             out.append((sb["email"], subj, html))
         state["brief_week"] = latest["week"]
     # 2a. paid clients: a personal Monday edition (status, what it means, deadlines, what moved), once a week
@@ -2214,6 +2271,7 @@ def send_mail():
                               ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
                               [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
                                ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved),
+                               ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs, only_unusual=False)),
                                ("Další suroviny" if cs else "Your other minerals", ['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(t.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for t in _other_terms(sb) for it in _other_news(state, t, pbudget)[:3]]),
                                ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             out.append((e, subj, html))
@@ -2246,6 +2304,11 @@ def send_mail():
             st["ou"] = seen[-400:]
         st["ofirst"] = True   # the first run only learns what already exists, so nobody gets a flood of old stories
         items = items + oth[:6]
+        rv_now = {r.get("id"): r.get("state") for r in ((current("live-data/live/hazards.json") or {}).get("rivers") or [])}
+        rv_was = st.get("riv") or {}
+        if rv_was:
+            items += [x for x in river_lines(cs) if any(rv_now.get(k) in ("low", "high") and rv_was.get(k) != rv_now.get(k) for k in rv_now)][:3]
+        st["riv"] = rv_now
         if items or due:
             subj = ("OreOrbit · upozornění pro vaše suroviny" if cs else "OreOrbit · alert for your minerals")
             html = _mail_html(cs, "Monitoring", ("Co se změnilo u vašich surovin" if cs else "What changed for your minerals"),
