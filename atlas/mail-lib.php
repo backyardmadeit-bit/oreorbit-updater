@@ -90,7 +90,11 @@ function oo_min_names(array $mins, bool $cs): string {
           'ge' => ['Germanium', 'Germanium'], 'li' => ['Lithium', 'Lithium'], 'co' => ['Cobalt', 'Kobalt'], 'ni' => ['Nickel', 'Nikl'], 'gr' => ['Graphite', 'Grafit'], 'mg' => ['Magnesium', 'Hořčík'], 'mn' => ['Manganese', 'Mangan']];
     $out = [];
     foreach ($mins as $m) { if (isset($n[$m])) { $out[] = $n[$m][$cs ? 1 : 0]; } }
-    return $out ? implode(', ', $out) : ($cs ? 'všech dvanáct surovin' : 'all twelve minerals');
+    if ($out) { return implode(', ', $out); }
+    $k = count($n);   // the number of minerals is counted, never typed in
+    $en = [10 => 'ten', 11 => 'eleven', 12 => 'twelve', 13 => 'thirteen', 14 => 'fourteen', 15 => 'fifteen', 16 => 'sixteen'];
+    $cz = [10 => 'deset', 11 => 'jedenáct', 12 => 'dvanáct', 13 => 'třináct', 14 => 'čtrnáct', 15 => 'patnáct', 16 => 'šestnáct'];
+    return $cs ? 'všech ' . ($cz[$k] ?? (string)$k) . ' surovin' : 'all ' . ($en[$k] ?? (string)$k) . ' minerals';
 }
 /* the welcome email for the free Monday brief */
 function oo_welcome_brief(string $email, array $mins, bool $cs): bool {

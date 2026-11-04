@@ -1099,7 +1099,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
                      [T("Test", "Test"), T("Every export control and chokepoint against your stock.", "Každá vývozní kontrola a úžina proti vašim zásobám.")],
                      [T("Check", "Kontrola"), T("An analyst verifies the sources and signs the report.", "Analytik ověří zdroje a podepíše zprávu.")],
                      [T("Hand over", "Předání"), T("The register, the report and the board slides are yours.", "Registr, zpráva i podklady pro vedení jsou vaše.")]];
-      const DOTS = ["#a78bfa", "#fb923c", "#facc15", "#a9b8cc", "#2dd4bf", "#e879f9", "#22d3ee", "#4ade80", "#f472b6", "#60a5fa", "#a3e635", "#e4e4e7"];   /* the ten mineral colours (brand book p. 17) */
+      const DOTS = ["#a78bfa", "#fb923c", "#facc15", "#a9b8cc", "#2dd4bf", "#e879f9", "#22d3ee", "#4ade80", "#f472b6", "#60a5fa", "#a3e635", "#e4e4e7"];   /* the twelve mineral colours (brand book p. 17) */
       const box = document.createElement("div"); box.className = "wx";
       box.innerHTML =
         `<p class="wx-free"><i></i><b>${esc(T("Free", "Zdarma"))}</b> · ${esc(T("the atlas · the quick check · the weekly brief · your parts list · no login", "atlas · rychlá kontrola · týdenní přehled · váš seznam dílů · bez přihlášení"))}</p>` +
