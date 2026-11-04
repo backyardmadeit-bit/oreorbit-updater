@@ -12,14 +12,24 @@ Mac user. Reply to David in Czech unless he writes in English. Be technical and 
 ## The three sites
 | Site | Stack | Hosting / deploy |
 |---|---|---|
-| `bohemiadefense.com/atlas` (OreOrbit) | static HTML/JS (three.js globe) + small PHP endpoints | WEDOS shared hosting, folder `/www/domains/bohemiadefense.com/atlas`, deployed via WebFTP (manual) |
+| `bohemiadefense.com/atlas` (OreOrbit) | static HTML/JS (three.js globe) + small PHP endpoints | WEDOS shared hosting, folder `/www/domains/bohemiadefense.com/atlas`; source in this repo (`atlas/`), auto-deployed over FTPS after merge (see Atlas deploy) |
 | `bohemiadefense.com` | WordPress (Rank Math, W3 Total Cache); homepage + founder pages are Custom HTML blocks | WEDOS; HTML pasted into WP pages `home`, `cs`, `david-madali`, `david-madali-cz`; root files (`llms.txt`) via WebFTP |
 | `madali.cz` | static HTML (EN `index.html`, CS `cs/index.html`) | GitHub Pages repo |
 
 Robot: GitHub repo `oreorbit-updater` (Python), workflow `.github/workflows/update.yml`, cron **every 3 hours**, plus a daily heartbeat commit (`last-run.txt`) that keeps the schedule alive (GitHub disables schedules after 60 days without repo activity in public repos).
-Proposed next step: move the atlas into the repo and auto-deploy to WEDOS over FTP after merge (needs FTP secrets).
 
-## Atlas files (WEDOS `atlas/`)
+## Atlas deploy (since 2026-11-04)
+- Source of truth for hand-written atlas files is `atlas/` in this repo. **Do not edit the atlas via WebFTP any more**: the next deploy overwrites server files with the repo version.
+- Workflow `.github/workflows/deploy-atlas.yml` + `.github/scripts/deploy-atlas.sh` (lftp over FTPS, cert verified, temp file + rename):
+  - **PR:** read-only check — logs in, verifies `index.html`, `atlas-main.js`, `update.php` exist (login must land in the atlas folder), lists what the merge would upload.
+  - **Push to `main`:** uploads only atlas files changed in that push. **Never deletes** on the server (files removed in git are reported as a notice and must be removed by hand).
+  - **Manual run** (Actions → Deploy atlas → Run workflow, `full`): uploads every tracked atlas file.
+- FTP account `w366378_atlas`, chrooted to the atlas folder (remote paths are relative to `atlas/`). GitHub Secrets: `FTP_HOST`, `FTP_USER`, `FTP_PASS`; optional repo variable `FTP_VERIFY_CERT=no` if the certificate ever stops matching.
+- **Not in the repo and never deployed** (git-ignored and skipped by the script's `PROTECTED` regex): server-only configs (templates `*.example.php` are in the repo), `subs/*`, `stats/*` (only their `.htaccess` is tracked), and everything the robot owns on the server via `update.php` `ALLOWED`: `live-data/`, `img/`, `p/`, `sitemap.xml`, `data/terrain/`, `data/{imagery,orbit-extras,timelapse,landsat,emit}.json`. If `ALLOWED` in `update.php` changes, update `PROTECTED` and `.gitignore` too.
+- Pushing: this machine's shell has no GitHub credentials; David pushes branches and opens PRs in GitHub Desktop. Public Actions status can be read via the GitHub REST API without auth (logs need auth).
+- Known harmless 404s: `textures/earth-day-hi.jpg`, `earth-night-hi.jpg` (never uploaded; the globe falls back to the normal textures).
+
+## Atlas files (repo `atlas/` → WEDOS `atlas/`)
 - `index.html` — page shell, CSS variables (mineral colours `--ree … --mn`), static SEO copy. Script tags carry `?v=` cache-busters: **bump them on every change**.
 - `index.php` — serves `index.html` with a server-rendered news/brief block for crawlers; sends `Cache-Control: no-store`.
 - `atlas-main.js` — core: data tables (`GROUPS/ORDER, PIN, MATERIALS, STAGES, STRATEGIC, SYSTEMS, SITES, ROUTES, PROD, CENTROID, ELEM, DEADLINES, CS` dictionary), globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base. `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
@@ -36,7 +46,7 @@ Proposed next step: move the atlas into the repo and auto-deploy to WEDOS over F
 - Email module `send_mail()`: free Monday brief (per subscriber minerals/language), paid personal Monday edition (status, "what it means", deadlines, what moved, rivers, other minerals), same-day alerts (new news, deadline reminders 30/14/7/1, river state changes, other-mineral news via GDELT once a day, max 8 queries/run), welcome fallback for anyone the website did not welcome, delivery log `state["log"]`, Monday delivery report to David.
 - `oreorbit_pages.py` — builds ~87 library pages (`p/*.html`, EN; CS for services/about/index), sitemap, embeds, social cards. **Dependency Index stays on the original ten** (`INDEX_TEN`); Mg/Mn are stored in `extra` beside it.
 - `config.json` — `sites` (43, for imagery/heat/SO2), `shipBoxes` (23, with `mins` for mineral ports), `sats`, `fred`, `portwatch`.
-- Secrets (GitHub): `ATLAS_KEY`, `FIRMS_MAP_KEY`, `FRED_API_KEY`, `AISSTREAM_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`.
+- Secrets (GitHub): `ATLAS_KEY`, `FIRMS_MAP_KEY`, `FRED_API_KEY`, `AISSTREAM_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`; atlas deploy: `FTP_HOST`, `FTP_USER`, `FTP_PASS`.
 
 ## Minerals (12) — ids, colours, order
 `ree` Nd #a78bfa · `ti` Ti #fb923c · `w` W #facc15 · `sb` Sb #a9b8cc · `mg` Mg #2dd4bf · `mn` Mn #e879f9 · `ga` Ga #22d3ee · `ge` Ge #4ade80 · `li` Li #f472b6 · `co` Co #60a5fa · `ni` Ni #a3e635 · `gr` C #e4e4e7
@@ -63,6 +73,7 @@ Flow: plans → `go-pay.php` → Stripe → webhook → `monitoring-active.txt` 
 - WEDOS SMTP from PHP can be slow or blocked: always reply to the browser/Stripe first (`oo_reply_now`), then send mail; the robot re-sends welcomes that did not go out.
 
 ## Checks before merge
+0. Atlas changes: the PR's "Deploy atlas" check must pass (it also runs `node --check` on `atlas/*.js`); after merge, confirm the deploy run succeeded and the live files match the repo (md5 of a few changed files).
 1. `node --check` all JS; `python3 -m py_compile` robot files; PHP bracket balance (no PHP CLI locally) or `php -l` if available.
 2. Build the library with `oreorbit_pages.build()` against local data; all pages build, JSON-LD parses.
 3. Consistency scan of **built HTML + every source file on all three sites** for stale counts (regex on 31/9/10/ten/nine/deset/deseti/devíti near minerals/sites/routes words; allow-list: Dependency Index "ten index minerals", changelog "First version …"). Compare against computed truth: `len(order)`, `len(sites)`, route count.
