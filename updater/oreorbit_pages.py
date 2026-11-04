@@ -335,8 +335,8 @@ def site_page(s, ref, live, today):
 
 def index_page(ref, today):
     path = "p/index.html"
-    title = "The OreOrbit library: ten critical minerals and 31 sites"
-    desc = "Readable, citable pages on the ten critical raw materials behind Europe's defence and the 31 mines and plants OreOrbit watches from orbit."
+    title = "The OreOrbit library: twelve critical minerals and 43 sites"
+    desc = "Readable, citable pages on the twelve critical raw materials behind Europe's defence and the 43 mines and plants OreOrbit watches from orbit."
     rows = []
     for m in ref["order"]:
         R = ref["materials"][m]
@@ -358,7 +358,7 @@ def about_page(ref, cfg, today):
     desc = "OreOrbit is a free, live atlas of the critical raw materials behind Europe's defence and space industries, built by David Madali at Bohemia Defense in Prague."
     mail = cfg.get("contactEmail") or "david@madali.cz"
     body = """<h1>About OreOrbit</h1>
-<p class="lede">Europe's defence runs on ten minerals, and for seven of them China controls at least one stage of the supply chain. OreOrbit shows where those minerals are mined and refined, how they reach Europe, and what is changing this week, from public data and satellite pictures.</p>
+<p class="lede">Europe's defence runs on twelve minerals, and for nine of them China controls at least one stage of the supply chain. OreOrbit shows where those minerals are mined and refined, how they reach Europe, and what is changing this week, from public data and satellite pictures.</p>
 <section><h2>Who is behind it</h2>
 <div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/"><b>David Madali</b></a> is a Prague-based analyst of the defence industry, critical raw materials and the space economy. He founded <a href="https://bohemiadefense.com/">Bohemia Defense</a> in 2024, an independent analysis project on Europe's defence industry, security and foreign policy, and built OreOrbit in 2026.</p>
@@ -461,7 +461,7 @@ INDEX_TEN = ("ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr")
 
 def dependency_series(trade):
     """The OreOrbit Dependency Index, month by month: China's share of the value of EU imports from outside the EU,
-    for each of the ten materials (all tracked products of a material added up), averaged with equal weight per material."""
+    for each of the ten index materials (all tracked products of a material added up), averaged with equal weight per material."""
     mats = (trade or {}).get("materials") or {}
     per = {}
     for m, rows in mats.items():
@@ -518,7 +518,7 @@ def dependency_page(ref, live, today):
     series = dependency_series(live.get("trade"))
     title = "OreOrbit Dependency Index: China's share of Europe's defence-mineral imports"
     if not series:
-        return path, page(path, title, "Monthly index of China's share of EU imports of the ten critical minerals behind Europe's defence.", "<h1>OreOrbit Dependency Index</h1><p class=\"lede\">The index appears once the monthly trade data is available.</p>", [], today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
+        return path, page(path, title, "Monthly index of China's share of EU imports of the ten index minerals behind Europe's defence.", "<h1>OreOrbit Dependency Index</h1><p class=\"lede\">The index appears once the monthly trade data is available.</p>", [], today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
     last = series[-1]
     v = round(last["value"] * 100)
     prev_m = series[-2] if len(series) > 1 else None
@@ -527,7 +527,7 @@ def dependency_page(ref, live, today):
     d_y = (v - round(yago["value"] * 100)) if yago else None
     chg = lambda d: (("+%d" % d if d > 0 else "%d" % d) + (" point" if abs(d) == 1 else " points")) if d is not None else "n/a"
     names = {m: ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m) for m in last["per"]}
-    quote = "China supplied %d%% of the EU's imports of the ten critical minerals behind Europe's defence industry in %s, according to the OreOrbit Dependency Index by Bohemia Defense%s." % (
+    quote = "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in %s, according to the OreOrbit Dependency Index by Bohemia Defense%s." % (
         v, month_txt(last["month"]), (", %s from %d%% a year earlier" % ("up" if d_y > 0 else "down" if d_y < 0 else "unchanged", round(yago["value"] * 100))) if yago else "")
     desc = quote
     rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
@@ -537,13 +537,13 @@ def dependency_page(ref, live, today):
     body = """<article style="--c:#3ddc97">
 <p class="kicker"><i></i>Monthly · Eurostat data for %(month)s</p>
 <h1>OreOrbit Dependency Index</h1>
-<p class="lede">China's share of what the EU imports from outside the EU across the ten critical minerals behind Europe's defence industry. Each mineral counts equally.</p>
+<p class="lede">China's share of what the EU imports from outside the EU across the ten index minerals behind Europe's defence industry. Each mineral counts equally.</p>
 <dl class="figs"><div><dt>%(v)d%%</dt><dd>China's share in %(month)s</dd></div><div><dt>%(dm)s</dt><dd>change from the month before</dd></div><div><dt>%(dy)s</dt><dd>change from a year earlier</dd></div><div><dt>%(over)d of %(n)d</dt><dd>minerals where China supplied more than half</dd></div></dl>
 <section><h2>Month by month</h2>%(chart)s<p class="small">Equal-weighted average of China's share of the value of extra-EU imports, per mineral. Source: Eurostat Comext, via OreOrbit.</p><button type="button" class="dl" hidden>Download chart (SVG)</button></section>
 <section><h2>Quote it</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" hidden>Copy the sentence</button><p class="small">Journalists and analysts may quote the index and reuse the chart with credit to “OreOrbit Dependency Index (Bohemia Defense)” and a link to this page.</p></section>
 <section><h2>By mineral, %(month)s</h2><ul class="idx">%(trs)s</ul><p class="small">China's share of the value of extra-EU imports, all tracked products of each mineral added up; change against the same month a year earlier.</p></section>
 <section><h2>How it is made</h2><ul class="plain">
-<li>For each of the ten minerals, OreOrbit adds up the value of the EU's monthly imports from outside the EU of the products it tracks (for example permanent magnets, rare-earth compounds and metals for rare earths) and takes China's share.</li>
+<li>Magnesium and manganese, added in November 2026, are tracked separately so the index stays comparable over time.</li> <li>For each of the ten index minerals, OreOrbit adds up the value of the EU's monthly imports from outside the EU of the products it tracks (for example permanent magnets, rare-earth compounds and metals for rare earths) and takes China's share.</li>
 <li>The index is the plain average of the ten shares, so a small but critical mineral such as gallium counts as much as lithium.</li>
 <li>Values, not tonnes; imports from outside the EU only. Single months can swing widely when few shipments arrive, so read the trend more than one month.</li>
 <li>Updated automatically when Eurostat publishes a new month, usually about six weeks after the month ends.</li></ul></section>
@@ -554,9 +554,9 @@ def dependency_page(ref, live, today):
         "embed": e('<iframe src="' + BASE + 'p/embed-index.html" width="100%" height="420" style="border:0;max-width:760px" title="OreOrbit Dependency Index" loading="lazy"></iframe>'),
         "month": e(month_txt(last["month"])), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
         "chart": index_chart(series), "quote": e(quote), "trs": trs, "cite": cite_box(title, path, today)}
-    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for ten critical raw materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite). Source: Eurostat Comext.",
+    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for the ten index materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite). Source: Eurostat Comext.",
            "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today,
-           "temporalCoverage": "%s/%s" % (series[0]["month"], last["month"]), "variableMeasured": "China's share of extra-EU import value, equal-weighted across ten materials",
+           "temporalCoverage": "%s/%s" % (series[0]["month"], last["month"]), "variableMeasured": "China's share of extra-EU import value, equal-weighted across the ten index materials",
            "isBasedOn": "https://ec.europa.eu/eurostat/comext/newxtweb/", "keywords": ["critical raw materials", "defence industry", "EU imports", "China", "supply chain"]}]
     return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)], alt="p/dependency-index-cs.html")
 
@@ -628,7 +628,7 @@ def about_page_cs(cfg, today):
     desc = "OreOrbit je bezplatný živý atlas kritických surovin, na kterých stojí evropský obranný a kosmický průmysl. Vytvořil ho David Madali v Bohemia Defense v Praze."
     mail = cfg.get("contactEmail") or "david@madali.cz"
     body = """<h1>O projektu OreOrbit</h1>
-<p class="lede">Obrana Evropy stojí na deseti surovinách a u sedmi z nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. OreOrbit ukazuje, kde se tyto suroviny těží a zpracovávají, jak se dostávají do Evropy a co se tento týden mění, z veřejných dat a satelitních snímků.</p>
+<p class="lede">Obrana Evropy stojí na dvanácti surovinách a u devíti z nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. OreOrbit ukazuje, kde se tyto suroviny těží a zpracovávají, jak se dostávají do Evropy a co se tento týden mění, z veřejných dat a satelitních snímků.</p>
 <section><h2>Kdo za tím stojí</h2>
 <div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/cs/"><b>David Madali</b></a> je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. V roce 2024 založil <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a>, nezávislý analytický projekt o evropském obranném průmyslu, bezpečnosti a zahraniční politice, a v roce 2026 vytvořil OreOrbit.</p>
@@ -659,7 +659,7 @@ def dependency_page_cs(ref, live, today):
     series = dependency_series(live.get("trade"))
     title = "Index závislosti OreOrbit: podíl Číny na dovozu surovin pro evropskou obranu"
     if not series:
-        return path, page(path, title, "Měsíční index podílu Číny na dovozu deseti kritických surovin do EU.", "<h1>Index závislosti OreOrbit</h1><p class=\"lede\">Index se zobrazí, jakmile budou k dispozici měsíční obchodní data.</p>", [], today, [("Atlas", ""), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
+        return path, page(path, title, "Měsíční index podílu Číny na dovozu deseti surovin indexu do EU.", "<h1>Index závislosti OreOrbit</h1><p class=\"lede\">Index se zobrazí, jakmile budou k dispozici měsíční obchodní data.</p>", [], today, [("Atlas", ""), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
     last = series[-1]
     v = round(last["value"] * 100)
     mi = int(last["month"][5:7]) - 1
@@ -673,7 +673,7 @@ def dependency_page_cs(ref, live, today):
         return ("+%d" % d if d > 0 else "%d" % d) + " " + w
     d_m = (v - round(prev_m["value"] * 100)) if prev_m else None
     d_y = (v - round(yago["value"] * 100)) if yago else None
-    quote = "Čína v %s dodala %d %% dovozu deseti kritických surovin, na kterých stojí evropský obranný průmysl, do EU, podle Indexu závislosti OreOrbit od Bohemia Defense%s." % (
+    quote = "Čína v %s dodala %d %% dovozu deseti surovin indexu, na kterých stojí evropský obranný průmysl, do EU, podle Indexu závislosti OreOrbit od Bohemia Defense%s." % (
         mon_loc, v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else "")
     rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
     trs = "".join('<li style="--c:%s"><span>%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d %%%s</span></li>' % (
@@ -688,7 +688,7 @@ def dependency_page_cs(ref, live, today):
 <section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
 <section><h2>Podle surovin, %(nom)s</h2><ul class="idx">%(trs)s</ul><p class="small">Podíl Číny na hodnotě dovozu do EU ze zemí mimo EU, všechny sledované produkty dané suroviny dohromady; změna proti stejnému měsíci před rokem.</p></section>
 <section><h2>Jak index vzniká</h2><ul class="plain">
-<li>U každé z deseti surovin OreOrbit sečte měsíční hodnotu dovozu sledovaných produktů do EU ze zemí mimo EU (například u vzácných zemin permanentní magnety, sloučeniny a kovy) a spočítá podíl Číny.</li>
+<li>Hořčík a mangan, přidané v listopadu 2026, sledujeme zvlášť, aby index zůstal srovnatelný v čase.</li> <li>U každé z deseti surovin indexu OreOrbit sečte měsíční hodnotu dovozu sledovaných produktů do EU ze zemí mimo EU (například u vzácných zemin permanentní magnety, sloučeniny a kovy) a spočítá podíl Číny.</li>
 <li>Index je prostý průměr deseti podílů, takže malá, ale kritická surovina jako galium váží stejně jako lithium.</li>
 <li>Hodnoty, ne tuny; jen dovoz ze zemí mimo EU. Jednotlivé měsíce mohou výrazně kolísat, když dorazí málo zásilek, proto čtěte spíš trend.</li>
 <li>Obnovuje se automaticky, jakmile Eurostat zveřejní nový měsíc, obvykle zhruba šest týdnů po jeho konci.</li></ul></section>
@@ -704,13 +704,13 @@ def dependency_page_cs(ref, live, today):
 
 # ---------------------------------------------------------------- the weekly LinkedIn cards and the embeddable chart
 
-PRODUCTS = [("Drones", "Drony", {"ree": "motor magnets", "ga": "radio links (GaN)", "gr": "battery anodes", "co": "battery cathodes", "li": "battery cells", "ni": "battery cathodes", "ge": "thermal camera lenses"}),
-            ("Ammunition and guided munitions", "Munice a řízená munice", {"sb": "primers and hardened lead", "w": "penetrators and fragmentation", "ree": "fin actuators", "ga": "seekers and fuzes"}),
+PRODUCTS = [("Drones", "Drony", {"ree": "motor magnets", "ga": "radio links (GaN)", "gr": "battery anodes", "co": "battery cathodes", "li": "battery cells", "ni": "battery cathodes", "ge": "thermal camera lenses", "mn": "battery cathodes"}),
+            ("Ammunition and guided munitions", "Munice a řízená munice", {"sb": "primers and hardened lead", "w": "penetrators and fragmentation", "ree": "fin actuators", "ga": "seekers and fuzes", "mg": "decoy flares and tracers", "mn": "steel shells and casings"}),
             ("Optics and thermal imaging", "Optika a termovize", {"ge": "infrared lenses", "ga": "detectors (GaAs, InGaAs)", "ree": "laser rangefinders"}),
             ("Radar and electronics", "Radary a elektronika", {"ga": "GaN power amplifiers", "ge": "high-frequency chips", "ree": "magnets and garnets", "sb": "infrared detectors"}),
-            ("Armoured vehicles", "Obrněná vozidla", {"ti": "armour and structures", "w": "penetrators and tooling", "ni": "armour steel", "ree": "electric drives"}),
-            ("Aircraft and space", "Letectví a kosmonautika", {"ti": "airframes and engines", "ni": "engine superalloys", "co": "engine superalloys", "ree": "actuators", "ga": "solar cells (GaAs)", "ge": "solar-cell substrates"}),
-            ("Batteries and energy storage", "Baterie a úložiště energie", {"li": "cells", "co": "cathodes", "ni": "cathodes", "gr": "anodes"})]
+            ("Armoured vehicles", "Obrněná vozidla", {"ti": "armour and structures", "w": "penetrators and tooling", "ni": "armour steel", "ree": "electric drives", "mn": "armour steel", "mg": "light alloy parts"}),
+            ("Aircraft and space", "Letectví a kosmonautika", {"ti": "airframes and engines", "ni": "engine superalloys", "co": "engine superalloys", "ree": "actuators", "ga": "solar cells (GaAs)", "ge": "solar-cell substrates", "mg": "titanium metal (Kroll process) and light alloys"}),
+            ("Batteries and energy storage", "Baterie a úložiště energie", {"li": "cells", "co": "cathodes", "ni": "cathodes", "gr": "anodes", "mn": "NMC and LMFP cathodes"})]
 FONTS_URL = "https://bohemiadefense.com/atlas/fonts/"
 
 
@@ -757,12 +757,12 @@ def social_cards(ref, live, today):
         svg = index_chart(series).replace('class="chart"', 'style="width:100%;height:100%"').replace('class="c-x"', 'font-size="13" fill="#697176" font-family="DM, monospace"')
         inner = ('<div class="main"><div class="k">OreOrbit Dependency Index · %s</div><h1 style="font-size:74px">China\'s share of Europe\'s <b>defence-mineral imports</b></h1>'
                  '<div class="big">%d%%</div><div class="sub">%s</div><div class="chart">%s</div></div>'
-                 '<div class="src">Equal-weighted share of extra-EU import value, ten minerals · Eurostat Comext via OreOrbit</div>') % (
+                 '<div class="src">Equal-weighted share of extra-EU import value, ten index minerals · Eurostat Comext via OreOrbit</div>') % (
             month_txt(last["month"]), v, ("<b>%+d points</b> from a year earlier" % dy) if dy is not None else "", svg)
         cards.append({"slug": "index", "title": "Dependency Index, %s" % month_txt(last["month"]), "html": card_doc((inner, "The monthly number, with the method")),
-                      "en": "China supplied %d%% of the EU's imports of the ten critical minerals behind Europe's defence industry in %s%s.\n\nThat's the OreOrbit Dependency Index: each mineral counts equally, so gallium matters as much as lithium. Full breakdown and method in the first comment.\n\n#CriticalRawMaterials #DefenceIndustry #SupplyChain #Europe" % (
+                      "en": "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in %s%s.\n\nThat's the OreOrbit Dependency Index: each mineral counts equally, so gallium matters as much as lithium. Full breakdown and method in the first comment.\n\n#CriticalRawMaterials #DefenceIndustry #SupplyChain #Europe" % (
                           v, month_txt(last["month"]), (", %s from %d%% a year earlier" % ("up" if dy > 0 else "down" if dy < 0 else "unchanged", round(yago["value"] * 100))) if yago else ""),
-                      "cs": "Čína v %s dodala %d %% dovozu deseti kritických surovin, na kterých stojí evropský obranný průmysl, do EU%s.\n\nTo je Index závislosti OreOrbit: každá surovina má stejnou váhu, takže galium se počítá stejně jako lithium. Rozpad a metodika v prvním komentáři." % (
+                      "cs": "Čína v %s dodala %d %% dovozu deseti surovin indexu, na kterých stojí evropský obranný průmysl, do EU%s.\n\nTo je Index závislosti OreOrbit: každá surovina má stejnou váhu, takže galium se počítá stejně jako lithium. Rozpad a metodika v prvním komentáři." % (
                           MONTH_CS_LOC[int(last["month"][5:7]) - 1] + " " + last["month"][:4], v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else ""),
                       "link": BASE + "p/dependency-index.html"})
         if yago:
@@ -798,9 +798,9 @@ def social_cards(ref, live, today):
              '<div class="list">%s</div></div><div class="src">Leading country\'s share at the tightest stage · USGS, IEA via OreOrbit</div>') % (
         84 if len(pen) <= 14 else 70, e(pen), len(rows), conc, (". China in %d" % cn) if cn else "", "".join(rows[:7]))
     cards.append({"slug": "product", "title": pen, "html": card_doc((inner, "Check your own product in 60 seconds")),
-                  "en": "%s depend on %d of the ten critical minerals. For %d of them, one country controls more than 65%% of a key stage%s.\n\nYou can check your own product type in 60 seconds, free, in OreOrbit's quick check (link in the first comment).\n\n#DefenceIndustry #CriticalRawMaterials #SupplyChain" % (
+                  "en": "%s depend on %d of the twelve critical minerals. For %d of them, one country controls more than 65%% of a key stage%s.\n\nYou can check your own product type in 60 seconds, free, in OreOrbit's quick check (link in the first comment).\n\n#DefenceIndustry #CriticalRawMaterials #SupplyChain" % (
                       pen, len(rows), conc, (", China in %d" % cn) if cn else ""),
-                  "cs": "%s závisí na %d z deseti kritických surovin. U %d z nich ovládá jedna země přes 65 %% klíčové fáze%s.\n\nSvůj typ výrobku si prověříte za 60 sekund zdarma v rychlé kontrole OreOrbit (odkaz v prvním komentáři)." % (
+                  "cs": "%s závisí na %d z dvanácti kritických surovin. U %d z nich ovládá jedna země přes 65 %% klíčové fáze%s.\n\nSvůj typ výrobku si prověříte za 60 sekund zdarma v rychlé kontrole OreOrbit (odkaz v prvním komentáři)." % (
                       pcs, len(rows), conc, (", Čína u %d" % cn) if cn else ""),
                   "link": BASE + "#check"})
     return cards
@@ -831,7 +831,7 @@ def embed_page(live, today):
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OreOrbit Dependency Index</title>
 <meta name="robots" content="noindex"><link rel="canonical" href="%(base)sp/dependency-index.html"><link rel="stylesheet" href="../fonts/fonts.css"><link rel="stylesheet" href="../library.css">
 <style>body{margin:0;padding:18px 20px 14px;background:#050607}.e-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.e-n{font-weight:300;font-size:44px;letter-spacing:-.04em;line-height:1}.e-t{color:#a3aaae;font-size:14px;max-width:46ch}.e-s{margin-top:6px;font-size:12px;color:#697176}.e-s a{color:#a3aaae}</style></head>
-<body><div class="e-top"><div class="e-n">%(v)d%%</div><div class="e-t">China's share of EU imports of the ten critical minerals behind Europe's defence, %(month)s</div></div>
+<body><div class="e-top"><div class="e-n">%(v)d%%</div><div class="e-t">China's share of EU imports of the ten index minerals behind Europe's defence, %(month)s</div></div>
 %(chart)s
 <div class="e-s">OreOrbit Dependency Index · Eurostat Comext · <a href="%(base)sp/dependency-index.html" target="_blank" rel="noopener">OreOrbit by Bohemia Defense</a></div><script src="../library.js" defer></script></body></html>
 """ % {"base": BASE, "v": v, "month": e(month_txt(last["month"])), "chart": index_chart(series)}
@@ -900,7 +900,7 @@ def index_snapshots(ref, live, today):
         prev = series[i - 1] if i else None
         yago = next((y for y in series if y["month"] == "%04d-%s" % (int(k[:4]) - 1, k[5:])), None)
         title = "OreOrbit Dependency Index, %s: %d%%" % (month_txt(k), v)
-        quote = "China supplied %d%% of the EU's imports of the ten critical minerals behind Europe's defence industry in %s, according to the OreOrbit Dependency Index (Bohemia Defense)%s." % (
+        quote = "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in %s, according to the OreOrbit Dependency Index (Bohemia Defense)%s." % (
             v, month_txt(k), (", against %d%% a year earlier" % round(yago["value"] * 100)) if yago else "")
         rows = sorted(x["per"].items(), key=lambda kv: -kv[1])
         lis = "".join('<li style="--c:%s"><span><a href="%s.html">%s</a></span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d%%</span></li>' % (
@@ -942,7 +942,7 @@ def space_page(ref, live, today):
             "Gallium arsenide is used in the high-efficiency solar cells that power most satellites." + ((" %s %s (%s)." % (ga_stat.get("num"), ga_stat.get("what"), ga_stat.get("src"))) if ga_stat else ""))]
     if last:
         qas.append(("How dependent is Europe on China for these minerals?",
-                    "Across the ten critical minerals OreOrbit tracks, China supplied %d%% of the value of the EU's imports from outside the EU in %s (OreOrbit Dependency Index, Eurostat data). The share varies widely by mineral; see the table above." % (round(last["value"] * 100), month_txt(last["month"]))))
+                    "Across the ten index minerals OreOrbit tracks, China supplied %d%% of the value of the EU's imports from outside the EU in %s (OreOrbit Dependency Index, Eurostat data). The share varies widely by mineral; see the table above." % (round(last["value"] * 100), month_txt(last["month"]))))
     qas.append(("How can a space company check its exposure?",
                 "OreOrbit's free quick check includes 'Aircraft and space' as a product type (bohemiadefense.com/atlas/#check). For a specific product line, Bohemia Defense offers a readiness review that maps the actual parts."))
     body = ('<article style="--c:#22d3ee"><p class="kicker"><i></i>Space economy · critical raw materials</p><h1>Critical minerals for the space industry</h1>'
