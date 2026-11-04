@@ -1,0 +1,598 @@
+{
+ "sites": {
+  "greenbushes": {
+   "file": "img/greenbushes-emit-20241024.png",
+   "date": "2024-10-24",
+   "granule": "EMIT_L2B_MIN_001_20241024T063403_2429804_030",
+   "cloudPct": 4,
+   "maskDate": "2024-10-24",
+   "barePct": 27,
+   "mappedPct": 68,
+   "classes": [
+    [
+     "clay",
+     47
+    ],
+    [
+     "carbonate",
+     33
+    ],
+    [
+     "other",
+     10
+    ],
+    [
+     "iron",
+     5
+    ],
+    [
+     "mgoh",
+     3
+    ],
+    [
+     "sulfate",
+     2
+    ]
+   ],
+   "top": [
+    [
+     "Kaolinite",
+     13
+    ],
+    [
+     "Siderite",
+     9
+    ],
+    [
+     "Kaolinite + Muscovite",
+     7
+    ],
+    [
+     "Calcite + Dolomite",
+     7
+    ],
+    [
+     "Calcite + Muscovite",
+     7
+    ]
+   ]
+  },
+  "bayan-obo": {
+   "file": "img/bayan-obo-emit-20231015.png",
+   "date": "2023-10-15",
+   "granule": "EMIT_L2B_MIN_001_20231015T062114_2328804_015",
+   "cloudPct": 1,
+   "maskDate": "2023-10-15",
+   "barePct": 98,
+   "mappedPct": 18,
+   "classes": [
+    [
+     "carbonate",
+     73
+    ],
+    [
+     "iron",
+     14
+    ],
+    [
+     "mgoh",
+     5
+    ],
+    [
+     "other",
+     4
+    ],
+    [
+     "mica",
+     2
+    ],
+    [
+     "clay",
+     2
+    ],
+    [
+     "sulfate",
+     1
+    ]
+   ],
+   "top": [
+    [
+     "Calcite + Dolomite",
+     46
+    ],
+    [
+     "Calcite",
+     16
+    ],
+    [
+     "Aragonite",
+     8
+    ],
+    [
+     "Nanohematite",
+     7
+    ],
+    [
+     "Goethite + Quartz",
+     3
+    ]
+   ]
+  },
+  "mountain-pass": {
+   "file": "img/mountain-pass-emit-20260602.png",
+   "date": "2026-06-02",
+   "granule": "EMIT_L2B_MIN_001_20260602T180058_2615312_007",
+   "cloudPct": 4,
+   "maskDate": "2026-06-05",
+   "barePct": 100,
+   "mappedPct": 96,
+   "classes": [
+    [
+     "carbonate",
+     79
+    ],
+    [
+     "mica",
+     20
+    ]
+   ],
+   "top": [
+    [
+     "Calcite + Muscovite",
+     30
+    ],
+    [
+     "Calcite",
+     22
+    ],
+    [
+     "Muscovite",
+     20
+    ],
+    [
+     "Calcite + Dolomite",
+     17
+    ],
+    [
+     "Calcite + Kaolinite",
+     9
+    ]
+   ]
+  },
+  "mount-weld": {
+   "file": "img/mount-weld-emit-20250902.png",
+   "date": "2025-09-02",
+   "granule": "EMIT_L2B_MIN_001_20250902T015239_2524501_031",
+   "cloudPct": 1,
+   "maskDate": "2025-09-01",
+   "barePct": 99,
+   "mappedPct": 100,
+   "classes": [
+    [
+     "clay",
+     46
+    ],
+    [
+     "carbonate",
+     34
+    ],
+    [
+     "other",
+     9
+    ],
+    [
+     "iron",
+     9
+    ],
+    [
+     "sulfate",
+     1
+    ]
+   ],
+   "top": [
+    [
+     "Calcite + Kaolinite",
+     35
+    ],
+    [
+     "Kaolinite",
+     31
+    ],
+    [
+     "Nacrite",
+     9
+    ],
+    [
+     "Nontronite",
+     8
+    ]
+   ]
+  },
+  "panzhihua": {
+   "file": "img/panzhihua-emit-20260220.png",
+   "date": "2026-02-20",
+   "granule": "EMIT_L2B_MIN_001_20260220T041543_2605103_006",
+   "cloudPct": 6,
+   "maskDate": "2026-02-22",
+   "barePct": 67,
+   "mappedPct": 16,
+   "classes": [
+    [
+     "carbonate",
+     45
+    ],
+    [
+     "mgoh",
+     45
+    ],
+    [
+     "other",
+     7
+    ],
+    [
+     "iron",
+     1
+    ],
+    [
+     "clay",
+     1
+    ]
+   ],
+   "top": [
+    [
+     "Clinochlore",
+     27
+    ],
+    [
+     "Calcite",
+     14
+    ],
+    [
+     "Actinolite",
+     12
+    ],
+    [
+     "Siderite",
+     11
+    ],
+    [
+     "Calcite + Muscovite",
+     7
+    ]
+   ]
+  },
+  "stibnite": {
+   "file": "img/stibnite-emit-20260805.png",
+   "date": "2026-08-05",
+   "granule": "EMIT_L2B_MIN_001_20260805T174946_2621712_015",
+   "cloudPct": 0,
+   "maskDate": "2026-08-05",
+   "barePct": 34,
+   "mappedPct": 21,
+   "classes": [
+    [
+     "carbonate",
+     67
+    ],
+    [
+     "clay",
+     17
+    ],
+    [
+     "mica",
+     13
+    ],
+    [
+     "iron",
+     2
+    ]
+   ],
+   "top": [
+    [
+     "Calcite + Muscovite",
+     50
+    ],
+    [
+     "Muscovite",
+     11
+    ],
+    [
+     "Kaolinite + Muscovite",
+     10
+    ],
+    [
+     "Calcite + Kaolinite",
+     9
+    ],
+    [
+     "Calcite + Dolomite",
+     6
+    ]
+   ]
+  },
+  "metlen-gallium": {
+   "file": "img/metlen-gallium-emit-20231019.png",
+   "date": "2023-10-19",
+   "granule": "EMIT_L2B_MIN_002_20231019T105626",
+   "cloudPct": 19,
+   "maskDate": "2023-10-20",
+   "barePct": 51,
+   "mappedPct": 62,
+   "classes": [
+    [
+     "carbonate",
+     94
+    ],
+    [
+     "iron",
+     5
+    ],
+    [
+     "sulfate",
+     1
+    ],
+    [
+     "other",
+     1
+    ]
+   ],
+   "top": [
+    [
+     "Calcite + Dolomite",
+     66
+    ],
+    [
+     "Calcite",
+     21
+    ],
+    [
+     "Aragonite",
+     6
+    ],
+    [
+     "Hematite",
+     5
+    ],
+    [
+     "Calcite + Kaolinite",
+     1
+    ]
+   ]
+  },
+  "kipushi": {
+   "file": "img/kipushi-emit-20260831.png",
+   "date": "2026-08-31",
+   "granule": "EMIT_L2B_MIN_002_20260831T072251",
+   "cloudPct": 0,
+   "maskDate": "2026-08-31",
+   "barePct": 100,
+   "mappedPct": 65,
+   "classes": [
+    [
+     "iron",
+     93
+    ],
+    [
+     "clay",
+     6
+    ],
+    [
+     "carbonate",
+     1
+    ]
+   ],
+   "top": [
+    [
+     "Hematite",
+     80
+    ],
+    [
+     "Hematite + Goethite",
+     5
+    ],
+    [
+     "Nanohematite + Goethite",
+     4
+    ],
+    [
+     "Goethite",
+     3
+    ],
+    [
+     "Kaolinite",
+     2
+    ]
+   ]
+  },
+  "atacama": {
+   "file": "img/atacama-emit-20231107.png",
+   "date": "2023-11-07",
+   "granule": "EMIT_L2B_MIN_002_20231107T132223",
+   "cloudPct": 0,
+   "maskDate": "2023-11-04",
+   "barePct": 78,
+   "mappedPct": 33,
+   "classes": [
+    [
+     "iron",
+     93
+    ],
+    [
+     "sulfate",
+     4
+    ],
+    [
+     "other",
+     2
+    ],
+    [
+     "mgoh",
+     1
+    ]
+   ],
+   "top": [
+    [
+     "Hematite",
+     82
+    ],
+    [
+     "Hematite + Goethite",
+     11
+    ],
+    [
+     "Jarosite",
+     3
+    ],
+    [
+     "Topaz",
+     1
+    ],
+    [
+     "Generic",
+     1
+    ]
+   ]
+  },
+  "tenke": {
+   "file": "img/tenke-emit-20260831.png",
+   "date": "2026-08-31",
+   "granule": "EMIT_L2B_MIN_002_20260831T072227",
+   "cloudPct": 0,
+   "maskDate": "2026-09-01",
+   "barePct": 96,
+   "mappedPct": 55,
+   "classes": [
+    [
+     "iron",
+     45
+    ],
+    [
+     "mgoh",
+     22
+    ],
+    [
+     "clay",
+     19
+    ],
+    [
+     "carbonate",
+     14
+    ]
+   ],
+   "top": [
+    [
+     "Hematite",
+     30
+    ],
+    [
+     "Sepiolite",
+     16
+    ],
+    [
+     "Hematite + Goethite",
+     14
+    ],
+    [
+     "Talc",
+     8
+    ],
+    [
+     "Clinochlore",
+     7
+    ]
+   ]
+  },
+  "mutanda": {
+   "file": "img/mutanda-emit-20240705.png",
+   "date": "2024-07-05",
+   "granule": "EMIT_L2B_MIN_001_20240705T065801_2418704_007",
+   "cloudPct": 4,
+   "maskDate": "2024-07-03",
+   "barePct": 94,
+   "mappedPct": 41,
+   "classes": [
+    [
+     "iron",
+     47
+    ],
+    [
+     "mgoh",
+     17
+    ],
+    [
+     "clay",
+     17
+    ],
+    [
+     "carbonate",
+     14
+    ],
+    [
+     "other",
+     3
+    ],
+    [
+     "mica",
+     3
+    ]
+   ],
+   "top": [
+    [
+     "Nanohematite",
+     45
+    ],
+    [
+     "Clinochlore",
+     11
+    ],
+    [
+     "Kaolinite + Muscovite",
+     9
+    ],
+    [
+     "Illite",
+     5
+    ]
+   ]
+  }
+ },
+ "generated": "2026-10-24",
+ "source": "NASA EMIT L2B Estimated Mineral Identification and Band Depth (EMITL2BMIN, versions 1 and 2), LP DAAC; vegetation and water masked with Copernicus Sentinel-2",
+ "classes": [
+  [
+   "carbonate",
+   "Carbonates (calcite, dolomite)",
+   "#4fb3ff"
+  ],
+  [
+   "clay",
+   "Clays (kaolinite, smectite, illite)",
+   "#f2c94c"
+  ],
+  [
+   "mica",
+   "White micas (muscovite)",
+   "#e9a3ff"
+  ],
+  [
+   "sulfate",
+   "Sulphates (gypsum, alunite, jarosite)",
+   "#ff6b6b"
+  ],
+  [
+   "mgoh",
+   "Mg-OH minerals (chlorite, epidote, talc)",
+   "#6be3a0"
+  ],
+  [
+   "iron",
+   "Iron oxides (hematite, goethite)",
+   "#ff8f3c"
+  ],
+  [
+   "other",
+   "Other minerals",
+   "#bec4c8"
+  ]
+ ]
+}

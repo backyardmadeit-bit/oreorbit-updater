@@ -1,0 +1,1494 @@
+{
+ "sites": {
+  "bayan-obo": {
+   "file": "img/bayan-obo-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1987,
+     "date": "1987-10-08",
+     "scene": "LT05_L2SP_127031_19871008_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-10-16",
+     "scene": "LT05_L2SP_127031_19901016_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-11-03",
+     "scene": "LT05_L2SP_128031_19941103_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-22",
+     "scene": "LT05_L2SP_127031_19981022_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-16",
+     "scene": "LE07_L2SP_128031_20021016_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-10-19",
+     "scene": "LT05_L2SP_128031_20061019_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-10-30",
+     "scene": "LT05_L2SP_128031_20101030_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-09",
+     "scene": "LC08_L2SP_128031_20141009_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-04",
+     "scene": "LC08_L2SP_128031_20181004_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2021,
+     "date": "2021-11-22",
+     "scene": "LC08_L2SP_127031_20211122_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-08-31",
+     "scene": "LC09_L2SP_128031_20260831_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "mountain-pass": {
+   "file": "img/mountain-pass-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-10-12",
+     "scene": "LT05_L2SP_039035_19861012_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-08-20",
+     "scene": "LT05_L2SP_039035_19900820_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-18",
+     "scene": "LT05_L2SP_039035_19941018_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-13",
+     "scene": "LT05_L2SP_039035_19981013_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-16",
+     "scene": "LE07_L2SP_039035_20021016_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-10-19",
+     "scene": "LT05_L2SP_039035_20061019_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-11-15",
+     "scene": "LT05_L2SP_039035_20101115_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-16",
+     "scene": "LC08_L2SP_040035_20141016_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-11-05",
+     "scene": "LC08_L2SP_039036_20181105_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-14",
+     "scene": "LC09_L2SP_040035_20221014_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-02",
+     "scene": "LC09_L2SP_039036_20261002_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "mount-weld": {
+   "file": "img/mount-weld-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-09-21",
+     "scene": "LT05_L2SP_109080_19860921_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-11-03",
+     "scene": "LT05_L2SP_109080_19901103_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-29",
+     "scene": "LT05_L2SP_109080_19941029_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-24",
+     "scene": "LT05_L2SP_109080_19981024_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-09-25",
+     "scene": "LE07_L2SP_109080_20020925_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2010,
+     "date": "2010-10-25",
+     "scene": "LT05_L2SP_109080_20101025_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-20",
+     "scene": "LC08_L2SP_109080_20141020_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-15",
+     "scene": "LC08_L2SP_109080_20181015_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-18",
+     "scene": "LC09_L2SP_109080_20221018_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-05",
+     "scene": "LC08_L2SP_109080_20261005_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "lynas-kuantan": {
+   "file": "img/lynas-kuantan-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1993,
+     "date": "1993-06-27",
+     "scene": "LT05_L2SP_126057_19930627_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1997,
+     "date": "1997-07-08",
+     "scene": "LT05_L2SP_126057_19970708_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-18",
+     "scene": "LE07_L2SP_126057_20021018_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2004,
+     "date": "2004-09-13",
+     "scene": "LT05_L2SP_126057_20040913_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2009,
+     "date": "2009-09-11",
+     "scene": "LT05_L2SP_126057_20090911_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2016,
+     "date": "2016-06-26",
+     "scene": "LC08_L2SP_126057_20160626_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-08-03",
+     "scene": "LC08_L2SP_126057_20180803_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2023,
+     "date": "2023-07-16",
+     "scene": "LC08_L2SP_126057_20230716_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-02",
+     "scene": "LC09_L2SP_126057_20260902_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "sillamae": {
+   "file": "img/sillamae-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1985,
+     "date": "1985-08-28",
+     "scene": "LT05_L2SP_186019_19850828_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1991,
+     "date": "1991-10-07",
+     "scene": "LT05_L2SP_187018_19911007_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1993,
+     "date": "1993-09-12",
+     "scene": "LT05_L2SP_185019_19930912_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-08-28",
+     "scene": "LE07_L2SP_185019_20020828_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-09-16",
+     "scene": "LT05_L2SP_185019_20060916_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-09-20",
+     "scene": "LC08_L2SP_187018_20140920_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2017,
+     "date": "2017-10-23",
+     "scene": "LC08_L2SP_186019_20171023_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-09-27",
+     "scene": "LC09_L2SP_186019_20220927_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2025,
+     "date": "2025-09-11",
+     "scene": "LC08_L2SP_186019_20250911_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "panzhihua": {
+   "file": "img/panzhihua-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-12-13",
+     "scene": "LT05_L2SP_130042_19861213_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-10-21",
+     "scene": "LT05_L2SP_130042_19901021_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-16",
+     "scene": "LT05_L2SP_130042_19941016_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-11-28",
+     "scene": "LT05_L2SP_130042_19981128_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-22",
+     "scene": "LT05_L2SP_130042_20021022_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2006,
+     "date": "2006-11-18",
+     "scene": "LT05_L2SP_130042_20061118_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-12-15",
+     "scene": "LT05_L2SP_130042_20101215_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-07",
+     "scene": "LC08_L2SP_130042_20141007_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-18",
+     "scene": "LC08_L2SP_130042_20181018_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-21",
+     "scene": "LC09_L2SP_130042_20221021_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2025,
+     "date": "2025-11-30",
+     "scene": "LC09_L2SP_130042_20251130_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "tellnes": {
+   "file": "img/tellnes-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1987,
+     "date": "1987-09-30",
+     "scene": "LT05_L2SP_199019_19870930_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1989,
+     "date": "1989-09-26",
+     "scene": "LT05_L2SP_200019_19890926_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-08-21",
+     "scene": "LE07_L2SP_200019_20020821_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2010,
+     "date": "2010-09-29",
+     "scene": "LT05_L2SP_199019_20100929_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2016,
+     "date": "2016-09-04",
+     "scene": "LC08_L2SP_200019_20160904_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2017,
+     "date": "2017-08-22",
+     "scene": "LC08_L2SP_200019_20170822_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-08-28",
+     "scene": "LC09_L2SP_200019_20220828_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-08-24",
+     "scene": "LC08_L2SP_199019_20260824_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "irshansk": {
+   "file": "img/irshansk-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-10-13",
+     "scene": "LT05_L2SP_183025_19861013_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-10-17",
+     "scene": "LT05_L2SP_182025_19901017_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-09-26",
+     "scene": "LT05_L2SP_182025_19940926_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-14",
+     "scene": "LT05_L2SP_183025_19981014_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2005,
+     "date": "2005-10-10",
+     "scene": "LT05_L2SP_182025_20051010_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-19",
+     "scene": "LC08_L2SP_182025_20141019_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-09-19",
+     "scene": "LC08_L2SP_183025_20180919_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-08",
+     "scene": "LC09_L2SP_183025_20221008_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-03",
+     "scene": "LC09_L2SP_183024_20261003_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "vilnohirsk": {
+   "file": "img/vilnohirsk-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-09-08",
+     "scene": "LT05_L2SP_178026_19860908_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1989,
+     "date": "1989-08-22",
+     "scene": "LT05_L2SP_179026_19890822_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1993,
+     "date": "1993-10-20",
+     "scene": "LT05_L2SP_179026_19931020_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1997,
+     "date": "1997-09-13",
+     "scene": "LT05_L2SP_179026_19970913_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-08-18",
+     "scene": "LE07_L2SP_179026_20020818_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2009,
+     "date": "2009-08-29",
+     "scene": "LT05_L2SP_179026_20090829_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2020,
+     "date": "2020-10-23",
+     "scene": "LC08_L2SP_178026_20201023_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2025,
+     "date": "2025-08-17",
+     "scene": "LC09_L2SP_179026_20250817_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "mittersill": {
+   "file": "img/mittersill-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1990,
+     "date": "1990-08-20",
+     "scene": "LT05_L2SP_192027_19900820_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1992,
+     "date": "1992-09-26",
+     "scene": "LT05_L2SP_192027_19920926_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-08-26",
+     "scene": "LT05_L2SP_192027_19980826_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-09",
+     "scene": "LC08_L2SP_192027_20141009_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-20",
+     "scene": "LC08_L2SP_192027_20181020_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2023,
+     "date": "2023-10-02",
+     "scene": "LC08_L2SP_192027_20231002_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-08",
+     "scene": "LC08_L2SP_192027_20260908_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "panasqueira": {
+   "file": "img/panasqueira-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-09-30",
+     "scene": "LT05_L2SP_204032_19860930_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-10-11",
+     "scene": "LT05_L2SP_204032_19901011_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-08-28",
+     "scene": "LT05_L2SP_203032_19940828_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-09-15",
+     "scene": "LT05_L2SP_204032_19980915_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-04",
+     "scene": "LE07_L2SP_204032_20021004_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-09-05",
+     "scene": "LT05_L2SP_204032_20060905_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-09-09",
+     "scene": "LT05_L2SP_203032_20100909_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-22",
+     "scene": "LC08_L2SP_203032_20141022_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-08",
+     "scene": "LC08_L2SP_204032_20181008_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-12",
+     "scene": "LC08_L2SP_203032_20221012_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-21",
+     "scene": "LC08_L2SP_203032_20260921_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "xikuangshan": {
+   "file": "img/xikuangshan-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-12-03",
+     "scene": "LT05_L2SP_124041_19861203_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-11-28",
+     "scene": "LT05_L2SP_124041_19901128_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-11-07",
+     "scene": "LT05_L2SP_124041_19941107_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-01",
+     "scene": "LT05_L2SP_124041_19981001_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-12",
+     "scene": "LT05_L2SP_124041_20021012_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-11-19",
+     "scene": "LT05_L2SP_124041_20101119_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-11-14",
+     "scene": "LC08_L2SP_124041_20141114_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2016,
+     "date": "2016-12-05",
+     "scene": "LC08_L2SP_124041_20161205_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-19",
+     "scene": "LC08_L2SP_124041_20221019_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-06",
+     "scene": "LC09_L2SP_124041_20261006_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "stibnite": {
+   "file": "img/stibnite-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1987,
+     "date": "1987-10-13",
+     "scene": "LT05_L2SP_041029_19871013_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1989,
+     "date": "1989-10-18",
+     "scene": "LT05_L2SP_041029_19891018_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1993,
+     "date": "1993-09-27",
+     "scene": "LT05_L2SP_041029_19930927_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-27",
+     "scene": "LT05_L2SP_041029_19981027_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-14",
+     "scene": "LE07_L2SP_041029_20021014_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2005,
+     "date": "2005-10-14",
+     "scene": "LT05_L2SP_041029_20051014_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-08-25",
+     "scene": "LT05_L2SP_041029_20100825_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-07",
+     "scene": "LC08_L2SP_041029_20141007_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-09-16",
+     "scene": "LC08_L2SP_041029_20180916_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-13",
+     "scene": "LC08_L2SP_041029_20221013_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-08",
+     "scene": "LC08_L2SP_041029_20261008_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "metlen-gallium": {
+   "file": "img/metlen-gallium-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-10-04",
+     "scene": "LT05_L2SP_184033_19861004_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-09-22",
+     "scene": "LT05_L2SP_183033_19900922_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-26",
+     "scene": "LT05_L2SP_184033_19941026_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-10-30",
+     "scene": "LT05_L2SP_183033_19981030_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-01",
+     "scene": "LE07_L2SP_183033_20021001_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2010,
+     "date": "2010-11-07",
+     "scene": "LT05_L2SP_184033_20101107_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-10",
+     "scene": "LC08_L2SP_183034_20141010_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-11-06",
+     "scene": "LC08_L2SP_183034_20181106_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-23",
+     "scene": "LC08_L2SP_184033_20221023_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-10",
+     "scene": "LC09_L2SP_184033_20261010_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "kipushi": {
+   "file": "img/kipushi-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1990,
+     "date": "1990-09-16",
+     "scene": "LT05_L2SP_173068_19900916_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-09-06",
+     "scene": "LT05_L2SP_173068_19980906_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-11",
+     "scene": "LE07_L2SP_173068_20021011_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-08-27",
+     "scene": "LT05_L2SP_173068_20060827_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2008,
+     "date": "2008-09-17",
+     "scene": "LT05_L2SP_173068_20080917_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-11-05",
+     "scene": "LC08_L2SP_173068_20141105_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-09-29",
+     "scene": "LC08_L2SP_173068_20180929_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-18",
+     "scene": "LC09_L2SP_173068_20221018_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-10-13",
+     "scene": "LC09_L2SP_173068_20261013_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "atacama": {
+   "file": "img/atacama-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-09-25",
+     "scene": "LT05_L2SP_233076_19860925_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-09-20",
+     "scene": "LT05_L2SP_233076_19900920_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-17",
+     "scene": "LT05_L2SP_233076_19941017_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-10-15",
+     "scene": "LE07_L2SP_233076_20021015_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-07",
+     "scene": "LC08_L2SP_233076_20260907_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "cinovec": {
+   "file": "img/cinovec-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1985,
+     "date": "1985-10-25",
+     "scene": "LT05_L2SP_192025_19851025_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-18",
+     "scene": "LT05_L2SP_192025_19941018_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-08-10",
+     "scene": "LT05_L2SP_192025_19980810_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2000,
+     "date": "2000-09-24",
+     "scene": "LE07_L2SP_192025_20000924_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2005,
+     "date": "2005-08-29",
+     "scene": "LT05_L2SP_192025_20050829_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-10-30",
+     "scene": "LT05_L2SP_192025_20101030_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2015,
+     "date": "2015-10-12",
+     "scene": "LC08_L2SP_192025_20151012_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-09-18",
+     "scene": "LC08_L2SP_192025_20180918_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2021,
+     "date": "2021-09-26",
+     "scene": "LC08_L2SP_192025_20210926_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-08",
+     "scene": "LC08_L2SP_192025_20260908_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "tenke": {
+   "file": "img/tenke-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-12-01",
+     "scene": "LT05_L2SP_174067_19861201_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-09-07",
+     "scene": "LT05_L2SP_174067_19900907_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-08-28",
+     "scene": "LT05_L2SP_174067_19980828_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-09-16",
+     "scene": "LE07_L2SP_174067_20020916_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2005,
+     "date": "2005-10-02",
+     "scene": "LT05_L2SP_174067_20051002_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-11-01",
+     "scene": "LT05_L2SP_174067_20101101_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-09-25",
+     "scene": "LC08_L2SP_174067_20140925_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-08-19",
+     "scene": "LC08_L2SP_174067_20180819_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-09",
+     "scene": "LC09_L2SP_174067_20221009_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-18",
+     "scene": "LC09_L2SP_174067_20260918_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "mutanda": {
+   "file": "img/mutanda-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1984,
+     "date": "1984-10-08",
+     "scene": "LT05_L2SP_174067_19841008_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-10-25",
+     "scene": "LT05_L2SP_174067_19901025_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-11-05",
+     "scene": "LT05_L2SP_174068_19941105_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-08-28",
+     "scene": "LT05_L2SP_174067_19980828_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-09-16",
+     "scene": "LE07_L2SP_174068_20020916_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-10-05",
+     "scene": "LT05_L2SP_174067_20061005_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-11-01",
+     "scene": "LT05_L2SP_174067_20101101_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-11",
+     "scene": "LC08_L2SP_174068_20141011_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-06",
+     "scene": "LC08_L2SP_174068_20181006_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-10-09",
+     "scene": "LC09_L2SP_174067_20221009_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-18",
+     "scene": "LC09_L2SP_174068_20260918_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "kokkola": {
+   "file": "img/kokkola-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-10-05",
+     "scene": "LT05_L2SP_191015_19861005_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-09-23",
+     "scene": "LT05_L2SP_190015_19900923_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1995,
+     "date": "1995-09-05",
+     "scene": "LT05_L2SP_190015_19950905_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-08-22",
+     "scene": "LE07_L2SP_191015_20020822_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-08-25",
+     "scene": "LT05_L2SP_191015_20060825_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2009,
+     "date": "2009-10-11",
+     "scene": "LT05_L2SP_192015_20091011_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-09-16",
+     "scene": "LC08_L2SP_191015_20140916_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2019,
+     "date": "2019-08-22",
+     "scene": "LC08_L2SP_190016_20190822_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-08-28",
+     "scene": "LC08_L2SP_192015_20220828_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-08-25",
+     "scene": "LC08_L2SP_190016_20260825_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "norilsk": {
+   "file": "img/norilsk-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-08-15",
+     "scene": "LT05_L2SP_154011_19860815_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1989,
+     "date": "1989-07-22",
+     "scene": "LT05_L2SP_154011_19890722_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1995,
+     "date": "1995-08-17",
+     "scene": "LT05_L2SP_153011_19950817_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2009,
+     "date": "2009-07-29",
+     "scene": "LT05_L2SP_154011_20090729_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2013,
+     "date": "2013-08-09",
+     "scene": "LC08_L2SP_154011_20130809_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-08-23",
+     "scene": "LC08_L2SP_154011_20180823_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-08-03",
+     "scene": "LC09_L2SP_153011_20220803_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-16",
+     "scene": "LC08_L2SP_152011_20260916_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "imip": {
+   "file": "img/imip-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1994,
+     "date": "1994-11-10",
+     "scene": "LT05_L2SP_113062_19941110_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1997,
+     "date": "1997-10-17",
+     "scene": "LT05_L2SP_113062_19971017_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2015,
+     "date": "2015-10-19",
+     "scene": "LC08_L2SP_113062_20151019_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-09-25",
+     "scene": "LC08_L2SP_113062_20180925_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2020,
+     "date": "2020-11-01",
+     "scene": "LC08_L2SP_113062_20201101_02_T1",
+     "platform": "landsat-8"
+    }
+   ]
+  },
+  "terrafame": {
+   "file": "img/terrafame-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1986,
+     "date": "1986-09-30",
+     "scene": "LT05_L2SP_188015_19860930_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1990,
+     "date": "1990-09-09",
+     "scene": "LT05_L2SP_188015_19900909_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-10-13",
+     "scene": "LT05_L2SP_189015_19941013_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1997,
+     "date": "1997-09-03",
+     "scene": "LT05_L2SP_189015_19970903_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-08-26",
+     "scene": "LE07_L2SP_187015_20020826_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-09-14",
+     "scene": "LT05_L2SP_187015_20060914_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-09-09",
+     "scene": "LT05_L2SP_187015_20100909_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-10-04",
+     "scene": "LC08_L2SP_189015_20141004_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2020,
+     "date": "2020-09-02",
+     "scene": "LC08_L2SP_189015_20200902_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2021,
+     "date": "2021-08-29",
+     "scene": "LC08_L2SP_188015_20210829_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2026,
+     "date": "2026-08-28",
+     "scene": "LC09_L2SP_187015_20260828_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  },
+  "balama": {
+   "file": "img/balama-landsat.jpg",
+   "frame": 256,
+   "frames": [
+    {
+     "year": 1989,
+     "date": "1989-10-23",
+     "scene": "LT05_L2SP_165069_19891023_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1994,
+     "date": "1994-11-22",
+     "scene": "LT05_L2SP_165069_19941122_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 1998,
+     "date": "1998-11-01",
+     "scene": "LT05_L2SP_165069_19981101_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2002,
+     "date": "2002-11-04",
+     "scene": "LE07_L2SP_165069_20021104_02_T1",
+     "platform": "landsat-7"
+    },
+    {
+     "year": 2006,
+     "date": "2006-10-22",
+     "scene": "LT05_L2SP_165069_20061022_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2010,
+     "date": "2010-11-18",
+     "scene": "LT05_L2SP_165069_20101118_02_T1",
+     "platform": "landsat-5"
+    },
+    {
+     "year": 2014,
+     "date": "2014-12-15",
+     "scene": "LC08_L2SP_165069_20141215_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2018,
+     "date": "2018-10-07",
+     "scene": "LC08_L2SP_165069_20181007_02_T1",
+     "platform": "landsat-8"
+    },
+    {
+     "year": 2022,
+     "date": "2022-11-27",
+     "scene": "LC09_L2SP_165069_20221127_02_T1",
+     "platform": "landsat-9"
+    },
+    {
+     "year": 2026,
+     "date": "2026-09-03",
+     "scene": "LC09_L2SP_165069_20260903_02_T1",
+     "platform": "landsat-9"
+    }
+   ]
+  }
+ },
+ "generated": "2026-10-24",
+ "source": "Landsat 4, 5, 7, 8 and 9 Collection 2 Level-2 surface reflectance (USGS), via Microsoft Planetary Computer; 30 m, Tier 1 scenes only, one clear scene about every four years in the same season"
+}
