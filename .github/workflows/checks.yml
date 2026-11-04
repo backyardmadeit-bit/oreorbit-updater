@@ -1,0 +1,56 @@
+name: Checks
+
+# Every PR (and every push to main): syntax of all code, the library pages build, and the consistency scan
+# for stale counts (minerals, sites, routes). The live WordPress pages and madali.cz are scanned too, but
+# only as warnings, because they are edited outside this repo.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python compiles
+        run: python -m py_compile updater/*.py tools/*.py
+
+      - name: JavaScript syntax
+        run: for f in atlas/*.js; do node --check "$f"; done
+
+      - name: PHP syntax
+        run: |
+          if command -v php >/dev/null; then
+            for f in atlas/*.php; do php -l "$f" >/dev/null || { php -l "$f"; exit 1; }; done
+            echo "php -l: all files OK"
+          else
+            echo "::warning::php not available on this runner, PHP syntax not checked"
+          fi
+
+      - name: Build the library pages (JSON-LD must parse)
+        run: python tools/build_pages.py build-pages
+
+      - name: Consistency scan (repo sources and built pages)
+        run: python tools/consistency_scan.py --pages build-pages
+
+      - name: Consistency scan (live WordPress pages and madali.cz, warnings only)
+        continue-on-error: true
+        run: |
+          python - <<'EOF'
+          import subprocess, sys
+          # --remote prints warnings for the live sites; the repo part already passed in the step above
+          out = subprocess.run([sys.executable, "tools/consistency_scan.py", "--remote"], capture_output=True, text=True)
+          print(out.stdout); print(out.stderr, file=sys.stderr)
+          EOF

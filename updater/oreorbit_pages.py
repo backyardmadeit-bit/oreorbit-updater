@@ -24,6 +24,44 @@ MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "No
 MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 BBC = "https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad"
 
+# Counts in words, computed from reference.json, never typed in (tools/consistency_scan.py checks the rest).
+_EN_W = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty".split()
+_CS_W = {5: ("pět", "pěti"), 6: ("šest", "šesti"), 7: ("sedm", "sedmi"), 8: ("osm", "osmi"), 9: ("devět", "devíti"), 10: ("deset", "deseti"),
+         11: ("jedenáct", "jedenácti"), 12: ("dvanáct", "dvanácti"), 13: ("třináct", "třinácti"), 14: ("čtrnáct", "čtrnácti"),
+         15: ("patnáct", "patnácti"), 16: ("šestnáct", "šestnácti"), 17: ("sedmnáct", "sedmnácti"), 18: ("osmnáct", "osmnácti"),
+         19: ("devatenáct", "devatenácti"), 20: ("dvacet", "dvaceti")}
+
+
+def w_en(n):
+    """12 -> 'twelve' (digits above twenty)."""
+    return _EN_W[n] if 0 <= n < len(_EN_W) else str(n)
+
+
+def w_cs(n, gen=False):
+    """12 -> 'dvanáct'; gen=True -> 'dvanácti' (genitive, dative and locative share it from five up)."""
+    return _CS_W[n][1 if gen else 0] if n in _CS_W else str(n)
+
+
+def _about_counts(ref, cs):
+    """The numbers in the About pages' lede and "What it is" list, in the page's language."""
+    c = counts(ref)
+    if cs:
+        rt = ("%s obchodních tras" % w_cs(c["routes"], gen=True)) if c["routes"] else "hlavních obchodních tras"
+        return {"n_min": w_cs(c["minerals"], gen=True), "n_cn": w_cs(c["china65"], gen=True), "n_sites": c["sites"], "n_routes": rt}
+    rt = ("%s trade routes" % w_en(c["routes"])) if c["routes"] else "the main trade routes"
+    return {"n_min": w_en(c["minerals"]), "n_cn": w_en(c["china65"]), "n_sites": c["sites"], "n_routes": rt}
+
+
+def counts(ref):
+    """minerals, sites, routes, and how many minerals have a stage where China holds more than 65 %."""
+    mats = ref.get("materials") or {}
+
+    def china65(m):
+        st = (mats.get(m) or {}).get("stages") or {}
+        return any(isinstance(v, dict) and v.get("who") == "China" and isinstance(v.get("pct"), (int, float)) and v["pct"] > 65 for v in st.values())
+    return {"minerals": len(ref["order"]), "sites": len(ref["sites"]), "routes": len(ref.get("routes") or []),
+            "china65": sum(1 for m in ref["order"] if china65(m))}
+
 
 def e(x):
     return html.escape(str(x if x is not None else ""), quote=True)
@@ -335,8 +373,9 @@ def site_page(s, ref, live, today):
 
 def index_page(ref, today):
     path = "p/index.html"
-    title = "The OreOrbit library: twelve critical minerals and 43 sites"
-    desc = "Readable, citable pages on the twelve critical raw materials behind Europe's defence and the 43 mines and plants OreOrbit watches from orbit."
+    c = counts(ref)
+    title = "The OreOrbit library: %s critical minerals and %d sites" % (w_en(c["minerals"]), c["sites"])
+    desc = "Readable, citable pages on the %s critical raw materials behind Europe's defence and the %d mines and plants OreOrbit watches from orbit." % (w_en(c["minerals"]), c["sites"])
     rows = []
     for m in ref["order"]:
         R = ref["materials"][m]
@@ -358,7 +397,7 @@ def about_page(ref, cfg, today):
     desc = "OreOrbit is a free, live atlas of the critical raw materials behind Europe's defence and space industries, built by David Madali at Bohemia Defense in Prague."
     mail = cfg.get("contactEmail") or "david@madali.cz"
     body = """<h1>About OreOrbit</h1>
-<p class="lede">Europe's defence runs on twelve minerals, and for nine of them China controls at least one stage of the supply chain. OreOrbit shows where those minerals are mined and refined, how they reach Europe, and what is changing this week, from public data and satellite pictures.</p>
+<p class="lede">Europe's defence runs on %(n_min)s minerals, and for %(n_cn)s of them China controls at least one stage of the supply chain. OreOrbit shows where those minerals are mined and refined, how they reach Europe, and what is changing this week, from public data and satellite pictures.</p>
 <section><h2>Who is behind it</h2>
 <div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/"><b>David Madali</b></a> is a Prague-based analyst of the defence industry, critical raw materials and the space economy. He founded <a href="https://bohemiadefense.com/">Bohemia Defense</a> in 2024, an independent analysis project on Europe's defence industry, security and foreign policy, and built OreOrbit in 2026.</p>
@@ -366,7 +405,7 @@ def about_page(ref, cfg, today):
 <p><a href="https://madali.cz/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali/">Founder page</a></p>
 </div></div></section>
 <section><h2>What it is</h2><ul class="plain">
-<li>A live atlas of 43 mines, refineries and magnet factories, eleven trade routes and the chokepoints between them.</li>
+<li>A live atlas of %(n_sites)d mines, refineries and magnet factories, %(n_routes)s and the chokepoints between them.</li>
 <li>Satellite pictures of every site, refreshed weekly: Sentinel-2 photos, ground cleared since 2018, Sentinel-1 radar and Landsat heat maps.</li>
 <li>Signals every few hours: heat at the plants, ships at the chokepoints, earthquakes and disaster alerts, conflict near the supply chain.</li>
 <li>Monthly EU import data and export-control deadlines, a quick check of what any product depends on, and a weekly brief of what is moving.</li>
@@ -380,7 +419,7 @@ def about_page(ref, cfg, today):
 <p>OreOrbit is free. For defence and space manufacturers who need a defensible answer, Bohemia Defense offers a fixed-scope supply-chain risk review of one product line, supporting documentation under Article 24 of the EU Critical Raw Materials Act, and ongoing monitoring of the materials, sites and deadlines in your own register.</p>
 <p><a class="cta" href="services.html">See services and prices</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Read a sample review (PDF)</a></p></section>
 <section><h2>How to cite OreOrbit</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: critical minerals from orbit. Bohemia Defense. https://bohemiadefense.com/atlas/</p>
-<p class="small">Each page in the library has its own citation. Figures and charts may be quoted and reused with credit to “OreOrbit (Bohemia Defense)” and a link.</p></section>""" % {"bbc": BBC, "mail": e(mail), "year": today[:4]}
+<p class="small">Each page in the library has its own citation. Figures and charts may be quoted and reused with credit to “OreOrbit (Bohemia Defense)” and a link.</p></section>""" % dict({"bbc": BBC, "mail": e(mail), "year": today[:4]}, **_about_counts(ref, False))
     ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("About", path)], alt="p/about-cs.html")
 
@@ -622,13 +661,13 @@ def services_page_cs(cfg, today):
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Služby", path)], lang="cs", alt="p/services.html")
 
 
-def about_page_cs(cfg, today):
+def about_page_cs(ref, cfg, today):
     path = "p/about-cs.html"
     title = "O projektu OreOrbit"
     desc = "OreOrbit je bezplatný živý atlas kritických surovin, na kterých stojí evropský obranný a kosmický průmysl. Vytvořil ho David Madali v Bohemia Defense v Praze."
     mail = cfg.get("contactEmail") or "david@madali.cz"
     body = """<h1>O projektu OreOrbit</h1>
-<p class="lede">Obrana Evropy stojí na dvanácti surovinách a u devíti z nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. OreOrbit ukazuje, kde se tyto suroviny těží a zpracovávají, jak se dostávají do Evropy a co se tento týden mění, z veřejných dat a satelitních snímků.</p>
+<p class="lede">Obrana Evropy stojí na %(n_min)s surovinách a u %(n_cn)s z nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. OreOrbit ukazuje, kde se tyto suroviny těží a zpracovávají, jak se dostávají do Evropy a co se tento týden mění, z veřejných dat a satelitních snímků.</p>
 <section><h2>Kdo za tím stojí</h2>
 <div class="person"><img src="../img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy"><div>
 <p><a href="https://madali.cz/cs/"><b>David Madali</b></a> je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. V roce 2024 založil <a href="https://bohemiadefense.com/cs/">Bohemia Defense</a>, nezávislý analytický projekt o evropském obranném průmyslu, bezpečnosti a zahraniční politice, a v roce 2026 vytvořil OreOrbit.</p>
@@ -636,7 +675,7 @@ def about_page_cs(cfg, today):
 <p><a href="https://madali.cz/cs/">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a> · <a href="https://bohemiadefense.com/david-madali-cz/">Stránka zakladatele</a></p>
 </div></div></section>
 <section><h2>Co to je</h2><ul class="plain">
-<li>Živý atlas 43 dolů, rafinerií a továren na magnety, jedenácti obchodních tras a úzkých míst mezi nimi.</li>
+<li>Živý atlas %(n_sites)d dolů, rafinerií a továren na magnety, %(n_routes)s a úzkých míst mezi nimi.</li>
 <li>Satelitní snímky každé lokality každý týden: fotografie Sentinel-2, odlesněná plocha od roku 2018, radar Sentinel-1 a tepelné mapy Landsat.</li>
 <li>Signály každých pár hodin: teplo v závodech, lodě v úžinách, zemětřesení a výstrahy, konflikty u dodavatelského řetězce.</li>
 <li>Měsíční data o dovozu do EU a termíny vývozních kontrol, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a týdenní přehled toho, co se hýbe.</li>
@@ -649,7 +688,7 @@ def about_page_cs(cfg, today):
 <section><h2>Spolupráce</h2>
 <p>OreOrbit je zdarma. Výrobcům obranné a kosmické techniky, kteří potřebují obhajitelnou odpověď, nabízí Bohemia Defense posouzení rizik jedné výrobní řady s pevným rozsahem jako podklad pro článek 24 nařízení EU o kritických surovinách a průběžné sledování surovin, lokalit a termínů z vašeho registru.</p>
 <p><a class="cta" href="services-cs.html">Služby a ceny</a> &nbsp; <a href="mailto:%(mail)s?subject=OreOrbit">Napsat na %(mail)s</a></p></section>
-<section><h2>Jak OreOrbit citovat</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: kritické suroviny z oběžné dráhy. Bohemia Defense. https://bohemiadefense.com/atlas/</p></section>""" % {"bbc": BBC, "mail": e(mail), "year": today[:4]}
+<section><h2>Jak OreOrbit citovat</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: kritické suroviny z oběžné dráhy. Bohemia Defense. https://bohemiadefense.com/atlas/</p></section>""" % dict({"bbc": BBC, "mail": e(mail), "year": today[:4]}, **_about_counts(ref, True))
     ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "inLanguage": "cs", "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("O projektu", path)], lang="cs", alt="p/about.html")
 
@@ -798,9 +837,9 @@ def social_cards(ref, live, today):
              '<div class="list">%s</div></div><div class="src">Leading country\'s share at the tightest stage · USGS, IEA via OreOrbit</div>') % (
         84 if len(pen) <= 14 else 70, e(pen), len(rows), conc, (". China in %d" % cn) if cn else "", "".join(rows[:7]))
     cards.append({"slug": "product", "title": pen, "html": card_doc((inner, "Check your own product in 60 seconds")),
-                  "en": "%s depend on %d of the twelve critical minerals. For %d of them, one country controls more than 65%% of a key stage%s.\n\nYou can check your own product type in 60 seconds, free, in OreOrbit's quick check (link in the first comment).\n\n#DefenceIndustry #CriticalRawMaterials #SupplyChain" % (
+                  "en": ("%s depend on %d of the " + w_en(len(ref["order"])) + " critical minerals. For %d of them, one country controls more than 65%% of a key stage%s.\n\nYou can check your own product type in 60 seconds, free, in OreOrbit's quick check (link in the first comment).\n\n#DefenceIndustry #CriticalRawMaterials #SupplyChain") % (
                       pen, len(rows), conc, (", China in %d" % cn) if cn else ""),
-                  "cs": "%s závisí na %d z dvanácti kritických surovin. U %d z nich ovládá jedna země přes 65 %% klíčové fáze%s.\n\nSvůj typ výrobku si prověříte za 60 sekund zdarma v rychlé kontrole OreOrbit (odkaz v prvním komentáři)." % (
+                  "cs": ("%s závisí na %d z " + w_cs(len(ref["order"]), gen=True) + " kritických surovin. U %d z nich ovládá jedna země přes 65 %% klíčové fáze%s.\n\nSvůj typ výrobku si prověříte za 60 sekund zdarma v rychlé kontrole OreOrbit (odkaz v prvním komentáři).") % (
                       pcs, len(rows), conc, (", Čína u %d" % cn) if cn else ""),
                   "link": BASE + "#check"})
     return cards
@@ -1037,7 +1076,7 @@ def build(ref, live, cfg, today):
             continue
         p, h = site_page(s, ref, live, today)
         out[p] = h
-    for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: dependency_page_cs(ref, live, today), lambda: services_page_cs(cfg, today), lambda: about_page_cs(cfg, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
+    for fn in (lambda: index_page(ref, today), lambda: dependency_page(ref, live, today), lambda: dependency_page_cs(ref, live, today), lambda: services_page_cs(cfg, today), lambda: about_page_cs(ref, cfg, today), lambda: services_page(cfg, today), lambda: about_page(ref, cfg, today), lambda: legal_page(cfg, today)):
         p, h = fn()
         out[p] = h
     out.update(brief_pages(live, today))

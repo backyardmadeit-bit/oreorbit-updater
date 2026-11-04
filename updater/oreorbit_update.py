@@ -1612,6 +1612,21 @@ def feed_radar(prev):
 
 # ---------------------------------------------------------------- part five: automatic news (GDELT) and the weekly summary
 
+def _w_en(n):
+    import oreorbit_pages as _P
+    return _P.w_en(n)
+
+
+def _w_cs(n):
+    import oreorbit_pages as _P
+    return _P.w_cs(n)
+
+
+def _w_cs_gen(n):
+    import oreorbit_pages as _P
+    return _P.w_cs(n, gen=True)
+
+
 MAT_NAME = {"ree": ("Rare earths", "Vzácné zeminy"), "ti": ("Titanium", "Titan"), "w": ("Tungsten", "Wolfram"), "sb": ("Antimony", "Antimon"),
             "ga": ("Gallium", "Galium"), "ge": ("Germanium", "Germanium"), "li": ("Lithium", "Lithium"), "co": ("Cobalt", "Kobalt"),
             "ni": ("Nickel", "Nikl"), "gr": ("Graphite", "Grafit"), "mg": ("Magnesium", "Hořčík"), "mn": ("Manganese", "Mangan")}
@@ -1699,7 +1714,7 @@ def rss_items(url):
 
 
 def feed_news(prev):
-    """Recent English headlines for the twelve materials from GDELT (two grouped questions), each sorted to its material(s)
+    """Recent English headlines for every tracked material from GDELT (two grouped questions), each sorted to its material(s)
     by the words in its title and marked as found automatically and not checked."""
     import re, html as H
     items = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("title")]
@@ -1934,8 +1949,8 @@ def feed_brief(prev):
     alerts = len((current("live-data/live/hazards.json") or {}).get("alerts") or [])
     brief = {"id": monday, "week": monday, "auto": True, "writtenAt": TODAY.isoformat(),
              "title": "The week in data, %s" % day_txt(monday, False), "title_cs": "Týden v datech, %s" % day_txt(monday, True),
-             "lede": "%d stories on the twelve materials in the last 7 days, %d of %d plants with furnace-hot pixels, and %d serious disaster alerts worldwide." % (len(week_news), len(hot), len(hs) or 31, alerts),
-             "lede_cs": "%d zpráv o dvanácti surovinách za posledních 7 dní, %d z %d závodů s pixely horkými jako pec a %d vážných výstrah před katastrofami ve světě." % (len(week_news), len(hot), len(hs) or 31, alerts),
+             "lede": ("%d stories on the " + _w_en(len(MAT_NAME)) + " materials in the last 7 days, %d of %d plants with furnace-hot pixels, and %d serious disaster alerts worldwide.") % (len(week_news), len(hot), len(hs) or len(CFG["sites"]), alerts),
+             "lede_cs": ("%d zpráv o " + _w_cs_gen(len(MAT_NAME)) + " surovinách za posledních 7 dní, %d z %d závodů s pixely horkými jako pec a %d vážných výstrah před katastrofami ve světě.") % (len(week_news), len(hot), len(hs) or len(CFG["sites"]), alerts),
              "points": pts[:8], "soWhat": "", "soWhat_cs": "", "watchNext": watch_en, "watchNext_cs": watch_cs}
     briefs = [b for b in briefs if b.get("week") != monday] + [brief]
     briefs.sort(key=lambda b: str(b.get("week") or b.get("id") or ""), reverse=True)
@@ -2192,7 +2207,7 @@ def send_mail():
     done = set(x.lower() for x in (data.get("welcomed") or [])) | set(state.setdefault("welcomed", []))
     def _welcome(sb, paid):
         cs = sb.get("lang") == "cs"; mins = [m for m in (sb.get("minerals") or []) if m in MAT_NAME]
-        names = ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins) or ("všech dvanáct surovin" if cs else "all twelve minerals")
+        names = ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins) or (("všech %s surovin" % _w_cs(len(MAT_NAME))) if cs else ("all %s minerals" % _w_en(len(MAT_NAME))))
         if paid:
             subj = "Vítejte v OreOrbit, jsme rádi, že jste s námi" if cs else "Welcome to OreOrbit, we're glad you're here"
             html = _mail_html(cs, "Vítejte v OreOrbit" if cs else "Welcome to OreOrbit",
