@@ -1,0 +1,97 @@
+/* OreOrbit readable pages. Same palette and type as the atlas. */
+:root{--bg:#050607;--well:#0b0f12;--paper:#eceee9;--dim:#a3aaae;--faint:#697176;--rule:rgba(236,238,233,.11);--live:#3ddc97;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--paper);font:400 17px/1.65 "Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration-color:rgba(236,238,233,.35);text-underline-offset:4px;text-decoration-thickness:1px}
+a:hover{text-decoration-color:var(--paper)}
+:focus-visible{outline:2px solid var(--live);outline-offset:3px;border-radius:4px}
+.bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:14px;padding:calc(12px + env(safe-area-inset-top,0px)) clamp(18px,4vw,40px) 12px;background:rgba(5,6,7,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule)}
+.brand{display:inline-flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em;text-decoration:none;font-size:17px}
+.brand svg{width:22px;height:22px}
+.by{color:var(--faint);font-size:14px}
+.by a{color:var(--dim)}
+.bar nav{margin-left:auto;display:flex;align-items:center;gap:18px;font-size:14px;font-weight:500}
+.bar nav a{text-decoration:none;color:var(--dim)}
+.bar nav a:hover{color:var(--paper)}
+a.cta{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:var(--paper);color:#050607!important;text-decoration:none;font-weight:600;font-size:14px}
+a.cta:hover{background:#fff}
+.doc{max-width:860px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(18px,4vw,40px) 40px}
+.crumbs{font-size:14px;color:var(--faint);margin-bottom:26px}
+.crumbs a{color:var(--dim)}
+.kicker{display:flex;align-items:center;gap:10px;margin:0 0 10px;color:var(--dim);font-size:15px}
+.kicker i{width:10px;height:10px;border-radius:50%;background:var(--c,var(--live))}
+h1{margin:0;font-weight:300;font-size:clamp(44px,7vw,84px);line-height:.95;letter-spacing:-.045em}
+.lede{margin:20px 0 0;font-size:clamp(19px,2vw,23px);line-height:1.5;color:var(--dim);max-width:52ch}
+h2{margin:0 0 14px;font-size:22px;font-weight:500;letter-spacing:-.015em}
+section{padding:34px 0 0;margin-top:34px;border-top:1px solid var(--rule)}
+section p{margin:0 0 12px;max-width:64ch}
+.small{font-size:14px;color:var(--faint)}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;margin:36px 0 0;background:var(--rule);border:1px solid var(--rule);border-radius:14px;overflow:hidden}
+.figs div{background:var(--bg);padding:18px 18px 16px}
+.figs dt{font-size:clamp(28px,3.4vw,40px);font-weight:300;letter-spacing:-.04em;line-height:1.05;color:var(--paper)}
+.figs dd{margin:8px 0 0;font-size:14px;line-height:1.45;color:var(--dim)}
+.facts,.signals{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:0;margin:28px 0 0}
+.facts div,.signals div{display:contents}
+.facts dt,.signals dt,.facts dd,.signals dd{padding:12px 0;border-top:1px solid var(--rule);margin:0}
+.facts dt,.signals dt{color:var(--faint);font-size:15px;padding-right:16px}
+.signals dd,.facts dd{color:var(--paper)}
+.chart{width:100%;height:auto;display:block;margin:6px 0 10px}
+.chart text{font:500 14px "Hanken Grotesk",sans-serif;fill:#eceee9}
+.chart .c-l{fill:#a3aaae}
+.chart .c-v{font-weight:600}
+.chart .c-n{fill:#697176;font-size:13px}
+.chart .c-x{fill:#697176;font-size:11px}
+.chart .c-track{fill:rgba(236,238,233,.08)}
+.key{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--k);margin:0 6px 0 0;vertical-align:-1px}
+.key.k-rest{background:rgba(236,238,233,.18);margin-left:10px}
+button.dl,button.copy{font:600 13px "Hanken Grotesk",sans-serif;color:var(--paper);background:transparent;border:1px solid var(--rule);border-radius:999px;height:32px;padding:0 14px;cursor:pointer}
+button.dl:hover,button.copy:hover{border-color:rgba(236,238,233,.4)}
+ul.stats,ul.plain,ul.news,ul.dates,ul.sites{list-style:none;margin:0;padding:0}
+ul.stats li,ul.plain li,ul.news li,ul.dates li,ul.sites li{padding:12px 0;border-top:1px solid var(--rule);color:var(--dim);max-width:70ch}
+ul.stats li:first-child,ul.plain li:first-child,ul.news li:first-child,ul.dates li:first-child,ul.sites li:first-child{border-top:0;padding-top:2px}
+ul.stats b{color:var(--paper);font-weight:600;font-size:20px;margin-right:6px}
+.src{display:block;font-size:13px;color:var(--faint)}
+ul.sites li,ul.news li{display:flex;flex-direction:column;gap:2px}
+ul.sites a,ul.news a{color:var(--paper);font-weight:500}
+ul.sites span,ul.news span{font-size:14px;color:var(--faint)}
+ul.dates li{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px}
+ul.dates time{color:var(--paper);font-weight:500}
+.sat{position:relative;margin:32px 0 0}
+.sat img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--rule)}
+.sat img.ov{position:absolute;inset:0;border-color:transparent;pointer-events:none}
+.sat figcaption{margin-top:10px;font-size:14px;color:var(--faint)}
+.cite{margin-top:40px;padding:22px 24px;border:1px solid var(--rule);border-radius:14px;background:var(--well)}
+.cite h2{font-size:17px;color:var(--dim);margin-bottom:10px}
+.cite-text{font-size:15px;line-height:1.6;color:var(--paper);margin:0 0 12px}
+.open{margin:36px 0 0}
+.person{display:grid;grid-template-columns:150px minmax(0,1fr);gap:24px;align-items:start}
+.person img{width:150px;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:12px;border:1px solid var(--rule)}
+ul.lib{list-style:none;margin:36px 0 0;padding:0;columns:2 320px;column-gap:40px}
+ul.lib>li{break-inside:avoid;padding:16px 0 18px;border-top:1px solid var(--rule)}
+ul.lib>li>a{display:inline-flex;align-items:center;gap:10px;font-size:24px;font-weight:400;letter-spacing:-.02em;text-decoration:none}
+ul.lib>li>a i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+ul.lib>li>span{display:block;color:var(--faint);font-size:14px;margin:2px 0 8px}
+ul.lib ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px}
+ul.lib ul a{color:var(--dim)}
+.foot{max-width:860px;margin:40px auto 0;padding:24px clamp(18px,4vw,40px) calc(40px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--rule);color:var(--faint);font-size:14px}
+.foot p{margin:0 0 8px}
+.foot p+p a{margin-right:14px}
+@media (max-width:640px){.by{display:none}.bar nav{gap:12px}.bar nav a:not(.cta){display:none}.facts,.signals{grid-template-columns:minmax(0,1fr)}.facts dd,.signals dd{border-top:0;padding-top:0}.person{grid-template-columns:minmax(0,1fr)}ul.dates li{grid-template-columns:minmax(0,1fr);gap:2px}}
+@media print{.bar,.foot,.open,button{display:none}body{background:#fff;color:#000}.chart text{fill:#000}}
+ul.idx{list-style:none;margin:0;padding:0}
+ul.idx li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+ul.idx li:first-child{border-top:0}
+ul.idx .pc{display:flex;align-items:center;gap:12px;font-weight:600;font-variant-numeric:tabular-nums}
+ul.idx .pc em{font-style:normal;font-weight:400;font-size:13px;color:var(--faint)}
+.qbar{flex:1;height:8px;border-radius:8px;background:rgba(236,238,233,.08);overflow:hidden}
+.qbar span{display:block;height:100%;border-radius:8px;background:var(--c)}
+/* v3.9: tables, questions and month links */
+.tbl{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0 4px}
+.tbl th{text-align:left;font-weight:600;font-size:13px;opacity:.75;padding:0 12px 8px 0;border-bottom:1px solid rgba(236,238,233,.18);vertical-align:bottom}
+.tbl td{padding:9px 12px 9px 0;border-bottom:1px solid rgba(236,238,233,.08);vertical-align:top}
+.tbl td i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.faq h3{font-size:18px;margin:24px 0 6px}.faq h3:first-of-type{margin-top:8px}
+.monthnav{line-height:2}.monthnav a{white-space:nowrap}
+.guides{margin:8px 0 28px}
+ul.brief li{padding:6px 0 6px 14px;border-left:3px solid var(--c,#3ddc97);margin:8px 0}

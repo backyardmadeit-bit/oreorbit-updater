@@ -1,0 +1,26 @@
+.DS_Store
+
+# Atlas: server-only secrets (templates live in *.example.php)
+atlas/pay-config.php
+atlas/mail-config.php
+atlas/update-config.php
+
+# Atlas: subscriber / client data and traffic stats (personal data, server only)
+atlas/subs/*
+!atlas/subs/.htaccess
+atlas/stats/*
+!atlas/stats/.htaccess
+
+# Atlas: runtime output written by the robot every run
+atlas/live-data/
+
+# Atlas: files the robot owns on the server (written via update.php; built by updater/)
+atlas/img/
+atlas/p/
+atlas/sitemap.xml
+atlas/data/terrain/
+atlas/data/imagery.json
+atlas/data/orbit-extras.json
+atlas/data/timelapse.json
+atlas/data/landsat.json
+atlas/data/emit.json

@@ -1,0 +1,52 @@
+# Critical Minerals from Orbit: settings for this folder only
+
+Options -Indexes
+DirectoryIndex index.php index.html
+
+# the update key's hash: never served
+<Files "update-config.php">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</Files>
+
+AddType font/woff2 .woff2
+AddType application/json .json
+AddDefaultCharset utf-8
+AddCharset utf-8 .js .css .json
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript text/javascript application/json image/svg+xml application/xml
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # pictures that change weekly keep a short memory; scripts and styles carry ?v= tags, so they can stay for a month
+  ExpiresByType image/jpeg "access plus 1 day"
+  ExpiresByType image/png "access plus 1 day"
+  ExpiresByType image/svg+xml "access plus 7 days"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/javascript "access plus 30 days"
+  ExpiresByType text/javascript "access plus 30 days"
+  ExpiresByType text/css "access plus 30 days"
+  ExpiresByType application/json "access plus 5 minutes"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# the Earth maps and the 3D engine never change
+<FilesMatch "^(earth-.*\.jpg|three\.min\.js)$">
+  <IfModule mod_expires.c>
+    ExpiresDefault "access plus 1 year"
+  </IfModule>
+</FilesMatch>
+
+# small settings scripts without a version tag: keep them fresh
+<FilesMatch "^(config|atlas-public)\.js$">
+  <IfModule mod_expires.c>
+    ExpiresDefault "access plus 1 hour"
+  </IfModule>
+</FilesMatch>
