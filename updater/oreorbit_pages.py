@@ -89,6 +89,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 <html lang="%(lang)s">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%%3E%%3Crect width='32' height='32' rx='7' fill='%%23050607'/%%3E%%3Ccircle cx='16' cy='16' r='5.6' stroke='%%23eceee9' stroke-width='2.2'/%%3E%%3Cellipse cx='16' cy='16' rx='13.4' ry='5.1' stroke='%%23eceee9' stroke-width='1.8' transform='rotate(-28 16 16)'/%%3E%%3Ccircle cx='27.7' cy='9.9' r='2.7' fill='%%233ddc97'/%%3E%%3C/svg%%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>%(title)s · OreOrbit</title>
 <meta name="description" content="%(desc)s">
@@ -109,7 +110,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="11" ry="3.6" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(-24 12 12)"/></svg>OreOrbit</a>
+  <a class="brand" href="../"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="14" r="4.9" stroke="#eceee9" stroke-width="1.4"/><ellipse cx="14" cy="14" rx="12.2" ry="4.6" stroke="#eceee9" stroke-width="1.1" transform="rotate(-28 14 14)"/><circle cx="24.7" cy="8.4" r="1.8" fill="#3ddc97"/></svg>OreOrbit</a>
   <span class="by">%(by)s <a href="https://bohemiadefense.com/%(bdpath)s">Bohemia Defense</a></span>
   <nav>%(nav)s</nav>
 </header>
@@ -432,7 +433,7 @@ def services_page(cfg, today):
 <section><h2>What we offer</h2>
 <dl class="signals">
 <div><dt>1 · Free<br><b>€0</b></dt><dd>The interactive atlas, the quick check for your product, this week's headlines and the live evidence. With your email, also the Monday brief for your minerals and the full evidence data. No login.</dd></div>
-<div><dt>2 · Monitoring<br><b>€390 / month</b></dt><dd>An immediate alert when something changes for the minerals you choose: export controls, plant outages, prices and news. Deadline reminders 30, 14 and 7 days ahead, and a short analyst note every month. Start with your email on the atlas.</dd></div>
+<div><dt>2 · Monitoring<br><b>€390 / month</b></dt><dd>A same-day alert when something changes for the minerals you choose: export controls, plant outages, prices and news. Deadline reminders 30, 14 and 7 days ahead, and a short analyst note every month. Start with your email on the atlas.</dd></div>
 <div><dt>3 · Readiness review<br><b>For your board</b></dt><dd>One product line in two to three weeks: the register of every part with a critical raw material and where it comes from, a rating for each part, stress tests against real export controls, the rules that decide who can supply you, and slides for your board. Scope and price are agreed in a free 30-minute intro call.</dd></div>
 </dl>
 <p class="small">Monitoring starts with your email on the atlas; David replies within one working day with a sample alert for your minerals.</p></section>
@@ -593,7 +594,7 @@ def services_page_cs(cfg, today):
 <section><h2>Co nabízíme</h2>
 <dl class="signals">
 <div><dt>1 · Zdarma<br><b>0 €</b></dt><dd>Interaktivní atlas, rychlá kontrola vašeho výrobku, titulky týdne a živé důkazy. S e-mailem navíc pondělní přehled pro vaše suroviny a plná data důkazů. Bez přihlášení.</dd></div>
-<div><dt>2 · Monitoring<br><b>390 € měsíčně</b></dt><dd>Okamžité upozornění, když se u surovin, které si zvolíte, něco změní: vývozní kontroly, výpadky závodů, ceny a zprávy. Připomínky termínů 30, 14 a 7 dní předem a krátká poznámka analytika každý měsíc. Začnete e-mailem v atlasu.</dd></div>
+<div><dt>2 · Monitoring<br><b>390 € měsíčně</b></dt><dd>Upozornění ještě v den, kdy se u surovin, které si zvolíte, něco změní: vývozní kontroly, výpadky závodů, ceny a zprávy. Připomínky termínů 30, 14 a 7 dní předem a krátká poznámka analytika každý měsíc. Začnete e-mailem v atlasu.</dd></div>
 <div><dt>3 · Posouzení připravenosti<br><b>Pro vaše vedení</b></dt><dd>Jedna výrobní řada za dva až tři týdny: registr všech dílů s kritickou surovinou a jejich původu, hodnocení každého dílu, zátěžové testy proti skutečným vývozním kontrolám, pravidla, která rozhodují, kdo vám smí dodávat, a podklady pro vedení. Rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma.</dd></div>
 </dl>
 <p class="small">Monitoring začíná e-mailem v atlasu; David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny.</p></section>
@@ -1007,6 +1008,19 @@ def sitemap(paths, today):
             + "".join("<url><loc>%s</loc><lastmod>%s</lastmod></url>\n" % (e(u), today) for u in urls) + "</urlset>\n")
 
 
+def _nb_cs(html):
+    """Czech typography: no single-letter word (v, k, s, z, a, i, o, u) left at the end of a line. Text only, never tags or scripts."""
+    out, pos = [], 0
+    for m in re.finditer(r'(<script\b.*?</script>|<style\b.*?</style>|<[^>]+>)', html, re.S | re.I):
+        seg = html[pos:m.start()]
+        for _ in range(2): seg = re.sub(r'(^|[\s\u00a0(„“])([vkszaiouVKSZAIOU]) +(?=\S)', '\\1\\2\u00a0', seg)   # twice: "a v", "a z"
+        out.append(seg); out.append(m.group(0)); pos = m.end()
+    seg = html[pos:]
+    for _ in range(2): seg = re.sub(r'(^|[\s\u00a0(„“])([vkszaiouVKSZAIOU]) +(?=\S)', '\\1\\2\u00a0', seg)
+    out.append(seg)
+    return "".join(out)
+
+
 def build(ref, live, cfg, today):
     """Returns {path: text} for every page and the sitemap."""
     out = {}
@@ -1050,6 +1064,11 @@ def build(ref, live, cfg, today):
             h = h.replace("Monitoring starts with your email on the atlas; David replies within one working day with a sample alert for your minerals.", "Monitoring starts on the atlas: choose your minerals, pay by card, and it runs from the same day. Cancel anytime. Not seeing the value? Ask within the first month and we refund you in full.")
             h = h.replace("Monitoring začíná e-mailem v atlasu; David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny.", "Monitoring spustíte v atlasu: zvolíte suroviny, zaplatíte kartou a běží ještě týž den. Zrušit ho můžete kdykoli. Nevidíte přínos? Během prvního měsíce vám na požádání vrátíme peníze.")
             out[k] = h
+    czk = str(cfg.get("monitoringPriceCzk") or "1 200").strip()
+    for k in list(out):
+        if k.endswith("-cs.html"):
+            h = out[k].replace("%s € měsíčně" % price, "%s € měsíčně (asi %s Kč)" % (price, czk)) if czk else out[k]
+            out[k] = _nb_cs(h)
     ep, eh = embed_page(live, today)
     if eh:
         out[ep] = eh

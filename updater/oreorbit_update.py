@@ -2043,10 +2043,10 @@ def _mail_html(cs, kicker, title, lede, sections, unsub):
         lis = "".join('<tr><td style="padding:10px 0;border-top:1px solid #e6e8e5;font:15px/1.5 Arial,sans-serif;color:#13171a">%s</td></tr>' % it for it in items)
         rows += ('<tr><td style="padding:22px 0 6px;font:12px/1.4 Menlo,Consolas,monospace;color:#5b6267">%s</td></tr>%s' % (_esc(head), lis))
     atlas = BASE + ("?lang=cs" if cs else "")
-    return ('<!doctype html><html><body style="margin:0;background:#f3f4f1"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f3f4f1"><tr><td align="center" style="padding:24px 12px">'
+    _h = ('<!doctype html><html><body style="margin:0;background:#f3f4f1"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f3f4f1"><tr><td align="center" style="padding:24px 12px">'
             '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:14px">'
-            '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:24px 28px;font:600 16px Arial,sans-serif;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span><div style="margin-top:12px">' + "".join('<span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:%s;margin-right:4px"></span>' % c for c in ("#a78bfa", "#fb923c", "#facc15", "#94a3b8", "#22d3ee", "#4ade80", "#f472b6", "#60a5fa", "#a3e635", "#e5e7eb")) + '</div></td></tr>'
-            '<tr><td style="padding:26px 28px 8px"><p style="margin:0 0 6px;font:12px Menlo,Consolas,monospace;color:#0f8f5c">%s</p>'
+            '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:24px 28px;font:600 16px Arial,sans-serif;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span><div style="margin-top:12px">' + "".join('<span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:%s;margin-right:4px"></span>' % c for c in ("#a78bfa", "#fb923c", "#facc15", "#a9b8cc", "#22d3ee", "#4ade80", "#f472b6", "#60a5fa", "#a3e635", "#e4e4e7")) + '</div></td></tr>'
+            '<tr><td style="padding:26px 28px 8px"><p style="margin:0 0 6px;font:12px Menlo,Consolas,monospace;color:#0f6b46">%s</p>'
             '<h1 style="margin:0;font:600 24px/1.25 Arial,sans-serif;color:#050607">%s</h1><p style="margin:12px 0 0;font:15px/1.55 Arial,sans-serif;color:#3b4247">%s</p></td></tr>'
             '<tr><td style="padding:0 28px"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0">%s</table></td></tr>'
             '<tr><td style="padding:24px 28px"><a href="%s" style="display:inline-block;background:#050607;color:#eceee9;text-decoration:none;font:600 14px Arial,sans-serif;padding:12px 20px;border-radius:999px">%s</a></td></tr>'
@@ -2056,7 +2056,7 @@ def _mail_html(cs, kicker, title, lede, sections, unsub):
         _esc("Otevřít atlas" if cs else "Open the atlas"),
         _esc("Bohemia Defense · David Madali · IČO 22229957 · bohemiadefense.com/atlas"), unsub,
         _esc("Odhlásit odběr" if cs else "Unsubscribe"))
-
+    return _nb_cs(_h) if cs else _h
 
 def _mins_ok(item_mins, mins):
     return not mins or not item_mins or any(m in mins for m in item_mins)
@@ -2082,6 +2082,19 @@ def _other_news(state, term, budget):
         return ent.get("items", [])
 
 MANAGE = "https://bohemiadefense.com/atlas/manage.php"
+
+def _nb_cs(html):
+    """Czech typography: no single-letter word (v, k, s, z, a, i, o, u) left at the end of a line. Text only, never tags or scripts."""
+    out, pos = [], 0
+    for m in re.finditer(r'(<script\b.*?</script>|<style\b.*?</style>|<[^>]+>)', html, re.S | re.I):
+        seg = html[pos:m.start()]
+        for _ in range(2): seg = re.sub(r'(^|[\s\u00a0(„“])([vkszaiouVKSZAIOU]) +(?=\S)', '\\1\\2\u00a0', seg)   # twice: "a v", "a z"
+        out.append(seg); out.append(m.group(0)); pos = m.end()
+    seg = html[pos:]
+    for _ in range(2): seg = re.sub(r'(^|[\s\u00a0(„“])([vkszaiouVKSZAIOU]) +(?=\S)', '\\1\\2\u00a0', seg)
+    out.append(seg)
+    return "".join(out)
+
 
 def _kind(subj):
     s = subj.lower()
@@ -2123,7 +2136,7 @@ def send_mail():
             html = _mail_html(cs, "Vítejte v OreOrbit" if cs else "Welcome to OreOrbit",
                               "Vítejte v OreOrbit. Jsme rádi, že jste s námi." if cs else "Welcome to OreOrbit. We're glad you're here.",
                               ("Děkujeme, že jste se k nám přidali. Patříte k malému okruhu firem, které vidí změny u svých surovin dřív, než dorazí do dodavatelského řetězce. Hlídáme: " if cs else "Thank you for joining us. You are part of a small circle of companies that see changes to their minerals before they reach the supply chain. We watch: ") + names + ".",
-                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Okamžité upozornění, když se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás.", "Připomínky termínů 30, 14 a 7 dní předem."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you.", "Deadline reminders 30, 14 and 7 days ahead."])]),
+                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ještě v den, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás.", "Připomínky termínů 30, 14 a 7 dní předem."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you.", "Deadline reminders 30, 14 and 7 days ahead."])]),
                                ("Osobně" if cs else "Personally", [_esc("Na tento e-mail odpovídá osobně David Madali, zakladatel. Chcete jiné suroviny nebo cokoli probrat? Stačí odpovědět." if cs else "David Madali, the founder, answers this email personally. Want different minerals or to talk anything through? Just reply.") + "<br><br><b>David Madali</b>"])], unsub(sb))
         else:
             subj = "Vítejte v pondělním přehledu OreOrbit" if cs else "Welcome to the OreOrbit Monday brief"
@@ -2150,7 +2163,7 @@ def send_mail():
         for sb in [x for x in subs if x.get("plan") == "brief"]:
             cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
             pts = [x for x in (latest.get("points") or []) if _mins_ok(x.get("materials"), mins)][:8]
-            items = ['%s%s' % (_esc((cs and x.get("text_cs")) or x.get("text")), (' <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc(x["url"]), _esc(x.get("source") or "Source"))) if str(x.get("url", "")).startswith("https://") else "") for x in pts]
+            items = ['%s%s' % (_esc((cs and x.get("text_cs")) or x.get("text")), (' <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(x["url"]), _esc(x.get("source") or "Source"))) if str(x.get("url", "")).startswith("https://") else "") for x in pts]
             dl = ['<b>%s</b> · %s' % (_esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:4]
             kicker = ("Pondělní přehled · týden od " if cs else "Monday brief · week of ") + _day(latest["week"], cs)
             subj = ("OreOrbit · pondělní přehled · " if cs else "OreOrbit · Monday brief · ") + _day(latest["week"], cs)
@@ -2194,15 +2207,15 @@ def send_mail():
                     means.append(_esc(("%s: víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." % nm) if cs else ("%s: more than half of EU imports come from China. Keep a second source in progress." % nm)))
             dl = ['<b>%s</b> · %s · %s' % (_esc(("za %d dní" if cs else "in %d days") % (dt.date.fromisoformat(d["date"]) - TODAY).days), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
             wk = (TODAY - dt.timedelta(days=7)).isoformat()
-            moved = ['%s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in news if str(n.get("date") or n.get("addedAt") or "") >= wk and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
+            moved = ['%s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in news if str(n.get("date") or n.get("addedAt") or "") >= wk and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
             subj = ("OreOrbit · vaše pondělní vydání · " if cs else "OreOrbit · your Monday edition · ") + _day(latest["week"], cs)
             html = _mail_html(cs, ("Monitoring · týden od " if cs else "Monitoring · week of ") + _day(latest["week"], cs),
                               "Vaše suroviny tento týden" if cs else "Your minerals this week",
                               ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
                               [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
                                ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved),
-                               ("Další suroviny" if cs else "Your other minerals", ['<b>%s</b> · %s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc(t.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for t in _other_terms(sb) for it in _other_news(state, t, pbudget)[:3]]),
-                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f8f5c">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
+                               ("Další suroviny" if cs else "Your other minerals", ['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(t.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for t in _other_terms(sb) for it in _other_news(state, t, pbudget)[:3]]),
+                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             out.append((e, subj, html))
         state["paid_week"] = latest["week"]
     # 2b. paid monitoring: an alert only when something new happens for the client's minerals
@@ -2213,7 +2226,7 @@ def send_mail():
         cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
         st = al.setdefault(e, {"since": TODAY.isoformat(), "dl": []})
         fresh = [n for n in news if str(n.get("addedAt") or n.get("date") or "") > st.get("since", "") and _mins_ok(n.get("materials"), mins) and n.get("materials")]
-        items = ['%s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in fresh[:8]]
+        items = ['%s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in fresh[:8]]
         due = []
         for d in dls:
             left = (dt.date.fromisoformat(d["date"]) - TODAY).days
@@ -2229,7 +2242,7 @@ def send_mail():
                     continue
                 seen.append(it["u"])
                 if st.get("ofirst"):
-                    oth.append('<b>%s</b> · %s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc(term.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")))
+                    oth.append('<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(term.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")))
             st["ou"] = seen[-400:]
         st["ofirst"] = True   # the first run only learns what already exists, so nobody gets a flood of old stories
         items = items + oth[:6]
@@ -2238,7 +2251,7 @@ def send_mail():
             html = _mail_html(cs, "Monitoring", ("Co se změnilo u vašich surovin" if cs else "What changed for your minerals"),
                               ("Od posledního upozornění." if cs else "Since your last alert."),
                               [("Nové zprávy" if cs else "New", items), ("Blíží se termín" if cs else "Deadline coming up", due),
-                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f8f5c">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
+                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             out.append((e, subj, html))
         st["since"] = TODAY.isoformat()
     wk = (TODAY - dt.timedelta(days=TODAY.weekday())).isoformat()
