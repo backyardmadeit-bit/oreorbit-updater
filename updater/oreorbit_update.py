@@ -32,6 +32,7 @@ import json
 import math
 import os
 import sys
+import unicodedata
 import time
 import traceback
 import urllib.error
@@ -2139,19 +2140,66 @@ def _mins_ok(item_mins, mins):
     return not mins or not item_mins or any(m in mins for m in item_mins)
 
 
+_OTHER = None
+
+
+def _other_list():
+    """The allow-list of other minerals (atlas/data/other-minerals.json): the same file the atlas and go-pay.php use."""
+    global _OTHER
+    if _OTHER is None:
+        d = {}
+        try:
+            d = json.load(open(os.path.join(HERE, "..", "atlas", "data", "other-minerals.json"), encoding="utf-8"))
+        except Exception:
+            d = current("data/other-minerals.json") or {}
+        norm = lambda x: unicodedata.normalize("NFD", str(x).lower()).encode("ascii", "ignore").decode().strip()
+        by_id = {o["id"]: o for o in (d.get("other") or []) if isinstance(o, dict) and o.get("id")}
+        alias = {}
+        for o in by_id.values():
+            for a in [o["id"], o.get("en", ""), o.get("cs", "")] + list(o.get("aka") or []):
+                alias[norm(a)] = o["id"]
+        _OTHER = {"by_id": by_id, "alias": alias, "norm": norm}
+    return _OTHER
+
+
 def _other_terms(sb):
-    raw = str(sb.get("other") or "")
-    return [t.strip().lower() for t in raw.replace(";", ",").split(",") if 2 < len(t.strip()) <= 30][:3]
+    """A client's other minerals: allow-list ids ("cu,sn"); text typed before the allow-list is matched by name, or kept as typed."""
+    L = _other_list(); out = []
+    for t in str(sb.get("other") or "").replace(";", ",").split(","):
+        t = t.strip().lower()
+        if not t:
+            continue
+        k = t if t in L["by_id"] else L["alias"].get(L["norm"](t), t)
+        if (k in L["by_id"] or 2 < len(k) <= 30) and k not in out:
+            out.append(k)
+    return out[:3]
+
+
+def _other_label(term, cs=False):
+    o = _other_list()["by_id"].get(term)
+    return (o.get("cs" if cs else "en") or term) if o else term.capitalize()
+
+
+def _other_quiet(state, term, days=14):
+    """True when the news questions for this term have found nothing for `days` days."""
+    ent = (state.get("other") or {}).get(term) or {}
+    seen = ent.get("hit") or ent.get("first")
+    return bool(seen) and (TODAY - dt.date.fromisoformat(seen)).days >= days
+
 
 def _other_news(state, term, budget):
     c = state.setdefault("other", {}); ent = c.get(term) or {}
     if ent.get("d") == TODAY.isoformat() or budget[0] <= 0:
         return ent.get("items", [])
     budget[0] -= 1
+    o = _other_list()["by_id"].get(term)
+    words = (o.get("q") if o else None) or [term]
+    q = ('"%s"' % words[0]) if len(words) == 1 else "(" + " OR ".join('"%s"' % w for w in words) + ")"
     try:
-        arts = gdelt('"%s" (mining OR mine OR smelter OR refinery OR export OR supply OR price)' % term, span="7d")
+        arts = gdelt(q + " (mining OR mine OR smelter OR refinery OR export OR supply OR price)", span="7d")
         items = [{"t": a.get("title"), "u": a.get("url"), "s": a.get("domain"), "d": "%s-%s-%s" % (a.get("seendate", "")[:4], a.get("seendate", "")[4:6], a.get("seendate", "")[6:8])} for a in arts if a.get("title") and a.get("url")][:12]
-        c[term] = {"d": TODAY.isoformat(), "items": items}
+        c[term] = {"d": TODAY.isoformat(), "items": items, "first": ent.get("first") or TODAY.isoformat(),
+                   "hit": TODAY.isoformat() if items else ent.get("hit")}
         time.sleep(6)   # the news index allows one question every few seconds
         return items
     except Exception as ex:
@@ -2295,7 +2343,8 @@ def send_mail():
                               [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
                                ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved),
                                ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs, only_unusual=False)),
-                               ("Další suroviny" if cs else "Your other minerals", ['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(t.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for t in _other_terms(sb) for it in _other_news(state, t, pbudget)[:3]]),
+                               ("Další suroviny" if cs else "Your other minerals", [x for t in _other_terms(sb) for x in (['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(t, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for it in _other_news(state, t, pbudget)[:3]]
+                                                                                        or (['<b>%s</b> · %s' % (_esc(_other_label(t, cs)), _esc("za posledních 14 dní jsme nenašli žádnou zprávu" if cs else "no news found in the last 14 days"))] if _other_quiet(state, t) else []))]),
                                ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             out.append((e, subj, html))
         state["paid_week"] = latest["week"]
@@ -2323,7 +2372,7 @@ def send_mail():
                     continue
                 seen.append(it["u"])
                 if st.get("ofirst"):
-                    oth.append('<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(term.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")))
+                    oth.append('<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(term, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")))
             st["ou"] = seen[-400:]
         st["ofirst"] = True   # the first run only learns what already exists, so nobody gets a flood of old stories
         items = items + oth[:6]
@@ -2352,9 +2401,13 @@ def send_mail():
             fail = sum(1 for x in mine if not x.get("ok") and x["d"] >= since)
             flag = "⚠️ " if (not last or last < (TODAY - dt.timedelta(days=8)).isoformat() or fail) else "✓ "
             rows.append(_esc("%s%s · last email %s · %d in 7 days%s" % (flag, e, last[:10] or "never", n7, (" · %d failed" % fail) if fail else "")))
+        quiet = []
+        for e in sorted(active):
+            sb = next((x for x in subs if x.get("email") == e), None) or {}
+            quiet += [_esc("%s (%s) · %s" % (_other_label(t), t, e)) for t in _other_terms(sb) if _other_quiet(state, t)]
         out.append(("david@madali.cz", "OreOrbit · delivery report · %d paying clients" % len(active),
                     _mail_html(False, "Internal · delivery report", "Did every paying client get their emails?", "Week of %s. A ⚠️ means no email in 8 days or a failed send: check it before the client notices." % wk,
-                               [("Paying clients", rows)], BASE)))
+                               [("Paying clients", rows), ("Other minerals with no news found in 14 days", quiet or ["None."])], BASE)))
         state["report_week"] = wk
     if not out:
         _subs_api(state)

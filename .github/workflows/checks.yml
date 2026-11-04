@@ -39,6 +39,28 @@ jobs:
             echo "::warning::php not available on this runner, PHP syntax not checked"
           fi
 
+      - name: PHP other-minerals allow-list (go-pay.php, stripe-webhook.php)
+        run: |
+          if command -v php >/dev/null; then
+            got=$(php -r 'require "atlas/other-lib.php"; echo implode(",", oo_other_ids(" CU, sn,xx,cu,nb,zn,<b>"));')
+            [ "$got" = "cu,sn,nb" ] || { echo "::error::oo_other_ids returned '$got', expected 'cu,sn,nb'"; exit 1; }
+            echo "oo_other_ids OK ($got)"
+          fi
+
+      - name: Other-minerals list is valid and does not clash with the tracked minerals
+        run: |
+          python - <<'EOF'
+          import json, re, sys
+          d = json.load(open("atlas/data/other-minerals.json", encoding="utf-8"))
+          order = json.load(open("atlas/data/reference.json", encoding="utf-8"))["order"]
+          ids = [o["id"] for o in d["other"]]
+          bad = [i for i in ids if not re.fullmatch(r"[a-z]{1,4}", i)] + [i for i in ids if i in order] + [i for i in set(ids) if ids.count(i) > 1]
+          missing = [m for m in order if m not in d["tracked"]]
+          if bad or missing:
+              print("::error::other-minerals.json: bad or clashing ids %s, tracked minerals without aliases %s" % (bad, missing)); sys.exit(1)
+          print("other-minerals.json OK: %d other minerals, aliases for all %d tracked" % (len(ids), len(order)))
+          EOF
+
       - name: Build the library pages (JSON-LD must parse)
         run: python tools/build_pages.py build-pages
 

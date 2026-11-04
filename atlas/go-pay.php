@@ -5,7 +5,8 @@ declare(strict_types=1);
 header('X-Robots-Tag: noindex, nofollow'); header('Cache-Control: no-store');
 $allowed = ['ree', 'ti', 'w', 'sb', 'ga', 'ge', 'li', 'co', 'ni', 'gr', 'mg', 'mn'];
 $mins = array_values(array_intersect(array_map('trim', explode(',', strtolower((string) ($_GET['m'] ?? '')))), $allowed));
-$other = substr(trim(preg_replace('/[^a-z0-9 ,\-]/', '', strtolower((string) ($_GET['o'] ?? '')))), 0, 40);
+require_once __DIR__ . '/other-lib.php';
+$other = implode(',', oo_other_ids((string) ($_GET['o'] ?? '')));   /* ids from data/other-minerals.json only, e.g. "cu,sn" */
 $lang = ($_GET['l'] ?? '') === 'cs' ? 'cs' : 'en';
 $pay = @include __DIR__ . '/pay-config.php';
 $link = (is_array($pay) && !empty($pay['payment_link']) && str_starts_with((string) $pay['payment_link'], 'https://')) ? (string) $pay['payment_link'] : '';
