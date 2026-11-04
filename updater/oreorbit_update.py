@@ -596,13 +596,28 @@ def feed_ships(prev):
             s["type"] = st["type"]
         if st.get("len"):
             s["len"] = st["len"]
+        # minerals travel as bulk and general cargo (AIS types 70-79); tankers, ferries, fishing and tugs are left out.
+        # A vessel whose type has not arrived yet is kept only if it is large.
+        try:
+            t = int(s.get("type")) if s.get("type") is not None else None
+        except (TypeError, ValueError):
+            t = None
+        if (t is not None and not (70 <= t <= 79)) or (t is None and (s.get("len") or 0) < 150):
+            continue
+        if b.get("mins"):
+            s["mins"] = b["mins"]
         counts[b["id"]][0] += 1
         if isinstance(s.get("sog"), (int, float)) and s["sog"] >= 0.5:
             counts[b["id"]][1] += 1
         ships.append(s)
     if not ships:
         raise RuntimeError("no vessels heard in %d s" % secs)
-    ships.sort(key=lambda s: (s["box"], -(s.get("len") or 0)))
+    # a fair share for every area: the largest ships of each, ports of critical minerals first
+    per = {}
+    for x in sorted(ships, key=lambda s: -(s.get("len") or 0)):
+        per.setdefault(x["box"], []).append(x)
+    cap = max(12, 400 // max(1, len(per)))
+    ships = [x for b in sorted(per, key=lambda k: (not any(bx.get("mins") and bx["name"] == k for bx in boxes), k)) for x in per[b][:cap]]
     out = dict(prev or {})
     out.update({"boxes": boxes, "counts": counts, "fetchedAt": iso(), "seconds": secs, "ships": ships[:400], "source": "AISStream.io"})
     return out, "ok (%d vessels)" % len(ships)
@@ -2047,6 +2062,27 @@ def _mins_ok(item_mins, mins):
     return not mins or not item_mins or any(m in mins for m in item_mins)
 
 
+def _other_terms(sb):
+    raw = str(sb.get("other") or "")
+    return [t.strip().lower() for t in raw.replace(";", ",").split(",") if 2 < len(t.strip()) <= 30][:3]
+
+def _other_news(state, term, budget):
+    c = state.setdefault("other", {}); ent = c.get(term) or {}
+    if ent.get("d") == TODAY.isoformat() or budget[0] <= 0:
+        return ent.get("items", [])
+    budget[0] -= 1
+    try:
+        arts = gdelt('"%s" (mining OR mine OR smelter OR refinery OR export OR supply OR price)' % term, span="7d")
+        items = [{"t": a.get("title"), "u": a.get("url"), "s": a.get("domain"), "d": "%s-%s-%s" % (a.get("seendate", "")[:4], a.get("seendate", "")[4:6], a.get("seendate", "")[6:8])} for a in arts if a.get("title") and a.get("url")][:12]
+        c[term] = {"d": TODAY.isoformat(), "items": items}
+        time.sleep(6)   # the news index allows one question every few seconds
+        return items
+    except Exception as ex:
+        log("mail      other mineral '%s': %s" % (term, str(ex)[:80]))
+        return ent.get("items", [])
+
+MANAGE = "https://bohemiadefense.com/atlas/manage.php"
+
 def _kind(subj):
     s = subj.lower()
     return "welcome" if ("welcome" in s or "vítejte" in s) else "edition" if ("edition" in s or "vydání" in s) else "alert" if ("alert" in s or "upozornění" in s or "reminder" in s or "připomínka" in s) else "report" if "delivery" in s else "brief"
@@ -2087,7 +2123,7 @@ def send_mail():
             html = _mail_html(cs, "Vítejte v OreOrbit" if cs else "Welcome to OreOrbit",
                               "Vítejte v OreOrbit. Jsme rádi, že jste s námi." if cs else "Welcome to OreOrbit. We're glad you're here.",
                               ("Děkujeme, že jste se k nám přidali. Patříte k malému okruhu firem, které vidí změny u svých surovin dřív, než dorazí do dodavatelského řetězce. Hlídáme: " if cs else "Thank you for joining us. You are part of a small circle of companies that see changes to their minerals before they reach the supply chain. We watch: ") + names + ".",
-                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ve chvíli, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás.", "Připomínky termínů 30, 14 a 7 dní předem."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you.", "Deadline reminders 30, 14 and 7 days ahead."])]),
+                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Okamžité upozornění, když se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás.", "Připomínky termínů 30, 14 a 7 dní předem."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you.", "Deadline reminders 30, 14 and 7 days ahead."])]),
                                ("Osobně" if cs else "Personally", [_esc("Na tento e-mail odpovídá osobně David Madali, zakladatel. Chcete jiné suroviny nebo cokoli probrat? Stačí odpovědět." if cs else "David Madali, the founder, answers this email personally. Want different minerals or to talk anything through? Just reply.") + "<br><br><b>David Madali</b>"])], unsub(sb))
         else:
             subj = "Vítejte v pondělním přehledu OreOrbit" if cs else "Welcome to the OreOrbit Monday brief"
@@ -2132,6 +2168,7 @@ def send_mail():
             ser = []
         ref = current("data/reference.json") or {}
         last = ser[-1] if ser else None
+        pbudget = [8]
         for e in sorted(active):
             sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
             cs, mins = sb.get("lang") == "cs", (sb.get("minerals") or list(MAT_NAME.keys()))
@@ -2163,11 +2200,14 @@ def send_mail():
                               "Vaše suroviny tento týden" if cs else "Your minerals this week",
                               ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
                               [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
-                               ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved)], unsub(sb))
+                               ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved),
+                               ("Další suroviny" if cs else "Your other minerals", ['<b>%s</b> · %s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc(t.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for t in _other_terms(sb) for it in _other_news(state, t, pbudget)[:3]]),
+                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f8f5c">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             out.append((e, subj, html))
         state["paid_week"] = latest["week"]
     # 2b. paid monitoring: an alert only when something new happens for the client's minerals
     al = state.setdefault("alerts", {})
+    budget = [8]   # at most eight news questions for other minerals per run
     for e in sorted(active):
         sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
         cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
@@ -2181,11 +2221,24 @@ def send_mail():
             if left in (30, 14, 7, 1) and _mins_ok(d.get("materials"), mins) and k not in st["dl"]:
                 due.append('<b>%s</b> · %s · %s' % (_esc(("za %d dní" % left) if cs else ("in %d days" % left)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
                 st["dl"] = (st["dl"] + [k])[-200:]
+        oth = []
+        for term in _other_terms(sb):
+            seen = st.setdefault("ou", [])
+            for it in _other_news(state, term, budget):
+                if it["u"] in seen:
+                    continue
+                seen.append(it["u"])
+                if st.get("ofirst"):
+                    oth.append('<b>%s</b> · %s <a href="%s" style="color:#0f8f5c">%s</a>' % (_esc(term.capitalize()), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")))
+            st["ou"] = seen[-400:]
+        st["ofirst"] = True   # the first run only learns what already exists, so nobody gets a flood of old stories
+        items = items + oth[:6]
         if items or due:
             subj = ("OreOrbit · upozornění pro vaše suroviny" if cs else "OreOrbit · alert for your minerals")
             html = _mail_html(cs, "Monitoring", ("Co se změnilo u vašich surovin" if cs else "What changed for your minerals"),
                               ("Od posledního upozornění." if cs else "Since your last alert."),
-                              [("Nové zprávy" if cs else "New", items), ("Blíží se termín" if cs else "Deadline coming up", due)], unsub(sb))
+                              [("Nové zprávy" if cs else "New", items), ("Blíží se termín" if cs else "Deadline coming up", due),
+                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f8f5c">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             out.append((e, subj, html))
         st["since"] = TODAY.isoformat()
     wk = (TODAY - dt.timedelta(days=TODAY.weekday())).isoformat()
