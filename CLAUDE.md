@@ -26,14 +26,14 @@ Robot: GitHub repo `oreorbit-updater` (Python), workflow `.github/workflows/upda
   - **Manual run** (Actions → Deploy atlas → Run workflow, `full`): uploads every tracked atlas file.
 - FTP account `w366378_atlas`, chrooted to the atlas folder (remote paths are relative to `atlas/`). GitHub Secrets: `FTP_HOST`, `FTP_USER`, `FTP_PASS`; optional repo variable `FTP_VERIFY_CERT=no` if the certificate ever stops matching.
 - **Not in the repo and never deployed** (git-ignored and skipped by the script's `PROTECTED` regex): server-only configs (templates `*.example.php` are in the repo), `subs/*`, `stats/*` (only their `.htaccess` is tracked), and everything the robot owns on the server via `update.php` `ALLOWED`: `live-data/`, `img/`, `p/`, `sitemap.xml`, `data/terrain/`, `data/{imagery,orbit-extras,timelapse,landsat,emit}.json`. If `ALLOWED` in `update.php` changes, update `PROTECTED` and `.gitignore` too.
-- Pushing: this machine's shell has no GitHub credentials; David pushes branches and opens PRs in GitHub Desktop. Public Actions status can be read via the GitHub REST API without auth (logs need auth).
+- Pushing: `gh` is installed via Homebrew at `/opt/homebrew/bin/gh` (not on the default PATH; prefix `export PATH=/opt/homebrew/bin:$PATH`), logged in as `backyardmadeit-bit` with `repo` + `workflow` scopes; `git push` over HTTPS uses the macOS keychain. Claude pushes branches and opens PRs; David merges.
 - Known harmless 404s: `textures/earth-day-hi.jpg`, `earth-night-hi.jpg` (never uploaded; the globe falls back to the normal textures).
 
 ## Atlas files (repo `atlas/` → WEDOS `atlas/`)
 - `index.html` — page shell, CSS variables (mineral colours `--ree … --mn`), static SEO copy. Script tags carry `?v=` cache-busters: **bump them on every change**.
 - `index.php` — serves `index.html` with a server-rendered news/brief block for crawlers; sends `Cache-Control: no-store`.
 - `atlas-main.js` — core: data tables (`GROUPS/ORDER, PIN, MATERIALS, STAGES, STRATEGIC, SYSTEMS, SITES, ROUTES, PROD, CENTROID, ELEM, DEADLINES, CS` dictionary), globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base. `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
-- `atlas-v2.js` — layered additions `v20 … v42` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel). Footer shows `build NN` (currently **42**). `?debug=1` shows a diagnostics panel; errors are counted via `count.php`.
+- `atlas-v2.js` — layered additions `v20 … v43` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel). Footer shows `build NN` (currently **43**). `?debug=1` shows a diagnostics panel; errors are counted via `count.php`.
 - `atlas-v2.css` — styles, appended per version.
 - `config.js` — public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
 - `data/reference.json` — **single source of truth for the library pages**: `materials{info,stages,worst,deadlines,euSp,rir}`, `sites` (43), `order` (12), `scenarios`, `online`. Keep it in sync with `atlas-main.js` (extract via node, see Phase 4 history).
@@ -81,7 +81,7 @@ Flow: plans → `go-pay.php` → Stripe → webhook → `monitoring-active.txt` 
 5. Dry-run `send_mail()` with stubbed SMTP and subscribers for free, paid and alert paths.
 
 ## Open tasks (from the last brief)
-1. **Funnel:** quick check result → direct CTA to `#teams` (monitoring preselected with the product's minerals), call as tertiary.
+1. ~~**Funnel**~~ done in build 43: quick check result → primary CTA "Get alerts for these N minerals" (`.qc-mon`, sets the plan via `window.ooMonSet`, scrolls to `#teams .pl3-b`, counts `act:qc-mon`), full review secondary, call as a text link.
 2. **Validation:** "Other minerals" field — allow-list + autocomplete, inline error for unknown terms, same allow-list server-side in `go-pay.php`; robot reports "no news found in 14 days" per term.
 3. **Free vs paid:** define "full evidence data" (history + CSV + per-site alerts for paid) and update plans, services pages and emails consistently.
 4. **Globe:** ship visibility (renderOrder, size with zoom, neutral high-contrast colour), site labels at lower zoom with collision handling (currently `cam.dist < 1.9` with a filter or `< 1.55`), imagery fallback (relax cloud cover, Sentinel-1 radar, "last clear view" date).
