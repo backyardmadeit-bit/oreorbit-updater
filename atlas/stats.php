@@ -97,6 +97,10 @@ $checks = [ // file => [label, hours before amber, hours before red]
   'live-data/live/hotspots.json' => ['Heat at plants', 12, 36], 'live-data/live/conflict.json' => ['Conflict', 200, 400],
   'live-data/live/trade.json' => ['EU imports', 200, 400], 'live-data/live/so2.json' => ['SO₂', 200, 400],
   'data/imagery.json' => ['Satellite pictures', 200, 400], 'p/index.html' => ['Library pages', 30, 72],
+  /* weekly and daily sources: the robot refreshes them every 6 days / every day on purpose (INTERVAL_H), so the
+     generic 12 / 48 hours would show them as stale when they are on time */
+  'live-data/live/traffic.json' => ['Ship traffic at chokepoints', 200, 400], 'live-data/live/tenders.json' => ['EU tenders', 200, 400],
+  'live-data/live/prices.json' => ['Prices', 30, 72],
 ];
 foreach (glob(__DIR__ . '/live-data/live/*.json') ?: [] as $f) { $k = 'live-data/live/' . basename($f); if (!isset($checks[$k])) { $checks[$k] = [ucfirst(str_replace(['-', '_'], ' ', basename($f, '.json'))), 12, 48]; } }
 echo '<h2>Data freshness</h2><p class="dim">Robot last run: ' . htmlspecialchars((string) ($rs['run'] ?? '–')) . '</p><table><tr><th>Feed</th><th class="n">Last update</th><th class="n">Age</th><th>Status</th></tr>';
