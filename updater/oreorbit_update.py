@@ -2346,6 +2346,14 @@ def send_mail():
     subs, state = data.get("subs") or [], data.get("state") or {}
     if isinstance(state, list):
         state = {}
+    # PHP (subs-export.php) stores an empty JSON object {} back as an empty list []: the maps keyed by email or
+    # term must be dicts again, or the first paying client crashes the mail step (seen on 2026-11-05)
+    for k in ("alerts", "other"):
+        if not isinstance(state.get(k), dict):
+            state[k] = {}
+    for v in state["alerts"].values():
+        if isinstance(v, dict) and not isinstance(v.get("riv"), dict):
+            v["riv"] = {}
     active = set(e.lower() for e in (data.get("active") or []))
     briefs = current("live-data/briefs.json") or []
     news = current("live-data/news.json") or []
