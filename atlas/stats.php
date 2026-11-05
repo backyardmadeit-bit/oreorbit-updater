@@ -114,6 +114,13 @@ foreach ($checks as $f => [$lab, $amber, $red]) {
   [$c, $w] = $h < $amber ? ['#3ddc97', 'fresh'] : ($h < $red ? ['#f5c45c', 'late'] : ['#f87171', 'stale']);
   echo '<tr><td>' . htmlspecialchars($lab) . '</td><td class="n">' . date('j M H:i', $t) . '</td><td class="n">' . oo_age($t) . '</td><td style="color:' . $c . '">● ' . $w . '</td></tr>';
 }
+/* v46: the emails, from the robot's own record of its last mail step */
+$ms = is_array($src['mail'] ?? null) ? $src['mail'] : null;
+if ($ms) {
+  $mf = (int) ($ms['fails'] ?? 0); $mok = isset($ms['ok']) ? strtotime((string) $ms['ok']) : false;
+  [$c, $w] = $mf >= 2 ? ['#f87171', 'failing'] : ($mf === 1 ? ['#f5c45c', 'failed once'] : ['#3ddc97', 'ok']);
+  echo '<tr><td>Emails</td><td class="n">' . ($mok ? date('j M H:i', $mok) : '–') . '</td><td class="n">' . ($mok ? oo_age($mok) : '–') . '</td><td style="color:' . $c . '" title="' . htmlspecialchars((string) ($ms['status'] ?? '')) . '">● ' . $w . '</td></tr>';
+}
 echo '</table><p class="dim">Green: on time. Amber: a run was missed. Red: check the robot report on GitHub.</p>';
 $sub = __DIR__ . '/subs/subscribers.csv'; $act = __DIR__ . '/subs/monitoring-active.txt';
 /* ---- private: did every paying client get their emails? (from the robot's delivery log) ---- */

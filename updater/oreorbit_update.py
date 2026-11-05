@@ -2551,6 +2551,32 @@ def send_mail():
     _subs_api(state)
     return "ok (%d of %d emails sent)" % (sent, len(out))
 
+def _mail_step(prev):
+    # v46: the emails get the same safety net as the data feeds: their state goes into runstatus.json (stats.php
+    # shows it), and two failed runs in a row turn the run red so GitHub emails David. The Monday delivery report
+    # cannot do this job, because it travels the same way as the emails that failed.
+    mst = dict(prev or {})
+    mst["checked"] = iso()
+    try:
+        res = send_mail()
+        m = re.match(r"ok \((\d+) of (\d+) emails sent\)", res)
+        if res.startswith("skipped (add SMTP"):
+            bad = "the SMTP secrets are missing, so no email can go out"
+        elif m and int(m.group(2)) > 0 and int(m.group(1)) == 0:
+            bad = "none of %s emails went out" % m.group(2)
+        else:
+            bad = None
+        log("mail      " + res)
+    except Exception as e:
+        bad = str(e)[:200]
+    if bad and not DRY:
+        mst.update({"status": "failed: " + bad, "fails": int(mst.get("fails") or 0) + 1})
+        log("mail      FAILED (%d run(s) in a row): %s" % (mst["fails"], bad))
+    elif not DRY:
+        mst.update({"status": res, "fails": 0, "ok": iso()})
+    return mst
+
+
 def main():
     log("OreOrbit updater v3.10 · %s · %s · %s" % (iso(), BASE, "DRY RUN" if DRY else "live"))
     remote_listing()
@@ -2658,10 +2684,7 @@ def main():
         log("history   FAILED: %s" % e)
 
     if not ONLY or "mail" in ONLY:
-        try:
-            log("mail      " + send_mail())
-        except Exception as e:
-            log("mail      FAILED: %s" % e)
+        status["mail"] = _mail_step(status.get("mail"))
 
     try:
         out = dict(rs)
@@ -2673,8 +2696,10 @@ def main():
     if failed:
         log("feeds that failed this run (their last good data stays online): " + ", ".join(failed))
     stuck = [k for k, v in status.items() if k in INTERVAL_H and int(v.get("fails") or 0) >= 3]
+    if int((status.get("mail") or {}).get("fails") or 0) >= 2:
+        stuck.append("mail (emails to subscribers and paying clients)")
     if stuck:
-        log("feeds that have failed 3 runs or more in a row: %s. The run is marked as failed so GitHub emails you." % ", ".join(stuck))
+        log("failing several runs in a row (feeds 3, emails 2): %s. The run is marked as failed so GitHub emails you." % ", ".join(stuck))
         sys.exit(1)
 
 
