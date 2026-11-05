@@ -1885,6 +1885,8 @@ const globe = (function initGlobe() {
       else if (it.shown) placeLabel(it.label, 0, 0, false);
       it.shown = show;
     });
+    const occ = [];   // v45: screen boxes of labels already placed this frame (ships, hazards), which site labels must not cover
+    const occupy = (el, x, y) => { if (!el._w) { el._w = el.offsetWidth || 80; el._h = el.offsetHeight || 18; } occ.push([x, y, x + el._w, y + el._h]); };
     let nearShips = null;
     if (shipLiveGroup.visible && isExploring() && cam.dist < 2.2) {
       const cx = innerWidth / 2, cy = innerHeight / 2;
@@ -1893,28 +1895,40 @@ const globe = (function initGlobe() {
     shipLive.forEach((x) => {
       const isHover = hovered && hovered.kind === "ship" && hovered.id === x.v.id;
       const show = shipLiveGroup.visible && (selShip === x.v.id || isHover || (nearShips && nearShips.has(x.v.id))) && facingUnit(x.unit);
-      if (show) { const sp = project(x.m.position); placeLabel(x.label, sp.x + 10, sp.y - 8, true); }
+      if (show) { const sp = project(x.m.position); placeLabel(x.label, sp.x + 10, sp.y - 8, true); occupy(x.label, sp.x + 10, sp.y - 8); }
       else if (x.shown) placeLabel(x.label, 0, 0, false);
       x.shown = show;
     });
     hzItems.forEach((h) => {
       const isHover = hovered && hovered.kind === "hz" && hovered.id === h.h.id;
       const show = hzGroup.visible && (selHz === h.h.id || isHover || (ex && cam.dist < 2.3 && h.h.kind !== "CF") || (ex && h.h.kind === "CF" && h.h.big)) && facingUnit(h.unit);
-      if (show) { const sp = project(h.g.position); placeLabel(h.label, sp.x + 12, sp.y - 8, true); }
+      if (show) { const sp = project(h.g.position); placeLabel(h.label, sp.x + 12, sp.y - 8, true); occupy(h.label, sp.x + 12, sp.y - 8); }
       else if (h.shown) placeLabel(h.label, 0, 0, false);
       h.shown = show;
     });
-    const close = cam.dist < 1.9;
+    /* v45: site labels from further out; they are placed in order of priority (selected, hovered, the filtered mineral,
+       then nearest the centre of the view) and a label that would overlap one already placed waits until there is room */
+    const LABEL_DIST = 2.45, cap = cam.dist > 2.1 ? 10 : cam.dist > 1.75 ? 18 : 60;
+    const cand = [];
     pins.forEach((p) => {
-      let show = p.g.visible && ex && (p.s.id === selected || (hovered && hovered.kind === "site" && hovered.id === p.s.id) || (close && filter !== "all") || cam.dist < 1.55);
-      if (show && !facingUnit(p.unit)) show = false;
-      if (show) {
-        p.head.getWorldPosition(v3); const sp = project(v3);
-        show = sp.x > -40 && sp.x < W + 40 && sp.y > -20 && sp.y < H + 20;
-        if (show) { placeLabel(p.label, sp.x + 10, sp.y - 12, true); p.label.classList.toggle("sel", p.s.id === selected); p.label.style.zIndex = p.s.id === selected ? 3 : 2; }
-      }
-      if (!show && p.shown) placeLabel(p.label, 0, 0, false);
-      p.shown = show;
+      const isSel = p.s.id === selected, isHov = !!(hovered && hovered.kind === "site" && hovered.id === p.s.id);
+      let want = p.g.visible && ex && (isSel || isHov || cam.dist < LABEL_DIST) && facingUnit(p.unit);
+      let sp = null;
+      if (want) { p.head.getWorldPosition(v3); sp = project(v3); want = sp.x > -40 && sp.x < W + 40 && sp.y > -20 && sp.y < H + 20; }
+      if (want) cand.push({ p, sp, pri: isSel ? 0 : isHov ? 1 : (filter !== "all" && p.s.m === filter) ? 2 : 3, d: (sp.x - W / 2) ** 2 + (sp.y - H / 2) ** 2 });
+      else { if (p.shown) placeLabel(p.label, 0, 0, false); p.shown = false; }
+    });
+    cand.sort((a, b) => a.pri - b.pri || a.d - b.d);
+    const taken = occ.slice(), placed0 = taken.length;
+    cand.forEach(({ p, sp, pri }) => {
+      if (!p.lw) { p.lw = p.label.offsetWidth || 90; p.lh = p.label.offsetHeight || 18; }
+      const r = [sp.x + 10, sp.y - 12, sp.x + 10 + p.lw, sp.y - 12 + p.lh];
+      const fits = pri < 2 || (taken.length - placed0 < cap && !taken.some((t) => r[0] < t[2] + 6 && r[2] + 6 > t[0] && r[1] < t[3] + 3 && r[3] + 3 > t[1]));
+      if (fits) {
+        taken.push(r);
+        placeLabel(p.label, r[0], r[1], true); p.label.classList.toggle("sel", p.s.id === selected); p.label.style.zIndex = p.s.id === selected ? 3 : 2;
+        p.shown = true;
+      } else { if (p.shown) placeLabel(p.label, 0, 0, false); p.shown = false; }
     });
     chokeObjs.forEach((c) => {
       let show = c.g.visible && (ex || hiRoute) && facingUnit(c.unit);
@@ -2318,7 +2332,15 @@ const globe = (function initGlobe() {
     return m ? Date.parse(`${m[1]}T${m[2]}${m[3] ? m[3].slice(0, 4) : ""}Z`) : Date.parse(t);
   };
   const DR_CAP_H = 1;  /* dead reckoning runs for at most an hour after a report, then the ship is held */
-  let shipHalo = null;
+  let shipHalo = null, shipMark = null;
+  /* v45: a light disc with a dark rim (brand paper on brand black): it reads on dark sea, bright land, ice and cloud alike */
+  function shipMarkTex() {
+    if (shipMark) return shipMark;
+    const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d");
+    x.fillStyle = "rgba(5,6,7,0.92)"; x.beginPath(); x.arc(32, 32, 30, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "#eceee9"; x.beginPath(); x.arc(32, 32, 19, 0, Math.PI * 2); x.fill();
+    shipMark = new THREE.CanvasTexture(c); return shipMark;
+  }
   function setShipsLive14(list) {
     if (shipHalo) { shipLiveGroup.remove(shipHalo); shipHalo.geometry.dispose(); shipHalo = null; }
     shipLive.forEach((x) => { x.label.remove(); });
@@ -2342,7 +2364,7 @@ const globe = (function initGlobe() {
     const mat = new THREE.MeshBasicMaterial({ vertexColors: true });
     Object.entries(byKind).forEach(([k, arr]) => {
       const im = new THREE.InstancedMesh(shipGeo[k], mat, arr.length);
-      im.frustumCulled = false;
+      im.frustumCulled = false; im.renderOrder = 3;   // v45: after the clouds (renderOrder 1), so clouds never hide a ship
       arr.forEach((x, i) => { x.idx = i; x.im = im; });
       shipInst[k] = im; shipLiveGroup.add(im);
     });
@@ -2358,13 +2380,13 @@ const globe = (function initGlobe() {
       }
       g.setAttribute("a", new THREE.BufferAttribute(a, 1));
       g.setAttribute("s", new THREE.BufferAttribute(s, 1));
-      wake = new THREE.LineSegments(g, wakeMat); wake.frustumCulled = false;
+      wake = new THREE.LineSegments(g, wakeMat); wake.frustumCulled = false; wake.renderOrder = 3;
       shipLiveGroup.add(wake);
     }
     if (n) {
       const hg = new THREE.BufferGeometry(); hg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
-      shipHalo = new THREE.Points(hg, new THREE.PointsMaterial({ map: dotTex, size: 7 * Math.min(2, window.devicePixelRatio || 1), sizeAttenuation: false, color: 0x9fdcef, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending }));   // a quiet hint, not a spotlight
-      shipHalo.frustumCulled = false; shipHalo.renderOrder = 1; shipLiveGroup.add(shipHalo);
+      shipHalo = new THREE.Points(hg, new THREE.PointsMaterial({ map: shipMarkTex(), size: 8, sizeAttenuation: false, color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false, alphaTest: 0.05 }));
+      shipHalo.frustumCulled = false; shipHalo.renderOrder = 4; shipLiveGroup.add(shipHalo);   // v45: a neutral, high-contrast marker; size follows the zoom
     }
     shipLiveGroup.visible = layers.ships;
     shipsAt = 0;
@@ -2387,6 +2409,11 @@ const globe = (function initGlobe() {
     if (SMALL && now - shipsAt < 90) return true;
     shipsAt = now;
     const k = Math.max(0.3, Math.min(1.6, (cam.dist - 1) / 1.6));
+    if (shipHalo) {   // v45: the marker grows as the camera pulls back (the 3D ship gets too small to see) and fades out close in
+      const px = Math.max(0, Math.min(9, (cam.dist - 1.3) * 7));
+      shipHalo.visible = px >= 2;
+      shipHalo.material.size = px * Math.min(2, window.devicePixelRatio || 1);
+    }
     const tNow = Date.now();
     const wp = wake ? wake.geometry.attributes.position : null;
     shipLive.forEach((x, i) => {
@@ -3494,6 +3521,20 @@ function showViz(mode, s) {
     if (arid) notes.push(T("The ground here was already bare in the older image, so this method cannot measure clearing.", "Půda zde byla holá už na starším snímku, takže tato metoda odkrytí změřit nemůže."));
     notes.push(T(`Contains modified Copernicus Sentinel data ${yearsTxt}.`, `Obsahuje upravená data Copernicus Sentinel ${yearsTxt}.`));
     $("#cmp-note").textContent = notes.join(" ");
+    /* v45: how old the last clear view is; when clouds have hidden the site for a month, the radar sees through them */
+    let stl = document.getElementById("cmp-stale");
+    if (!stl) { stl = document.createElement("p"); stl.id = "cmp-stale"; stl.className = "cmp-stale"; $("#cmp-note").before(stl); }
+    const age = im.nowDate ? Math.round((Date.now() - Date.parse(im.nowDate + "T12:00:00Z")) / 864e5) : null;
+    const oxr = (OX[s.id] || {}).radar;
+    if (age !== null && age > 30) {
+      stl.hidden = false;
+      stl.innerHTML = `<b>${esc(T("Last clear view: " + fmtDay(im.nowDate) + ".", "Poslední jasný záběr: " + fmtDay(im.nowDate) + "."))}</b> ` +
+        esc(T(age + " days ago; clouds have covered the site since.", "Před " + age + " dny; od té doby lokalitu zakrývají mraky.")) +
+        (oxr ? ` <button type="button" class="cmp-radar">${esc(T("Radar sees through clouds", "Radar vidí skrz mraky"))} · ${esc(fmtDay(oxr.date))} →</button>` : "");
+      const rb = stl.querySelector(".cmp-radar"); if (rb) rb.onclick = () => showViz("radar", s);
+    } else if (typeof im.nowClearPct === "number" && im.nowClearPct < 90) {
+      stl.hidden = false; stl.textContent = T("Partly cloudy: about " + im.nowClearPct + "% of this view is clear.", "Částečně oblačno: jasných je asi " + im.nowClearPct + " % záběru.");
+    } else { stl.hidden = true; stl.textContent = ""; }
   } else if (mode === "terrain" && im && im.terrain) {
     orbitImg.hidden = true; specWrap.hidden = false;
     loadTerrain(s, im);

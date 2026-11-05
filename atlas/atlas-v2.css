@@ -889,3 +889,10 @@ table.health th { text-transform: none !important; letter-spacing: 0 !important;
 .mo-msg:empty { display: none; }
 .mo-msg.bad { color: #ff8a7d; }
 .mo-box:has(input[aria-invalid="true"]) { border-color: #ff8a7d; }
+
+/* v45: the last clear view and the way to the radar */
+.cmp-stale { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(236,238,233,.14); background: rgba(236,238,233,.04); font-size: 13.5px; line-height: 1.5; color: var(--dim, #a3aaae); }
+.cmp-stale b { color: var(--text, #eceee9); font-weight: 600; }
+.cmp-stale .cmp-radar { margin-left: 4px; padding: 0; border: 0; background: none; color: #3ddc97; font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.cmp-stale .cmp-radar:hover { color: #6ff0b6; }
+.cmp-stale[hidden] { display: none; }
