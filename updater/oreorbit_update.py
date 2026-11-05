@@ -2206,6 +2206,96 @@ def _other_news(state, term, budget):
         log("mail      other mineral '%s': %s" % (term, str(ex)[:80]))
         return ent.get("items", [])
 
+# ---- the paid data pack: alerts for the sites of a client's minerals, and the weekly CSV with the history behind them
+
+def _site_events():
+    """Unusual states at the sites right now, from the daily heat (FIRMS) and SO2 files: {"<site>|<kind>": event}.
+    quiet: no furnace-hot pixels for 7 days after at least 4 hot days in the 14 before; flare: hot on 2+ of the last 7
+    days after none in the 14 before; so2: the first reading above 2 DU in 30 days, within the last week."""
+    hs = (current("live-data/live/hotspots.json") or {}).get("sites") or {}
+    so_file = current("live-data/live/so2.json") or {}
+    so, rad = so_file.get("sites") or {}, so_file.get("radiusKm") or 50
+    ev = {}
+    for s in CFG["sites"]:
+        sid, nm = s.get("id"), s.get("name") or s.get("id")
+        bd = (hs.get(sid) or {}).get("byDay") or {}
+        days = sorted(bd)
+        if len(days) >= 14:
+            hot = lambda d: (bd[d].get("n") or bd[d].get("px") or 0) > 0
+            last7 = sum(1 for d in days[-7:] if hot(d))
+            prev = days[-21:-7]
+            before = sum(1 for d in prev if hot(d))
+            if last7 == 0 and before >= 4:
+                ev[sid + "|quiet"] = {"sid": sid, "m": s.get("m"), "kind": "quiet",
+                                      "en": "%s: no furnace-hot pixels for 7 days, after %d hot days in the %d days before. A stoppage, or simply clouds." % (nm, before, len(prev)),
+                                      "cs": "%s: 7 dní bez pixelů horkých jako pec, předtím %d horkých dní z %d. Odstávka, nebo jen oblačnost." % (nm, before, len(prev))}
+            elif last7 >= 2 and before == 0:
+                ev[sid + "|flare"] = {"sid": sid, "m": s.get("m"), "kind": "flare",
+                                      "en": "%s: furnace-hot pixels on %d of the last 7 days, none in the %d days before. A start-up or a ramp-up." % (nm, last7, len(prev)),
+                                      "cs": "%s: pixely horké jako pec %d z posledních 7 dní, předtím %d dní žádné. Najíždění, nebo zvýšení výroby." % (nm, last7, len(prev))}
+        ser = sorted((x.get("d"), x.get("near")) for x in ((so.get(sid) or {}).get("series") or [])
+                     if x.get("d") and isinstance(x.get("near"), (int, float)))
+        if len(ser) >= 2:
+            d_last, v_last = ser[-1]
+            try:
+                age = (TODAY - dt.date.fromisoformat(d_last)).days
+                earlier = [v for d, v in ser[:-1] if (dt.date.fromisoformat(d_last) - dt.date.fromisoformat(d)).days <= 30]
+            except ValueError:
+                continue
+            if v_last > 2 and age <= 7 and earlier and max(earlier) <= 2:
+                ev[sid + "|so2"] = {"sid": sid, "m": s.get("m"), "kind": "so2",
+                                    "en": "%s: sulphur dioxide %.1f DU within %d km on %s, the first reading above 2 DU in 30 days. The smelter may be working harder." % (nm, v_last, rad, _day(d_last, False)),
+                                    "cs": "%s: oxid siřičitý %s DU do %d km dne %s, první hodnota nad 2 DU za 30 dní. Huť možná jede naplno." % (nm, ("%.1f" % v_last).replace(".", ","), rad, _day(d_last, True))}
+    return ev
+
+
+def _site_lines(ev, mins, cs):
+    """The Monday edition's "Your sites" section: what is unusual now at the sites of these minerals."""
+    mine = [v for v in ev.values() if not mins or v.get("m") in mins]
+    if mine:
+        return [_esc(v["cs" if cs else "en"]) for v in mine][:8]
+    n = sum(1 for s in CFG["sites"] if not mins or s.get("m") in mins)
+    return [_esc(("Žádná neobvyklá změna u %d lokalit vašich surovin." % n) if cs else ("No unusual change at the %d sites for your minerals." % n))]
+
+
+def _data_csv(mins):
+    """The weekly data file for a paying client: monthly EU imports, daily heat and SO2 at their minerals' sites."""
+    trade = (current("live-data/live/trade.json") or {}).get("materials") or {}
+    hs_file = current("live-data/live/hotspots.json") or {}
+    so_file = current("live-data/live/so2.json") or {}
+    hs, so = hs_file.get("sites") or {}, so_file.get("sites") or {}
+    hs_src, so_src = hs_file.get("source") or "NASA FIRMS", so_file.get("source") or "NOAA-20 OMPS"
+    ms = [m for m in (mins or list(MAT_NAME)) if m in MAT_NAME]
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["section", "mineral", "item", "date", "metric", "value", "unit", "source"])
+    for m in ms:
+        for r in trade.get(m) or []:
+            mo = r.get("monthly") or {}
+            f, cn, ex = mo.get("from"), mo.get("cn") or [], mo.get("ext") or []
+            if not f:
+                continue
+            y0, m0 = int(f[:4]), int(f[5:7])
+            item = "%s (CN %s)" % (r.get("label") or "", r.get("code") or "")
+            for i in range(min(len(cn), len(ex))):
+                k = "%d-%02d" % (y0 + (m0 - 1 + i) // 12, (m0 - 1 + i) % 12 + 1)
+                w.writerow(["eu_imports", MAT_NAME[m][0], item, k, "extra_eu_import_value", ex[i], "EUR", "Eurostat Comext"])
+                w.writerow(["eu_imports", MAT_NAME[m][0], item, k, "from_china_value", cn[i], "EUR", "Eurostat Comext"])
+                if ex[i]:
+                    w.writerow(["eu_imports", MAT_NAME[m][0], item, k, "china_share", round(100.0 * cn[i] / ex[i], 1), "%", "Eurostat Comext"])
+    for s in CFG["sites"]:
+        if s.get("m") not in ms:
+            continue
+        for d, x in sorted(((hs.get(s["id"]) or {}).get("byDay") or {}).items()):
+            w.writerow(["site_heat", MAT_NAME[s["m"]][0], s.get("name"), d, "hot_pixels", x.get("n", x.get("px", 0)), "count", hs_src])
+            if "frp" in x:
+                w.writerow(["site_heat", MAT_NAME[s["m"]][0], s.get("name"), d, "fire_radiative_power", x["frp"], "MW", hs_src])
+        for x in sorted(((so.get(s["id"]) or {}).get("series") or []), key=lambda x: x.get("d") or ""):
+            if isinstance(x.get("near"), (int, float)):
+                w.writerow(["site_so2", MAT_NAME[s["m"]][0], s.get("name"), x.get("d"), "so2_within_%dkm" % (so_file.get("radiusKm") or 50), x["near"], "DU", so_src])
+    return "\ufeff" + buf.getvalue()   # the BOM makes Excel read the accents right
+
+
 MANAGE = "https://bohemiadefense.com/atlas/manage.php"
 
 def _nb_cs(html):
@@ -2249,6 +2339,7 @@ def send_mail():
     news = current("live-data/news.json") or []
     news = news if isinstance(news, list) else (news.get("items") or [])
     dls = [d for d in deadlines_from_page() if d.get("date", "") >= TODAY.isoformat()]
+    sev = _site_events()   # unusual states at the sites now (heat, SO2), for the paid data pack
     unsub = lambda s: BASE + "unsubscribe.php?e=" + up.quote(s["email"]) + "&t=" + s.get("token", "")
     out = []
     # 0. welcome emails the website could not send (or anyone not yet welcomed): sent here, once
@@ -2261,7 +2352,7 @@ def send_mail():
             html = _mail_html(cs, "Vítejte v OreOrbit" if cs else "Welcome to OreOrbit",
                               "Vítejte v OreOrbit. Jsme rádi, že jste s námi." if cs else "Welcome to OreOrbit. We're glad you're here.",
                               ("Děkujeme, že jste se k nám přidali. Patříte k malému okruhu firem, které vidí změny u svých surovin dřív, než dorazí do dodavatelského řetězce. Hlídáme: " if cs else "Thank you for joining us. You are part of a small circle of companies that see changes to their minerals before they reach the supply chain. We watch: ") + names + ".",
-                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ještě v den, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás.", "Připomínky termínů 30, 14 a 7 dní předem."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you.", "Deadline reminders 30, 14 and 7 days ahead."])]),
+                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ještě v den, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás, s daty v příloze (CSV).", "Připomínky termínů 30, 14 a 7 dní předem.", "Upozornění, když lokalita vašich surovin ztichne nebo se rozjede."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you, with the data attached (CSV).", "Deadline reminders 30, 14 and 7 days ahead.", "An alert when a site for your minerals goes quiet or starts up."])]),
                                ("Osobně" if cs else "Personally", [_esc("Na tento e-mail odpovídá osobně David Madali, zakladatel. Chcete jiné suroviny nebo cokoli probrat? Stačí odpovědět." if cs else "David Madali, the founder, answers this email personally. Want different minerals or to talk anything through? Just reply.") + "<br><br><b>David Madali</b>"])], unsub(sb))
         else:
             subj = "Vítejte v pondělním přehledu OreOrbit" if cs else "Welcome to the OreOrbit Monday brief"
@@ -2342,11 +2433,17 @@ def send_mail():
                               ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
                               [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
                                ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved),
+                               ("Vaše lokality" if cs else "Your sites", _site_lines(sev, mins, cs)),
                                ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs, only_unusual=False)),
                                ("Další suroviny" if cs else "Your other minerals", [x for t in _other_terms(sb) for x in (['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(t, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for it in _other_news(state, t, pbudget)[:3]]
                                                                                         or (['<b>%s</b> · %s' % (_esc(_other_label(t, cs)), _esc("za posledních 14 dní jsme nenašli žádnou zprávu" if cs else "no news found in the last 14 days"))] if _other_quiet(state, t) else []))]),
+                               ("Data" if cs else "Your data", [_esc("V příloze je CSV s daty za tímto vydáním: měsíční dovoz do EU a denní teplo a SO2 u lokalit vašich surovin. Otevře se v Excelu." if cs else "Attached: a CSV with the data behind this edition, monthly EU imports and daily heat and SO2 at your minerals' sites. It opens in Excel.")]),
                                ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
-            out.append((e, subj, html))
+            try:
+                att = [("oreorbit-data-%s.csv" % latest["week"], _data_csv(mins))]
+            except Exception as ex:
+                log("mail      data file for one client failed: %s" % str(ex)[:100]); att = []
+            out.append((e, subj, html, att))
         state["paid_week"] = latest["week"]
     # 2b. paid monitoring: an alert only when something new happens for the client's minerals
     al = state.setdefault("alerts", {})
@@ -2376,6 +2473,10 @@ def send_mail():
             st["ou"] = seen[-400:]
         st["ofirst"] = True   # the first run only learns what already exists, so nobody gets a flood of old stories
         items = items + oth[:6]
+        mine = {k: v for k, v in sev.items() if not mins or v.get("m") in mins}
+        if "se" in st:   # the first run only learns the current state, so nobody gets an alert for something old
+            items += [_esc(v["cs" if cs else "en"]) for k, v in sorted(mine.items()) if k not in st["se"]][:4]
+        st["se"] = sorted(mine)
         rv_now = {r.get("id"): r.get("state") for r in ((current("live-data/live/hazards.json") or {}).get("rivers") or [])}
         rv_was = st.get("riv") or {}
         if rv_was:
@@ -2417,13 +2518,17 @@ def send_mail():
         if port != 465:
             smtp.starttls(context=ssl.create_default_context())
         smtp.login(user, pw)
-        for to, subj, html in out:
+        for item in out:
+            to, subj, html = item[:3]
             try:
                 m = EmailMessage()
                 m["From"], m["To"], m["Subject"] = sender, to, subj
                 m["List-Unsubscribe"] = "<%s>" % (BASE + "unsubscribe.php")
                 m.set_content("Open this email in an HTML-capable mail app, or read the brief at " + BASE)
                 m.add_alternative(html, subtype="html")
+                for fname, data in (item[3] if len(item) > 3 else []):
+                    if data and len(data) <= 5_000_000:
+                        m.add_attachment(data, subtype="csv", charset="utf-8", filename=fname)
                 smtp.send_message(m)
                 sent += 1
                 _deliv(state, to, subj, True)
