@@ -1297,25 +1297,29 @@ def ndvi_values(item_id, bbox, size, Image):
     return [x / 127.5 - 1 for x in v], a
 
 
-def s2_clear_scene(site, rec, Image):
-    """The newest Sentinel-2 scene whose 7 km box is at least 90% clear, in the months the site allows."""
+def s2_clear_scene(site, rec, Image, relaxed=False, skip=()):
+    """The newest Sentinel-2 scene whose 7 km box is at least 90% clear, in the months the site allows.
+    relaxed (v45, for a picture over 30 days old): scenes up to 80% cloud and a box at least 75% clear, skipping the
+    scenes the strict pass already checked. Returns (feature, date, bbox, clear %, ids checked)."""
     months = set(rec.get("months") or range(1, 13))
     feats = pc_search("sentinel-2-l2a", site["lat"], site["lng"], (TODAY - dt.timedelta(days=150)).isoformat(), TODAY.isoformat(),
-                      query={"eo:cloud_cover": {"lt": 40}})
+                      query={"eo:cloud_cover": {"lt": 80 if relaxed else 40}})
     bbox = box(site["lat"], site["lng"], rec.get("spanKm") or 7.0)
-    checked = 0
+    need, most = (0.75, 8) if relaxed else (0.9, 6)
+    checked = []
     for f in feats:
         d = (f.get("properties") or {}).get("datetime", "")[:10]
-        if not d or int(d[5:7]) not in months:
+        if not d or int(d[5:7]) not in months or f["id"] in skip:
             continue
-        if checked >= 6:
+        if len(checked) >= most:
             break
-        checked += 1
+        checked.append(f["id"])
         v, a = scl_values(f["id"], bbox, 120, Image)
         seen = [x for x, al in zip(v, a) if al > 0]
-        if len(seen) > 0.8 * len(v) and sum(1 for x in seen if x in CLEAR_SCL) >= 0.9 * len(seen):
-            return f, d, bbox
-    return None, None, bbox
+        clear = sum(1 for x in seen if x in CLEAR_SCL)
+        if len(seen) > 0.8 * len(v) and clear >= need * len(seen):
+            return f, d, bbox, round(100 * clear / len(seen)), checked
+    return None, None, bbox, None, checked
 
 
 def feed_imagery(prev):
@@ -1339,7 +1343,15 @@ def feed_imagery(prev):
         if site.get("lat") is None:
             continue
         try:
-            f, d, bbox = s2_clear_scene(site, rec, Image)
+            f, d, bbox, clear, tried = s2_clear_scene(site, rec, Image)
+            old = rec.get("nowDate")
+            if not f and old and (TODAY - dt.date.fromisoformat(old)).days > 30:
+                # v45: a month of clouds: a partly clear view is better than an old one (the atlas says how clear it is)
+                f, d, bbox, clear, _ = s2_clear_scene(site, rec, Image, relaxed=True, skip=set(tried))
+                if f and d <= old:
+                    f = None
+                if f:
+                    log("  imagery %s: relaxed pass found %s (%d%% clear)" % (sid, d, clear))
             if not f:
                 continue
             restyle = bool(rec.get("thenDate")) and not rec.get("noThen") and not (rec.get("change") or {}).get("method", "").endswith("isolated pixels removed")
@@ -1350,7 +1362,7 @@ def feed_imagery(prev):
             jpg = pc_crop("sentinel-2-l2a", f["id"], bbox, size, size, "jpg", {"assets": "visual", "asset_bidx": "visual|1,2,3", "nodata": "0"})
             now_path = "img/%s-now-%s.jpg" % (sid, ymd)
             files[now_path] = jpg
-            new = {"now": now_path, "nowDate": d, "nowScene": f["id"]}
+            new = {"now": now_path, "nowDate": d, "nowScene": f["id"], "nowClearPct": clear}
             # the change map against the 2018 picture, when the 2018 scene can be found again
             if rec.get("thenDate") and not rec.get("noThen"):
                 then = [g for g in pc_search("sentinel-2-l2a", site["lat"], site["lng"], rec["thenDate"], rec["thenDate"], limit=10)]
