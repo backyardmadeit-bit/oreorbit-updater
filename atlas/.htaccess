@@ -3,8 +3,8 @@
 Options -Indexes
 DirectoryIndex index.php index.html
 
-# the update key's hash: never served
-<Files "update-config.php">
+# server-only settings (update key hash, payment and mail settings): never served, even if PHP stopped running
+<FilesMatch "^(update|pay|mail)-config\.php$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -12,7 +12,7 @@ DirectoryIndex index.php index.html
     Order allow,deny
     Deny from all
   </IfModule>
-</Files>
+</FilesMatch>
 
 AddType font/woff2 .woff2
 AddType application/json .json
@@ -50,3 +50,12 @@ AddCharset utf-8 .js .css .json
     ExpiresDefault "access plus 1 hour"
   </IfModule>
 </FilesMatch>
+
+# private and payment pages: no framing by other sites, no referrer to third parties
+# (the library's embed pages in p/ are meant to be framed, so this is not set for the whole folder)
+<IfModule mod_headers.c>
+  <FilesMatch "^(stats|mail-test|go-pay|manage|unsubscribe|subscribe|stripe-webhook|subs-export|update)\.php$">
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+  </FilesMatch>
+</IfModule>

@@ -5,6 +5,7 @@ header('Content-Type: text/html; charset=utf-8'); header('X-Robots-Tag: noindex,
 $cfg = @include __DIR__ . '/update-config.php';
 $key = isset($_POST['key']) ? (string) $_POST['key'] : '';
 $ok = is_array($cfg) && $key !== '' && hash_equals(strtolower((string) $cfg['key_sha256']), hash('sha256', $key));
+if (!$ok && $key !== '') { usleep(800000); }   /* a wrong key costs time */
 echo '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Email test</title><style>body{background:#050607;color:#eceee9;font:16px/1.6 system-ui;max-width:620px;margin:40px auto;padding:0 20px}input,button{font:inherit;padding:10px 14px;border-radius:999px;border:1px solid #444;background:#111;color:#eee}button{background:#eceee9;color:#050607;font-weight:600}.ok{color:#3ddc97}.bad{color:#f87171}</style><h1>Email test</h1>';
 if (!$ok) { echo '<form method="post"><p>Enter the update key (ATLAS_KEY).</p><input type="password" name="key" autofocus> <button>Send test emails</button></form>'; exit; }
 require_once __DIR__ . '/mail-lib.php';

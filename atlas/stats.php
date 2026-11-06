@@ -7,6 +7,7 @@ function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 $cfg = @include __DIR__ . '/update-config.php';
 $key = isset($_POST['key']) ? (string)$_POST['key'] : '';
 $ok = is_array($cfg) && $key !== '' && hash_equals(strtolower($cfg['key_sha256']), hash('sha256', $key));
+if (!$ok && $key !== '') { usleep(800000); }   /* a wrong key costs time, so guessing it is slow */
 
 /* ---- private: the subscribers, one row per address and plan, newest first ---- */
 function oo_subs_rows(): array {
