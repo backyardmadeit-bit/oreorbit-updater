@@ -71,13 +71,13 @@ function oo_static(bool $cs): string
     $h = [];
     $h[] = '<div class="oo-static" id="oo-static">';
     $h[] = '<p class="oo-brand"><b>OreOrbit</b> · ' . oo_e($T('Critical minerals from orbit', 'Kritické suroviny z oběžné dráhy')) . '</p>';
-    $h[] = '<h1>' . oo_e($T("Europe's defence runs on twelve minerals.", 'Obrana Evropy stojí na dvanácti surovinách.')) . '</h1>';
+    $h[] = '<h2 class="oo-h1">' . oo_e($T("Europe's defence runs on twelve minerals.", 'Obrana Evropy stojí na dvanácti surovinách.')) . '</h2>';
     $h[] = '<p class="oo-lede">' . oo_e($T(
         "For nine of them, China makes more than 65% of world output at one stage or another, and it makes 99% of the world's primary gallium (USGS, 2026).",
         'U devíti z nich vyrábí Čína v některé fázi víc než 65 % světové produkce a u primárního galia je to 99 % (USGS, 2026).')) . '</p>';
     $h[] = '<p class="oo-ten">' . oo_e($T(
-        'Rare earths · Titanium · Tungsten · Antimony · Gallium · Germanium · Lithium · Cobalt · Nickel · Graphite',
-        'Vzácné zeminy · Titan · Wolfram · Antimon · Galium · Germanium · Lithium · Kobalt · Nikl · Grafit')) . '</p>';
+        'Rare earths · Titanium · Tungsten · Antimony · Magnesium · Manganese · Gallium · Germanium · Lithium · Cobalt · Nickel · Graphite',
+        'Vzácné zeminy · Titan · Wolfram · Antimon · Hořčík · Mangan · Galium · Germanium · Lithium · Kobalt · Nikl · Grafit')) . '</p>';
     $h[] = '<p class="oo-note">' . oo_e($T(
         'OreOrbit is a free atlas of the mines, refineries, sea routes and chokepoints behind these materials, with a Monday brief and an in-browser supply-chain assessment for strategy and supply-chain teams in European defence and space. The interactive globe needs JavaScript and WebGL; the latest brief and stories are below as plain text.',
         'OreOrbit je bezplatný atlas dolů, rafinerií, námořních tras a úzkých míst, na kterých tyto suroviny stojí, s pondělním přehledem a posouzením dodavatelského řetězce v prohlížeči pro strategické týmy a týmy dodavatelských řetězců v evropské obraně a kosmonautice. Interaktivní glóbus potřebuje JavaScript a WebGL; nejnovější přehled a zprávy jsou níže jako prostý text.')) . '</p>';
@@ -199,8 +199,6 @@ try {
             '<meta property="og:url" content="' . OO_BASE . '">' => '<meta property="og:url" content="' . OO_BASE . '?lang=cs">',
             '<meta property="og:locale" content="en_GB">' => '<meta property="og:locale" content="cs_CZ">',
             '<meta property="og:locale:alternate" content="cs_CZ">' => '<meta property="og:locale:alternate" content="en_GB">',
-            '<title>OreOrbit · Critical minerals from orbit</title>' => '<title>OreOrbit · Kritické suroviny z oběžné dráhy</title>',
-            '<meta property="og:title" content="OreOrbit · Critical minerals from orbit">' => '<meta property="og:title" content="OreOrbit · Kritické suroviny z oběžné dráhy">',
         ];
         foreach ($swap as $from => $to) {
             $i = strpos($page, $from);
@@ -216,6 +214,9 @@ try {
             '#<meta name="description" content="[^"]*">#' => '<meta name="description" content="' . $desc_cs . '">',
             '#<meta property="og:description" content="[^"]*">#' => '<meta property="og:description" content="' . $desc_cs . '">',
             '#<meta property="og:image:alt" content="[^"]*">#' => '<meta property="og:image:alt" content="' . $alt_cs . '">',
+            '#<title>[^<]*</title>#' => '<title>OreOrbit · Atlas kritických surovin pro evropskou obranu | Bohemia Defense</title>',
+            '#<meta property="og:title" content="[^"]*">#' => '<meta property="og:title" content="OreOrbit · Kritické suroviny z oběžné dráhy">',
+            '#<meta name="twitter:title" content="[^"]*">#' => '<meta name="twitter:title" content="OreOrbit · Kritické suroviny z oběžné dráhy">',
         ];
         foreach ($tags as $re => $to) {
             $out = preg_replace_callback($re, function () use ($to) { return $to; }, $page, 1);
