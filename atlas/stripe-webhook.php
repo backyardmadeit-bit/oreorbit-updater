@@ -30,6 +30,11 @@ $prefs = function (string $email) use ($dir): array {
     if (($f = @fopen($dir . '/subscribers.csv', 'r'))) { while (($r = fgetcsv($f, null, ',', '"', '')) !== false) { if (count($r) >= 6 && strtolower(trim((string) $r[2])) === $email) { $mins = array_values(array_filter(explode(' ', (string) $r[3]))); $lang = $r[5]; } } fclose($f); }
     return [$mins, $lang];
 };
+if ($type === 'checkout.session.completed' && !in_array((string) ($o['payment_status'] ?? 'paid'), ['paid', 'no_payment_required'], true)) {
+    /* a delayed payment (bank transfer, SEPA) is not money yet: Stripe sends checkout.session.async_payment_succeeded later */
+    $type = 'checkout.pending';
+}
+if ($type === 'checkout.session.async_payment_succeeded') { $type = 'checkout.session.completed'; }
 if ($type === 'checkout.session.completed') {
     $email = strtolower(trim((string) ($o['customer_details']['email'] ?? $o['customer_email'] ?? '')));
     if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
