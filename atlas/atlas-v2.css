@@ -896,3 +896,22 @@ table.health th { text-transform: none !important; letter-spacing: 0 !important;
 .cmp-stale .cmp-radar { margin-left: 4px; padding: 0; border: 0; background: none; color: #3ddc97; font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .cmp-stale .cmp-radar:hover { color: #6ff0b6; }
 .cmp-stale[hidden] { display: none; }
+
+/* v47: the globe legend: zoomed out only, foldable, never over the drawer */
+.glegend { position: absolute; left: var(--gutter, 16px); top: calc(env(safe-area-inset-top, 0px) + 128px); z-index: 4; width: 252px; max-width: calc(100vw - 32px); padding: 10px 12px; border-radius: 14px; font-size: 12.5px; line-height: 1.35; color: var(--dim, #a3aaae); transition: opacity .3s, transform .3s; }
+.glegend.gl-off { opacity: 0; transform: translateY(-6px); pointer-events: none; }
+.glegend .gl-h { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; padding: 0; border: 0; background: none; color: var(--text, #eceee9); font: 600 12.5px var(--sans, inherit); cursor: pointer; }
+.glegend .gl-h i::before { content: "−"; font-style: normal; font-size: 15px; opacity: .7; }
+.glegend.gl-fold .gl-h i::before { content: "+"; }
+.glegend .gl-l { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 6px; }
+.glegend.gl-fold .gl-l { display: none; }
+.glegend li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: center; }
+.gl-ring { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--c); box-sizing: border-box; justify-self: center; }
+.gl-ship { width: 10px; height: 10px; border-radius: 50%; background: #eceee9; box-shadow: 0 0 0 2.5px #050607, 0 0 0 3.5px rgba(236,238,233,.35); justify-self: center; }
+.gl-pin { width: 12px; height: 12px; border-radius: 3px; background: conic-gradient(#a78bfa 0 25%, #facc15 0 50%, #22d3ee 0 75%, #f472b6 0); justify-self: center; }
+body.touring .glegend, body.presenting .glegend { display: none; }
+@media (max-width: 520px) { .glegend { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); width: auto; right: var(--gutter-r, 16px); } }
+
+/* v47: what High / Medium / Low risk mean */
+.qc-key { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--faint, #8a9196); max-width: 78ch; }
+.qc-lv em[title] { cursor: help; }

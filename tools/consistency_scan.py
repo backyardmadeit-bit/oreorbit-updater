@@ -15,7 +15,8 @@ Usage:
   consistency_scan.py                 scan the repo sources (atlas/, updater/, README.md)
   consistency_scan.py --pages DIR     also scan built library pages in DIR
   consistency_scan.py --remote        also fetch the live WordPress pages and madali.cz (reported as warnings)
-Exit code 1 when the repo or built pages contain a stale count.
+Exit code 1 when the repo or built pages contain a stale count. JSON-LD blocks (structured data for search engines)
+are scanned too: they are invisible on the page but show up in search results.
 """
 import argparse
 import html
@@ -50,7 +51,7 @@ NOUNS = {
 SPREAD = {"minerals": 3, "sites": 15, "routes": 4}
 GAP = r"(?:\s+(?!(?:of|z|ze|and|a|or|nebo)\b)[\w\-–]+){0,3}?\s+"   # up to three words between number and noun
 
-ALLOW = re.compile(r"index minerals|INDEX_TEN|Dependency Index|Index závislosti|index závislosti|indexu závislosti|"
+ALLOW = re.compile(r"index minerals|INDEX_TEN|ten index|deseti surovin\w* indexu|"
                    r"index materials|surovin\w* indexu|First version|První verze|original ten|původních deset|"
                    r"skóre z \d|score out of|out of \d+ by the|strategic projects|strategických projektů|"
                    r"China supplied more than half|Čína dodala víc než polovinu", re.I)
@@ -153,7 +154,7 @@ def main():
                 if f.endswith((".html", ".xml", ".txt")):
                     p = os.path.join(d, f)
                     txt = open(p, encoding="utf-8", errors="replace").read()
-                    txt = re.sub(r"<script\b[^>]*>.*?</script>|<style\b[^>]*>.*?</style>", " ", txt, flags=re.S)
+                    txt = re.sub(r"<script\b(?![^>]*ld\+json)[^>]*>.*?</script>|<style\b[^>]*>.*?</style>", " ", txt, flags=re.S)
                     scan_text("built:" + os.path.relpath(p, a.pages), re.sub(r">\s*<", ">\n<", txt), t, errors)
     gh = os.environ.get("GITHUB_ACTIONS") == "true"
     notes = [x for x in errors if HISTORICAL.match(x[0])]
@@ -170,7 +171,7 @@ def main():
             except Exception as ex:
                 print(("::warning::" if gh else "WARN ") + "could not fetch %s (%s)" % (url, ex))
                 continue
-            txt = re.sub(r"<script\b[^>]*>.*?</script>|<style\b[^>]*>.*?</style>", " ", txt, flags=re.S)
+            txt = re.sub(r"<script\b(?![^>]*ld\+json)[^>]*>.*?</script>|<style\b[^>]*>.*?</style>", " ", txt, flags=re.S)
             scan_text(url, re.sub(r">\s*<", ">\n<", txt), t, warnings)
         for name, i, found, why in warnings:
             print(("::warning::" if gh else "WARN ") + "%s (line %d)  \"%s\"  (%s)" % (name, i, found, why))

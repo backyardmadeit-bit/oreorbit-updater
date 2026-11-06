@@ -981,6 +981,35 @@ function paintChips() {
 /* ================= globe ================= */
 const globe = (function initGlobe() {
   const canvas = $("#globe"), plate = $("#plate"), labelsEl = $("#labels");
+  /* v47: a small legend for the rings and markers. It shows while the globe is zoomed out and steps aside when the
+     camera comes close, a drawer is open or the tour runs. It can be folded; the choice is remembered. */
+  const legendEl = (() => {
+    const el = document.createElement("div"); el.className = "glegend glass gl-off"; el.id = "glegend";
+    const L = [
+      ["#ff5a5a", T("Severe disaster alert", "Závažná výstraha před katastrofou")],
+      ["#ff9f43", T("Serious alert, or a river too low or too high", "Vážná výstraha nebo řeka s příliš nízkou či vysokou vodou")],
+      ["#ffd166", T("Moderate alert", "Mírná výstraha")],
+      ["#f5b14c", T("Earthquake M5+, larger when stronger", "Zemětřesení M5+, větší kruh = silnější")],
+      ["#7fd3ff", T("Tropical cyclone", "Tropický cyklon")],
+      ["#9fe0b0", T("Other natural hazard: flood, fire, drought, volcano", "Jiný přírodní jev: povodeň, požár, sucho, sopka")],
+      ["#d2b0ff", T("Armed conflict, larger when more events", "Ozbrojený konflikt, větší kruh = více událostí")],
+      ["#eceee9", T("Chokepoint on a trade route", "Úzké místo na obchodní trase")]
+    ];
+    let folded = false;
+    try { const v = localStorage.getItem("oo-legend"); folded = v ? v === "0" : innerWidth < 520; } catch (e) { folded = innerWidth < 520; }   // open for a first visit, folded on phones
+    el.innerHTML = `<button type="button" class="gl-h" aria-expanded="${!folded}">${T("What the rings mean", "Co znamenají kruhy")}<i aria-hidden="true"></i></button>` +
+      `<ul class="gl-l">${L.map(([c, t]) => `<li><span class="gl-ring" style="--c:${c}"></span>${t}</li>`).join("")}` +
+      `<li><span class="gl-ship"></span>${T("Ship, live position", "Loď, aktuální poloha")}</li>` +
+      `<li><span class="gl-pin"></span>${T("Mine or plant: the colour shows the mineral", "Důl nebo závod: barva značí surovinu")}</li></ul>`;
+    el.classList.toggle("gl-fold", folded);
+    el.querySelector(".gl-h").addEventListener("click", () => {
+      folded = !folded; el.classList.toggle("gl-fold", folded); el.querySelector(".gl-h").setAttribute("aria-expanded", String(!folded));
+      try { localStorage.setItem("oo-legend", folded ? "0" : "1"); } catch (e) {}
+    });
+    plate.appendChild(el);
+    return el;
+  })();
+  let legendOn = false;
   const fail = (msg) => {
     const d = document.createElement("div"); d.className = "fallback"; d.textContent = msg;
     plate.appendChild(d); canvas.hidden = true; return null;
@@ -1869,6 +1898,8 @@ const globe = (function initGlobe() {
   }
   function updateLabels() {
     const ex = isExploring();
+    const lgOn = ex && cam.dist > 1.85 && !document.body.classList.contains("touring") && !!document.getElementById("panel") && document.getElementById("panel").hidden;
+    if (lgOn !== legendOn) { legendOn = lgOn; legendEl.classList.toggle("gl-off", !lgOn); }
     towerItems.forEach((t) => {
       const grow = t.g.scale.z / t.h;
       tmpV.copy(t.unit).multiplyScalar(1.001 + t.h * grow);
@@ -3719,7 +3750,11 @@ function nearFilter(list) {
   if (!ss.length) return list;
   return list.filter((h) => ss.some((s) => { const dy = h.lat - s.lat, dx = (h.lng - s.lng) * Math.cos(s.lat * Math.PI / 180); return dx * dx + dy * dy < 81; }));
 }
+/* v47: picking anything while the guided tour runs ends the tour (silently, keeping the view), because the drawer
+   that shows the data is hidden while touring */
+function leaveTourForPick() { if (tourIdx >= 0 && !PRESENTING) { endTour(true); if (globe) globe.relayout(); } }
 function select(id, fly) {
+  leaveTourForPick();
   enterExplore();
   selRoute = null; selChoke = null; selSat = false; selHz = null; selLive = false; selShip = null;
   selected = id;
@@ -3733,6 +3768,7 @@ function select(id, fly) {
   renderDrawer();
 }
 function selectRoute(id) {
+  leaveTourForPick();
   enterExplore();
   selected = null; selChoke = null; selSat = false; selHz = null; selLive = false; selShip = null; selRoute = id;
   if (!layers.routes) setLayer("routes", true);
@@ -3740,6 +3776,7 @@ function selectRoute(id) {
   renderDrawer();
 }
 function selectSat(id) {
+  leaveTourForPick();
   enterExplore();
   selected = null; selRoute = null; selChoke = null; selHz = null; selLive = false; selShip = null; selSat = id || "s2c";
   if (!layers.satellite) setLayer("satellite", true);
@@ -3747,6 +3784,7 @@ function selectSat(id) {
   renderDrawer();
 }
 function selectHazard(id) {
+  leaveTourForPick();
   enterExplore();
   selected = null; selRoute = null; selChoke = null; selSat = false; selLive = false; selShip = null; selHz = id;
   const h = HZ_BY_ID[id];
@@ -3761,6 +3799,7 @@ function selectLive() {
   renderDrawer();
 }
 function selectChoke(id) {
+  leaveTourForPick();
   enterExplore();
   selected = null; selRoute = null; selSat = false; selHz = null; selLive = false; selShip = null; selChoke = id;
   const c = CHOKE_BY_ID[id];
@@ -4261,6 +4300,7 @@ function shipList() {
   }));
 }
 function selectShip(id) {
+  leaveTourForPick();
   enterExplore();
   selected = null; selRoute = null; selChoke = null; selSat = false; selHz = null; selLive = false; selShip = id;
   const v = SHIP_BY_ID[id];
