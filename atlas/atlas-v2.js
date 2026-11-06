@@ -594,7 +594,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       ["batteries", T("Batteries and energy storage", "Baterie a úložiště energie"), { li: T("cells", "články"), co: T("cathodes", "katody"), ni: T("cathodes", "katody"), gr: T("anodes", "anody") , mn: T("NMC and LMFP cathodes", "katody NMC a LMFP") }],
     ];
     window.ooQC = {}; P.forEach((p) => { window.ooQC[p[0]] = { name: p[1], mins: Object.keys(p[2]) }; });   // v24: shared with This week and the sign-up forms
-    const LV = { red: [T("High risk", "Vysoké riziko"), "qc-red"], amber: [T("Watch", "Sledovat"), "qc-amber"], green: [T("Stable", "Stabilní"), "qc-green"] };
+    const LV = { red: [T("High risk", "Vysoké riziko"), "qc-red"], amber: [T("Medium risk", "Střední riziko"), "qc-amber"], green: [T("Low risk", "Nízké riziko"), "qc-green"] };   // v47: "Watch" read as ambiguous to a first user
     const sec = document.createElement("section");
     sec.className = "section"; sec.id = "check"; sec.setAttribute("aria-labelledby", "check-h");
     sec.innerHTML = `<div class="inner">
@@ -609,7 +609,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const nav = document.querySelector(".nav-links");
     if (nav && !nav.querySelector('a[href="#check"]')) { const x = document.createElement("a"); x.href = "#check"; x.textContent = T("Quick check", "Rychlá kontrola"); nav.insertBefore(x, nav.firstChild); }
     const out = sec.querySelector(".qc-out");
-    const PENT = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22];
+    const PENT = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24, 27];   // v47: one note per mineral in ORDER (12); with ten, nickel and graphite were silent
     let names = null;
     try { names = new Intl.DisplayNames([O.LANG === "cs" ? "cs" : "en"], { type: "region" }); } catch (e) { names = null; }
     const land = (cc) => { if (!cc) return ""; if (O.LANG === "cs" && cc === "CN") return "Číny"; try { return (names && names.of(cc)) || O.ctry(cc); } catch (e) { return O.ctry(cc); } };
@@ -659,7 +659,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
           <span class="qc-share">${share}<span class="qc-bar"><span style="width:${x ? Math.min(100, x.pct) : 0}%"></span></span></span>
           <span class="qc-imp"><small>${T("EU imports", "Dovoz do EU")}</small>${im}</span>
-          <span class="qc-lv">${lv ? `<em class="${lv[1]}">${lv[0]}</em>` : ""}</span></button>`;
+          <span class="qc-lv">${lv ? `<em class="${lv[1]}" title="${esc((rag.why || []).join(" · ") || T("Nothing unusual this week", "Tento týden nic neobvyklého"))}">${lv[0]}</em>` : ""}</span></button>`;
       }).join("");
       const sum = T(`${p[1]} typically depend on <b>${ms.length} of the twelve</b> critical minerals. For <b>${conc}</b> of them one country controls more than 65% of a stage${cn ? `, China in ${cn}` : ""}.`,
                     `${p[1]} obvykle závisí na <b>${ms.length} z dvanácti</b> kritických surovin. U <b>${conc}</b> z nich ovládá jedna země přes 65 % některé fáze${cn ? `, Čína u ${cn}` : ""}.`);
@@ -676,7 +676,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
       const BK43 = O.safeUrl ? (O.safeUrl(C43.bookingUrl) || "mailto:david@madali.cz") : (C43.bookingUrl || "mailto:david@madali.cz");
       const n43 = ms.length, csW = n43 >= 2 && n43 <= 4 ? "tyto " + n43 + " suroviny" : "těchto " + n43 + " surovin";
-      out.innerHTML = `<p class="qc-sum">${sum}</p>${dl}<div class="qc-rows">${rows}</div>
+      const lvKey = `<p class="qc-key">${esc(T("High risk: one country controls more than 65% of a stage and something is moving this week (a deadline within 45 days, news, or a hazard or conflict near a site). Medium risk: only one of the two. Low risk: neither.", "Vysoké riziko: jedna země ovládá přes 65 % některé fáze a zároveň se tento týden něco děje (termín do 45 dní, zprávy, hrozba nebo konflikt u lokality). Střední riziko: platí jen jedno z toho. Nízké riziko: ani jedno."))}</p>`;
+      out.innerHTML = `<p class="qc-sum">${sum}</p>${dl}<div class="qc-rows">${rows}</div>${lvKey}
         <div class="qc-ctas"><a class="btn qc-mon" href="#teams">${esc(T("Get alerts for these " + n43 + " minerals", "Hlídat " + csW))}</a><a class="btn ghost" href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Full review of your product line", "Plné posouzení vaší výrobní řady")}</a><button type="button" class="btn ghost qc-pdf">${T("Download my result (PDF)", "Stáhnout výsledek (PDF)")}</button></div>
         <p class="qc-cta-note">${esc(T("Monitoring: an email the same day something changes for these minerals, €" + PR43 + " a month, cancel anytime.", "Monitoring: e-mail ještě týž den, kdy se u těchto surovin něco změní, " + PR43 + " € měsíčně, zrušíte kdykoli."))} ${esc(T("Not sure yet?", "Ještě si nejste jistí?"))} <a href="${esc(BK43)}" target="_blank" rel="noopener">${esc(T("Book a 30-minute call", "Domluvte si 30minutový hovor"))}</a></p>`;
       out.querySelector(".qc-pdf").addEventListener("click", printResult);
@@ -695,7 +696,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
       out.querySelectorAll(".qc-row").forEach((r) => r.addEventListener("click", () => { const s = snd(); if (s) s.tick(); O.showMaterial(r.dataset.m); }));
       const s = quiet ? null : snd();
-      if (s) ms.forEach((m, i) => setTimeout(() => { const f = 330 * Math.pow(2, PENT[O.ORDER.indexOf(m)] / 12); s.blip(f, f, 0.16, 0.035, "triangle"); }, 90 * i));
+      if (s) ms.forEach((m, i) => setTimeout(() => { const f = 330 * Math.pow(2, (PENT[O.ORDER.indexOf(m)] ?? 0) / 12); s.blip(f, f, 0.16, 0.035, "triangle"); }, 90 * i));
     }
     sec.querySelectorAll(".qc-p").forEach((b) => b.addEventListener("click", () => { render(b.dataset.p); ooHit("qc:" + b.dataset.p); }));
     render("drones", true);
@@ -1770,7 +1771,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 46"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 47"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1821,7 +1822,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 46 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 47 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
