@@ -506,7 +506,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           <dd>${T("Everything on this page, from public data that is dated and linked, updated every day. The assessment runs in your browser and your register never leaves it.", "Vše na této stránce z veřejných, datovaných a odkazovaných dat, aktualizované každý den. Posouzení běží ve vašem prohlížeči a registr ho nikdy neopustí.")}</dd>
           <dd><a href="p/index.html">${T("Browse the library: every material and site as a page you can read and cite", "Projděte knihovnu: každá surovina a lokalita jako stránka k citaci")}</a></dd>
           ${sign ? `<dd><a class="btn ghost small" href="${esc(sign)}" target="_blank" rel="noopener">${T("Get the Monday brief by email", "Pondělní přehled e-mailem")}</a></dd>` : ""}</div>
-        <div class="tm-o"><dt><span class="tm-n">${T("From €4,900", "Od 4 900 €")}</span>${T("Article 24 readiness review", "Připravenost na článek 24")}</dt>
+        <div class="tm-o"><dt><span class="tm-n">${T("Tailored", "Na míru")}</span>${T("Article 24 readiness review", "Připravenost na článek 24")}</dt>
           <dd>${T("One product line, worked through with your engineers and buyers: the parts and suppliers behind it, where their materials are mined and refined, the stock you hold and what each export control would do to it. You get an assessment your board can sign, and a named analyst checks every figure in it.", "Jedna výrobní řada, prošlá s vašimi konstruktéry a nákupčími: díly a dodavatelé, kde se jejich suroviny těží a zpracovávají, jaké máte zásoby a co by s nimi udělala každá vývozní kontrola. Dostanete posouzení, které může vedení podepsat, a každý údaj v něm zkontroluje jmenovaný analytik.")}</dd>
           <dd><a href="oreorbit-sample-assessment.pdf">${T("Read a sample review (PDF, 7 pages)", "Ukázkové posouzení (PDF, 7 stran, anglicky)")}</a> · <a href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Services and prices", "Služby a ceny")}</a></dd></div>
         <div class="tm-o"><dt><span class="tm-n">${T("From €390 a month", "Od 390 € měsíčně")}</span>${T("Monitoring for your register", "Sledování pro váš registr")}</dt>
@@ -633,7 +633,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         <h1>${esc(last.name)}</h1><p class="sum">${esc(strip(last.sum))}</p>
         ${last.dl ? `<p class="dl">${T("Next deadline", "Nejbližší termín")}: <b>${esc(last.dl[0])}</b> · ${esc(last.dl[1])}</p>` : ""}
         <table><tr><th>${T("Mineral and use", "Surovina a použití")}</th><th>${T("Leading country, tightest stage", "Vedoucí země, nejužší fáze")}</th><th>${T("EU imports", "Dovoz do EU")}</th><th>${T("Level", "Úroveň")}</th></tr>${rows}</table>
-        <div class="next"><b>${T("Want this for your actual parts list?", "Chcete to pro váš skutečný seznam dílů?")}</b> ${T("A readiness review maps one product line in two to three weeks, from €4,900.", "Posouzení připravenosti zmapuje jednu výrobní řadu za dva až tři týdny, od 4 900 €.")}<br>
+        <div class="next"><b>${T("Want this for your actual parts list?", "Chcete to pro váš skutečný seznam dílů?")}</b> ${T("A readiness review maps one product line in two to three weeks; scope and price are agreed in a free 30-minute call.", "Posouzení připravenosti zmapuje jednu výrobní řadu za dva až tři týdny; rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma.")}<br>
         David Madali · Bohemia Defense · <a href="mailto:david@madali.cz">david@madali.cz</a> · bohemiadefense.com/atlas</div>
         <p class="note">${T("Typical uses in such products; your own parts may differ. Shares: USGS and IEA; EU imports: Eurostat Comext; via OreOrbit. Not investment or legal advice.", "Typické použití v takových výrobcích; vaše díly se mohou lišit. Podíly: USGS a IEA; dovoz do EU: Eurostat Comext; přes OreOrbit. Nejde o investiční ani právní radu.")}</p>
         <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`;
@@ -1105,7 +1105,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       box.innerHTML =
         `<p class="wx-free"><i></i><b>${esc(T("Free", "Zdarma"))}</b> · ${esc(T("the atlas · the quick check · the weekly brief · your parts list · no login", "atlas · rychlá kontrola · týdenní přehled · váš seznam dílů · bez přihlášení"))}</p>` +
         `<div class="wx-row">` +
-        card(true, T("Readiness review", "Posouzení připravenosti"), esc(T("from €4,900", "od 4 900 €")), T("€2,900 for the first three clients", "2 900 € pro první tři klienty"),
+        card(true, T("Readiness review", "Posouzení připravenosti"), esc(T("Tailored", "Na míru")), T("Scope and price after a free 30-minute call", "Rozsah a cenu domluvíme na hovoru zdarma"),
              T("One product line: its parts, suppliers, origins and stock, tested against every export control that could hit it.", "Jedna výrobní řada: díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole, která ji může zasáhnout."),
              [T("Two to three weeks", "Dva až tři týdny"), T("Two working sessions of your time", "Dvě pracovní schůzky"), T("Ready for your board and CRMA Article 24", "Pro vedení i článek 24 CRMA")],
              ask(T("OreOrbit readiness review", "OreOrbit: posouzení připravenosti")), T("Ask about a review", "Zeptat se na posouzení")) +
@@ -1771,7 +1771,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 47"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 48"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1822,7 +1822,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 47 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 48 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
