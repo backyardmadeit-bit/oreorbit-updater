@@ -1,5 +1,17 @@
 # WordPress (bohemiadefense.com): úpravy z 6. 11. 2026
 
+## Nejjednodušší cesta: celý kód úvodní stránky
+
+Obě úvodní stránky jsou v **Elementoru** (EN stránka 5581, CS stránka 6312), kód je ve widgetu **HTML**.
+
+1. Otevři [EN v Elementoru](https://bohemiadefense.com/wp-admin/post.php?post=5581&action=elementor), klikni na widget HTML, v poli s kódem dej Cmd+A a vlož celý obsah souboru [`home-en.html`](home-en.html).
+2. Totéž pro [CS v Elementoru](https://bohemiadefense.com/wp-admin/post.php?post=6312&action=elementor) se souborem [`home-cs.html`](home-cs.html).
+3. **Aktualizovat**, pak Elementor → Nástroje → Regenerovat soubory a data a W3 Total Cache → Purge All Caches.
+
+Soubory vznikly z kódu, který na webu běžel 6. 11., a obsahují všechny změny níže (texty tarifů, 12 tónů, nový obrázek OreOrbit) a navíc: obrázky v původní podobě (W3 Total Cache je při vykreslení přepisoval na líné načítání), opravené počítání kliků na služby a LinkedIn a v CS „94 % Čína“ s mezerou. Mapa se nemění: všech 14 evropských lokalit z atlasu na ní už je.
+
+Pasáže „najdi a nahraď“ níže platí jen pro ruční úpravu místo vložení celého kódu.
+
 WordPress nemá Claude přístup, proto jsou tu přesné pasáže k ručnímu vložení. Každý text pod „Najdi“ je na stránce právě jednou (ověřeno na živém HTML).
 
 ## 0. Obrázek OreOrbit
