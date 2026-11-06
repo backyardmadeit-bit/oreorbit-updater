@@ -86,8 +86,8 @@ const CS_RX = [
   [/^(\d+) tracked materials?$/, (m, n) => `${n} ${csPlural(+n, "sledovaná surovina", "sledované suroviny", "sledovaných surovin")}`],
   [/^(\d+) materials?$/, (m, n) => `${n} ${csPlural(+n, "surovina", "suroviny", "surovin")}`],
   [/^(\d+) km swath$/, (m, n) => `pás ${n} km`],
-  [/^(.+) · (Rare earths|Titanium|Tungsten|Antimony|Gallium|Germanium|Lithium|Cobalt|Nickel|Graphite)$/, (m, a, b) => `${trPiece(a)} · ${trPiece(b)}`],
-  [/^(Rare earths|Titanium|Tungsten|Antimony|Gallium|Germanium|Lithium|Cobalt|Nickel|Graphite) · (mine|processing|magnets|planned)$/, (m, a, b) => `${trPiece(a)} · ${{ mine: "důl", processing: "zpracování", magnets: "magnety", planned: "plánováno" }[b]}`],
+  [/^(.+) · (Rare earths|Titanium|Tungsten|Antimony|Magnesium|Manganese|Gallium|Germanium|Lithium|Cobalt|Nickel|Graphite)$/, (m, a, b) => `${trPiece(a)} · ${trPiece(b)}`],
+  [/^(Rare earths|Titanium|Tungsten|Antimony|Magnesium|Manganese|Gallium|Germanium|Lithium|Cobalt|Nickel|Graphite) · (mine|processing|magnets|planned)$/, (m, a, b) => `${trPiece(a)} · ${{ mine: "důl", processing: "zpracování", magnets: "magnety", planned: "plánováno" }[b]}`],
   [/^Source: (.+)$/, (m, x) => `Zdroj: ${x}`],
   [/^(\d+) points$/, (m, n) => `${n} ${csPlural(+n, "bod", "body", "bodů")}`],
   [/^You guessed below the real figure (\d+) times? out of five\.( Supply is even more concentrated than it feels\.)?$/, (m, n, x) => `Pod skutečným číslem jste odhadli ${n}× z pěti.${x ? " Dodávky jsou ještě koncentrovanější, než se zdá." : ""}`],
@@ -1220,10 +1220,16 @@ const globe = (function initGlobe() {
     dirty = true;
   }, undefined, () => { if (fallback) hiTex(fallback, key, 2); });   // no sharper map on this server: use the 2k one
   const whenIdle = (f, ms) => setTimeout(() => (window.requestIdleCallback || ((g) => g()))(f, { timeout: 2000 }), ms);
-  if (!tx && !HI_TEX) window.addEventListener("globe-tex", function up2k(e) {
+  const conn = navigator.connection || {};
+  const slowNet = !!conn.saveData || /^(slow-2g|2g|3g)$/.test(conn.effectiveType || "");
+  if (!tx && !HI_TEX && !slowNet) window.addEventListener("globe-tex", function up2k(e) {
     if (e.detail !== 3) return;
     window.removeEventListener("globe-tex", up2k);
-    whenIdle(() => { hiTex("textures/earth-day.jpg", "dayMap", 2); hiTex("textures/earth-night.jpg", "nightMap", 2); hiTex("textures/earth-water.jpg", "specMap", 2); }, 400);
+    const go = () => whenIdle(() => { hiTex("textures/earth-day.jpg", "dayMap", 2); hiTex("textures/earth-night.jpg", "nightMap", 2); hiTex("textures/earth-water.jpg", "specMap", 2); }, 400);
+    /* v48: on a phone the sharper maps (about 0.9 MB) wait until the visitor opens the interactive atlas */
+    if (!SMALL || document.body.classList.contains("exploring")) { go(); return; }
+    const mo = new MutationObserver(() => { if (document.body.classList.contains("exploring")) { mo.disconnect(); go(); } });   // reads body's class only
+    mo.observe(document.body, { attributes: true, attributeFilter: ["class"] });
   });
   if (HI_TEX) window.addEventListener("globe-tex", function hiOnce(e) {
     if (e.detail !== 3) return;
@@ -4139,9 +4145,20 @@ async function connectWire() {
     db.doc("meta/status").onSnapshot((d) => { META = d.exists ? d.data() : null; if (wireState === "ready") renderWire(); }, () => {});
     connectTeam(db);
     v14Connect(db);
-    ["orbits", "hazards", "conditions", "scenes", "prices", "ships", "traffic", "conflict", "tenders", "trade", "clouds", "hotspots", "so2", "cnexports", "cloudshi0", "cloudshi1", "cloudshi2", "cloudshi3", "history", "runstatus"].filter((k) => !(LITE && /^cloudshi\d$/.test(k))).forEach((k) => {
-      db.doc("live/" + k).onSnapshot((d) => { LIVE[k] = d.exists ? d.data() : null; onLive(k); }, () => {});
-    });
+    const sub = (k) => db.doc("live/" + k).onSnapshot((d) => { LIVE[k] = d.exists ? d.data() : null; onLive(k); }, () => {});
+    ["orbits", "hazards", "conditions", "scenes", "prices", "ships", "traffic", "conflict", "tenders", "trade", "clouds", "hotspots", "so2", "cnexports", "history", "runstatus"].forEach(sub);
+    /* v48: the four detailed cloud tiles (about 0.5 MB) wait: a few idle seconds on a computer, and on a phone until the
+       visitor opens the interactive atlas. Until then the globe shows the base cloud map (clouds.json). */
+    if (!LITE) {
+      let hiDone = false;
+      const loadHiClouds = () => { if (hiDone) return; hiDone = true; ["cloudshi0", "cloudshi1", "cloudshi2", "cloudshi3"].forEach(sub); };
+      if (!SMALL) setTimeout(() => (window.requestIdleCallback || ((f) => f()))(loadHiClouds, { timeout: 3000 }), 4000);
+      if (isExploring()) loadHiClouds();
+      else {
+        const mo = new MutationObserver(() => { if (isExploring()) { mo.disconnect(); loadHiClouds(); } });   // watches body's class, never writes it
+        mo.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+      }
+    }
   } catch (e) { fail(); }
 }
 

@@ -63,6 +63,24 @@ def counts(ref):
             "china65": sum(1 for m in ref["order"] if china65(m))}
 
 
+def meta_desc(text, limit=160):
+    """The search-result description: whole sentences that fit in `limit` characters (search engines cut longer ones
+    mid-word) when they make at least 110 characters; otherwise the text is cut at a word, with an ellipsis.
+    og:description keeps the full text."""
+    t = " ".join(str(text or "").split())
+    if len(t) <= limit:
+        return t
+    out = ""
+    for sent in re.split(r"(?<=[.!?])\s+", t):
+        if len(out) + len(sent) + (1 if out else 0) > limit:
+            break
+        out = (out + " " + sent) if out else sent
+    if len(out) >= 110:   # whole sentences, if they say enough
+        return out
+    cut = t[:limit - 1].rsplit(" ", 1)[0].rstrip(",;:·–-")
+    return cut + "…"
+
+
 def e(x):
     return html.escape(str(x if x is not None else ""), quote=True)
 
@@ -130,7 +148,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 <link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%%3E%%3Crect width='32' height='32' rx='7' fill='%%23050607'/%%3E%%3Ccircle cx='16' cy='16' r='5.6' stroke='%%23eceee9' stroke-width='2.2'/%%3E%%3Cellipse cx='16' cy='16' rx='13.4' ry='5.1' stroke='%%23eceee9' stroke-width='1.8' transform='rotate(-28 16 16)'/%%3E%%3Ccircle cx='27.7' cy='9.9' r='2.7' fill='%%233ddc97'/%%3E%%3C/svg%%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>%(title)s · OreOrbit</title>
-<meta name="description" content="%(desc)s">
+<meta name="description" content="%(desc_meta)s">
 <meta name="author" content="David Madali">
 <meta name="theme-color" content="#050607">
 <link rel="canonical" href="%(url)s">
@@ -162,7 +180,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
 <script src="../library.js" defer></script>
 </body>
 </html>
-""" % {"title": e(title), "desc": e(desc), "url": e(url), "ld": json.dumps(ld, ensure_ascii=False).replace("</", "<\\/"),
+""" % {"title": e(title), "desc": e(desc), "desc_meta": e(meta_desc(desc)), "url": e(url), "ld": json.dumps(ld, ensure_ascii=False).replace("</", "<\\/"),
        "crumbs": crumb_html, "body": body, "today_txt": e(day(today)), "lang": lang, "alt": alt_head, "nav": nav, "by": "od" if cs else "by", "bdpath": "cs/" if cs else "",
        "foot": foot or ('<p>OreOrbit is built and run by <a href="https://madali.cz/">David Madali</a> at <a href="https://bohemiadefense.com/">Bohemia Defense</a>, Prague. Public data, updated automatically every day. Data as of %s.</p>\n  <p><a href="services.html">Services</a> <a href="about.html">About</a> <a href="legal.html">Imprint, privacy and data licences</a> <a href="https://madali.cz/">madali.cz</a> <a href="https://www.linkedin.com/in/davidmadali/">LinkedIn</a></p>\n  <p>David Madali · Bohemia Defense · IČO 22229957</p>' % e(day(today)))}
 
@@ -237,7 +255,7 @@ def material_page(m, ref, live, today):
     t_svg, t_meta = trade_chart(m, trade_rows[0]) if trade_rows else ("", None)
     dls = [d for d in (R.get("deadlines") or []) if str(d.get("date", "")) >= today]
     news = [x for x in (live.get("news") or []) if isinstance(x, dict) and m in (x.get("materials") or [])][:6]
-    title = "%s: who makes it, and what it means for Europe's defence" % name
+    title = "%s: who makes %s, and what it means for Europe's defence" % (name, "them" if m == "ree" else "it")   # "Rare earths" is plural
     desc = ("%s %s" % (lede_fact, info.get("uses") or "")).strip()[:300]
     figs = []
     if wx:
