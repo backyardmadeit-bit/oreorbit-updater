@@ -141,7 +141,7 @@ Na všech stránkách (home, cs, david-madali, david-madali-cz) je stejný blok 
 1. Najdi ten blok: hledej text `"price": "390"`.
 2. Nahraď **celý** blok od `<script type="application/ld+json">` po `</script>` obsahem souboru [`jsonld-sitewide.html`](jsonld-sitewide.html).
 
-Změny v bloku: Monitoring `49` EUR; OreOrbit „twelve critical minerals“; u Readiness review je cena vypuštěná (na webu se píše „rozsah a cenu domluvíme na hovoru“; Google chce, aby se strukturovaná data shodovala s viditelným obsahem); do oborů přibyly Magnesium a Manganese.
+Změny v bloku: Monitoring `49` EUR; OreOrbit „twelve critical minerals“; u Readiness review je cena vypuštěná (4 900 € už neplatí, potvrzeno 6. 11.); vypuštěné `alumniOf` (univerzita: pravidlo „never mention the Ing. studies“); do oborů přibyly Magnesium a Manganese.
 
 ## 4. Po uložení
 
