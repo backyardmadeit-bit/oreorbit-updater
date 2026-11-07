@@ -1372,13 +1372,12 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     // the sign-up forms: the free Monday brief and paid monitoring
     const selMins = () => PK() ? [...PK().querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.dataset.my) : [];
     const minNames = () => { const n = selMins().map((m) => { const c = PK().querySelector('.chip2[data-my="' + m + '"]'); return c ? c.textContent.trim() : m; }); return n.length ? n.join(", ") : T("all twelve minerals", "všech dvanáct surovin"); };
-    const form = (plan, btn, cons) => `<form class="oo-sub" data-plan="${plan}" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(btn)}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="oo-cons"><input type="checkbox" name="consent" required> <span>${esc(cons)} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></label><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
+    const form = (plan, btn, cons) => `<form class="oo-sub" data-plan="${plan}" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(btn)}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span>${esc(cons)} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
     document.addEventListener("submit", async (ev) => {
       const f = ev.target.closest && ev.target.closest(".oo-sub"); if (!f) return;
       ev.preventDefault();
-      const msg = f.querySelector(".oo-msg"), em = f.querySelector('input[name="email"]'), ok = f.querySelector('input[name="consent"]');
+      const msg = f.querySelector(".oo-msg"), em = f.querySelector('input[name="email"]');
       if (!em.value || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value)) { msg.textContent = T("Please enter a valid email.", "Zadejte prosím platný e-mail."); msg.className = "oo-msg err"; em.focus(); return; }
-      if (!ok.checked) { msg.textContent = T("Please tick the consent box.", "Zaškrtněte prosím souhlas."); msg.className = "oo-msg err"; return; }
       const b = f.querySelector('button[type="submit"]'); b.disabled = true; msg.textContent = T("Sending…", "Odesílám…"); msg.className = "oo-msg";
       try {
         const r = await fetch("subscribe.php", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em.value.trim(), consent: true, plan: f.dataset.plan, minerals: (f.closest(".wk3") && window.ooBriefMins) ? window.ooBriefMins() : (f.closest(".pl3-y") && window.ooMonMins) ? window.ooMonMins() : selMins(), other: (f.closest(".pl3-y") && window.ooMonOther) ? window.ooMonOther() : "", product: window.ooProduct || "", lang: CS ? "cs" : "en", website: f.querySelector(".oo-hp").value }) });
@@ -1398,7 +1397,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const wk = document.querySelector(".wk2");
     if (wk && !document.querySelector(".wk2-sub")) {
       const w = document.createElement("div"); w.className = "wk2-sub";
-      w.innerHTML = `<div><b>${esc(T("Get this every Monday, free.", "Dostávejte to každé pondělí, zdarma."))}</b><span class="wk2-sub-m"></span></div>` + form("brief", T("Subscribe", "Odebírat"), T("I agree that Bohemia Defense (David Madali) stores my email to send me the Monday brief. Unsubscribe any time.", "Souhlasím, že Bohemia Defense (David Madali) uloží můj e-mail pro zasílání pondělního přehledu. Odhlásit se mohu kdykoli."));
+      w.innerHTML = `<div><b>${esc(T("Get this every Monday, free.", "Dostávejte to každé pondělí, zdarma."))}</b><span class="wk2-sub-m"></span></div>` + form("brief", T("Subscribe", "Odebírat"), T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."));
       wk.after(w);
     }
     // 7. services: free atlas → monitoring (email) → readiness review (intro call, no price)
@@ -1411,7 +1410,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `<article class="wx-card feat wx-mon"><span class="wx-badge"><i></i>${esc(T("For your minerals", "Pro vaše suroviny"))}</span><p class="wx-name">${esc(T("Monitoring", "Monitoring"))}</p><p class="wx-price">${esc(T("€390", "390 €"))}<small>${esc(T(" / month", " / měsíc"))}</small></p>` +
         `<p class="wx-sub">${esc(T("Your minerals: ", "Vaše suroviny: "))}<span class="wx-mins"></span> · <a href="#monday">${esc(T("change", "změnit"))}</a></p>` +
         `<div class="wx-text"><p>${esc(T("A same-day alert when something changes for your minerals: export controls, deadlines, plant outages and prices. Plus a short note every month.", "Upozornění ještě v den, kdy se u vašich surovin něco změní: vývozní kontroly, termíny, výpadky závodů a ceny. A každý měsíc krátké shrnutí."))}</p></div>` +
-        form("monitoring", T("Start monitoring", "Spustit monitoring"), T("I agree that Bohemia Defense (David Madali) stores my email to contact me about monitoring.", "Souhlasím, že Bohemia Defense (David Madali) uloží můj e-mail kvůli nabídce monitoringu.")) + `</article>` +
+        form("monitoring", T("Start monitoring", "Spustit monitoring"), T("We'll use this address to contact you about monitoring.", "Tuto adresu použijeme, abychom vás kontaktovali kvůli monitoringu.")) + `</article>` +
         `<article class="wx-card wx-rev"><p class="wx-name">${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="wx-price wx-price-t">${esc(T("For your board", "Pro vaše vedení"))}</p><p class="wx-sub">${esc(T("CRMA Article 24 · two to three weeks", "Článek 24 CRMA · dva až tři týdny"))}</p>` +
         `<div class="wx-text"><p>${esc(T("One product line, its parts, suppliers, origins and stock, tested against every export control and chokepoint. Signed by an analyst.", "Jedna výrobní řada, její díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole a úžině. Podepsané analytikem."))}</p>` +
         `<ul><li>${esc(T("Your parts-list register", "Registr vašich dílů"))}</li><li>${esc(T("Stress tests against real export controls", "Zátěžové testy proti skutečným vývozním kontrolám"))}</li><li>${esc(T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"))}</li><li>${esc(T("Slides for your board", "Podklady pro vedení"))}</li></ul></div>` +
@@ -1472,7 +1471,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (grid && !document.querySelector(".sig-gate")) {
       const gate = document.createElement("div"); gate.className = "sig-gate"; gate.hidden = true;
       gate.innerHTML = `<div><b>${esc(T("Open the full data, free.", "Otevřete plná data, zdarma."))}</b><span>${esc(T("Leave your email once and every panel opens. You also get the Monday brief; unsubscribe any time.", "Zadejte jednou e-mail a otevřou se všechny panely. Dostanete i pondělní přehled; odhlásit se můžete kdykoli."))}</span></div>` +
-        `<form class="oo-sub" data-plan="brief" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(T("Open the data", "Otevřít data"))}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="oo-cons"><input type="checkbox" name="consent" required> <span>${esc(T("I agree that Bohemia Defense (David Madali) stores my email to send me the Monday brief. Unsubscribe any time.", "Souhlasím, že Bohemia Defense (David Madali) uloží můj e-mail pro zasílání pondělního přehledu. Odhlásit se mohu kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></label><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
+        `<form class="oo-sub" data-plan="brief" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(T("Open the data", "Otevřít data"))}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span>${esc(T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
       grid.after(gate);
       let want = null;
       grid.addEventListener("click", (ev) => {
@@ -1578,7 +1577,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const ext = /^https?:/.test(BOOK) ? ' target="_blank" rel="noopener"' : "";
     const PRICE = String(C.monitoringPrice || "49").trim();
     const snd = (big) => { try { if (O.SND && O.SND.on) { if (big && O.SND.chord) O.SND.chord([523.25, 659.25, 783.99], 0.03); else if (O.SND.tick) O.SND.tick(); } } catch (e) {} };
-    const cons = (txt) => `<label class="oo-cons"><input type="checkbox" name="consent" required> <span>${esc(txt)} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></label>`;
+    const cons = (txt) => `<p class="oo-cons"><span>${esc(txt)} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p>`;
     const form = (plan, btn, consTxt) => `<form class="oo-sub" data-plan="${plan}" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(btn)}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">${cons(consTxt)}<p class="oo-msg" role="status" aria-live="polite"></p></form>`;
     /* plans: three columns, thin rules, one aligned row of actions */
     const row = document.querySelector(".pl-row, .wx-row");
@@ -1593,7 +1592,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `<div class="pl3-col pl3-c"><p class="pl3-k">03 · ${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="pl3-price">${esc(T("Tailored", "Na míru"))}</p><p class="pl3-sub">${esc(T("Scope and price after a free 30-minute call.", "Rozsah a cena po bezplatném 30minutovém hovoru."))}</p>` +
           li([T("One product line in two to three weeks", "Jedna výrobní řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení, článek 24 CRMA")]) + `</div>` +
         `<div class="pl3-act pl3-x"><button type="button" class="btn ghost" data-go="brief">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</button></div>` +
-        `<div class="pl3-act pl3-y">${form("monitoring", T("Start monitoring", "Spustit monitoring"), T("I agree that Bohemia Defense (David Madali) stores my email for monitoring and payment.", "Souhlasím, že Bohemia Defense (David Madali) uloží můj e-mail kvůli monitoringu a platbě."))}</div>` +
+        `<div class="pl3-act pl3-y">${form("monitoring", T("Start monitoring", "Spustit monitoring"), T("We'll use this address for your alerts and the payment.", "Tuto adresu použijeme pro vaše upozornění a platbu."))}</div>` +
         `<div class="pl3-act pl3-z"><a class="btn ghost" href="${esc(BOOK)}"${ext}>${esc(T("Book a 30-minute intro call", "Domluvit 30minutový hovor"))}</a></div>`;
       document.querySelectorAll(".pl-form").forEach((e) => e.remove());
       row.addEventListener("click", (ev) => {
@@ -1625,7 +1624,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (old && !document.querySelector(".wk3")) {
       const w = document.createElement("div"); w.className = "wk3";
       w.innerHTML = `<div class="wk3-l"><p class="wk3-k"><i></i>${esc(T("The Monday brief", "Pondělní přehled"))}</p><p class="wk3-h">${esc(T("Get this every Monday,", "Dostávejte to každé pondělí,"))} <b>${esc(T("free.", "zdarma."))}</b></p><p class="wk3-m">${esc(T("For: ", "Pro: "))}<span class="wk2-sub-m"></span></p></div>` +
-        `<div class="wk3-r">${form("brief", T("Subscribe", "Odebírat"), T("I agree that Bohemia Defense (David Madali) stores my email to send me the Monday brief. Unsubscribe any time.", "Souhlasím, že Bohemia Defense (David Madali) uloží můj e-mail pro zasílání pondělního přehledu. Odhlásit se mohu kdykoli."))}<p class="wk3-d">${esc(T("Monitoring goes further: a same-day alert when something changes for your minerals.", "Monitoring jde dál: upozornění ještě v den, kdy se u vašich surovin něco změní."))} <a href="#teams">${esc(T("See plans", "Úrovně"))} →</a></p></div>`;
+        `<div class="wk3-r">${form("brief", T("Subscribe", "Odebírat"), T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))}<p class="wk3-d">${esc(T("Monitoring goes further: a same-day alert when something changes for your minerals.", "Monitoring jde dál: upozornění ještě v den, kdy se u vašich surovin něco změní."))} <a href="#teams">${esc(T("See plans", "Úrovně"))} →</a></p></div>`;
       old.replaceWith(w);
       const upd = () => { const pk = $i("mon-pick"); const n = pk ? [...pk.querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.textContent.trim()) : []; const sp = w.querySelector(".wk2-sub-m"); if (sp) sp.textContent = n.length ? n.join(", ") : T("all twelve minerals", "všech dvanáct surovin"); };
       upd(); const pk = $i("mon-pick"); if (pk) watchPick(upd);
@@ -1771,7 +1770,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 50"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 51"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1822,7 +1821,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 50 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 51 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

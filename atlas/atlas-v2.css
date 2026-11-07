@@ -915,3 +915,6 @@ body.touring .glegend, body.presenting .glegend { display: none; }
 /* v47: what High / Medium / Low risk mean */
 .qc-key { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--faint, #8a9196); max-width: 78ch; }
 .qc-lv em[title] { cursor: help; }
+
+/* v51: the sign-up forms carry a plain notice instead of a consent box (submitting the form is the consent) */
+p.oo-cons { margin: 0; cursor: default; }
