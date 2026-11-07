@@ -1685,6 +1685,10 @@ const globe = (function initGlobe() {
   const HOME = { lat: 20, lng: 34, dist: 3.75 };
   const cam = { lat: HOME.lat, lng: HOME.lng, dist: HOME.dist };
   let vel = { lat: 0, lng: 0 }, anim = null, lastInteract = 0;
+  /* phones (LITE): the globe stays still, one picture redrawn only when something changes, until the visitor
+     touches it, explores, takes the tour or picks something. Saves battery and keeps the page responsive. */
+  let woke = !LITE;
+  ["pointerdown", "wheel", "keydown", "gesturestart"].forEach((ev) => canvas.addEventListener(ev, () => { if (!woke) { woke = true; dirty = true; } }, { passive: true }));
   const clampLat = (v) => Math.max(-80, Math.min(80, v));
   const clampDist = (v) => Math.max(1.28, Math.min(4.8, v));
   function placeCamera() { camera.position.copy(ll2v(cam.lat, cam.lng, cam.dist)); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0); }
@@ -1988,6 +1992,12 @@ const globe = (function initGlobe() {
     const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
     last = now;
     if ((!onScreen || document.hidden) && drawnOnce) return;
+    const settling = !!anim || (fadeIn && now - fadeIn < 800) || (towerItems.length && now - towerT0 < 900);
+    if (!woke) {
+      if (isExploring() || tourIdx >= 0 || PRESENTING || selected || selRoute || selChoke || selHz || selSat) woke = true;
+      else if (drawnOnce && !dirty && !settling) return;
+    }
+    const calmDirty = dirty;
     if (anim) {
       const t = anim.dur ? Math.min(1, (now - anim.t0) / anim.dur) : 1, k = ease(t);
       cam.lat = anim.from.lat + (anim.to.lat - anim.from.lat) * k;
@@ -2004,7 +2014,7 @@ const globe = (function initGlobe() {
         const dl = ((it.geo.lng - cam.lng + 540) % 360) - 180;
         cam.lng += dl * 0.04; cam.lat = clampLat(cam.lat + (it.geo.lat - cam.lat) * 0.04); dirty = true;
       }
-    } else if (!drag && !reduceMotion && !introState && !PRESENTING && tourIdx < 0 && !selected && !selRoute && !selChoke && !selHz && now - lastInteract > (isExploring() ? 5000 : 1500)) {
+    } else if (woke && !drag && !reduceMotion && !introState && !PRESENTING && tourIdx < 0 && !selected && !selRoute && !selChoke && !selHz && now - lastInteract > (isExploring() ? 5000 : 1500)) {
       cam.lng -= dt * (isExploring() ? 2.2 : 3.2); dirty = true;
     }
     if (fadeIn) { const f = Math.min(1, (now - fadeIn) / 700); if (uniforms.ready.value !== f) { uniforms.ready.value = f; dirty = true; } }
@@ -2067,6 +2077,7 @@ const globe = (function initGlobe() {
     }
     v13Frame(now, dt);
     v14Frame(now, dt);
+    if (!woke && !settling) dirty = calmDirty; /* still globe: draw only what changed outside the animations */
     if (!dirty) return;
     dirty = false;
     placeCamera();
@@ -7241,7 +7252,7 @@ $("#nav-present").addEventListener("click", startPresent);
 /* on phones the details sheet is fixed to the screen: hide it while the reader is down in the sections */
 try { new IntersectionObserver((en) => document.body.classList.toggle("atlas-off", !en[0].isIntersecting), { threshold: 0.05 }).observe($("#plate")); } catch (e) { /* old browser: the sheet stays */ }
 (function openingSweep() {
-  if (!globe || reduceMotion || (location.hash || "").length > 1) return;
+  if (!globe || reduceMotion || LITE || (location.hash || "").length > 1) return; /* phones: the globe stays still until touched */
   let seen = false;
   try { seen = sessionStorage.getItem("cma-intro") === "1"; sessionStorage.setItem("cma-intro", "1"); } catch (e) { seen = false; }
   if (seen) return;
