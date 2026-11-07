@@ -1770,7 +1770,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 51"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 52"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1821,7 +1821,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 51 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 52 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1990,8 +1990,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     }
     const copy = document.getElementById("hero-copy");
     if (!copy) return;
-    const badge = document.createElement("a"); badge.className = "idx-badge"; badge.href = "p/dependency-index.html"; badge.hidden = true;
-    copy.insertBefore(badge, copy.firstChild);
+    /* the page carries an invisible badge (.idx-wait) that keeps its place, so filling it moves nothing */
+    let badge = copy.querySelector(".idx-badge");
+    if (!badge) { badge = document.createElement("a"); badge.className = "idx-badge"; badge.href = "p/dependency-index.html"; badge.hidden = true; copy.insertBefore(badge, copy.firstChild); }
     const calc = () => {
       const mats = (O.LIVE.trade && O.LIVE.trade.materials) || null; if (!mats) return false;
       const per = {};
@@ -2009,7 +2010,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const v = Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length);
       const mon = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 15).toLocaleDateString(O.LANG === "cs" ? "cs-CZ" : "en-GB", { month: "short", year: "numeric" });
       badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}%</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(mon)}</span>`;
-      badge.hidden = false; return true;
+      badge.hidden = false; badge.classList.remove("idx-wait"); badge.removeAttribute("aria-hidden"); badge.removeAttribute("tabindex"); return true;
     };
     let n = 0; const t = setInterval(() => { if (calc() || ++n > 30) clearInterval(t); }, 1000); calc();
   }

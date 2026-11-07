@@ -918,3 +918,6 @@ body.touring .glegend, body.presenting .glegend { display: none; }
 
 /* v51: the sign-up forms carry a plain notice instead of a consent box (submitting the form is the consent) */
 p.oo-cons { margin: 0; cursor: default; }
+
+/* v52: the opening is in the page as it ends up, so nothing moves after load; the Dependency Index badge keeps its place until its number arrives */
+.idx-badge.idx-wait { visibility: hidden; }
