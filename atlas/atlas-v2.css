@@ -921,3 +921,6 @@ p.oo-cons { margin: 0; cursor: default; }
 
 /* v52: the opening is in the page as it ends up, so nothing moves after load; the Dependency Index badge keeps its place until its number arrives */
 .idx-badge.idx-wait { visibility: hidden; }
+
+/* v53: the footer's small print stays quiet but readable (contrast about 6:1 on the dark background) */
+.site-foot .legal, .site-foot .legal span, .oo-build { color: #8b9296; }
