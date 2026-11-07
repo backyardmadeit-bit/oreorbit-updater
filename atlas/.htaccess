@@ -37,9 +37,12 @@ AddCharset utf-8 .js .css .json
   ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
 
-# the Earth maps and the 3D engine never change
+# the Earth maps and the 3D engine never change (ExpiresByType wins over ExpiresDefault, so the type is set here too)
 <FilesMatch "^(earth-.*\.jpg|three\.min\.js)$">
   <IfModule mod_expires.c>
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
     ExpiresDefault "access plus 1 year"
   </IfModule>
 </FilesMatch>
