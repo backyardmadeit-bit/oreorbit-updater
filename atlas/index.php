@@ -152,8 +152,9 @@ function oo_static(bool $cs): string
         'David Madali is a Prague-based analyst of the defence industry, critical raw materials and the space economy, founder of Bohemia Defense and creator of OreOrbit, an open atlas of the minerals behind Europe\'s defence. Quoted by BBC News as an analyst.',
         'David Madali je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky, zakladatel Bohemia Defense a autor OreOrbit, otevřeného atlasu surovin, na kterých stojí evropská obrana. Jako analytika ho citovala BBC News.'))
         . ' <a href="https://madali.cz/" rel="me noopener">madali.cz</a> · <a href="https://www.linkedin.com/in/davidmadali/" rel="me noopener">LinkedIn</a> · <a href="https://bohemiadefense.com/" rel="noopener">Bohemia Defense</a> · <a href="https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad" rel="noopener">BBC News</a></p>';
-    $lib = ['rare-earths' => 'Rare earths', 'titanium' => 'Titanium', 'tungsten' => 'Tungsten', 'antimony' => 'Antimony', 'gallium' => 'Gallium',
-            'germanium' => 'Germanium', 'lithium' => 'Lithium', 'cobalt' => 'Cobalt', 'nickel' => 'Nickel', 'graphite' => 'Graphite'];
+    $lib = ['rare-earths' => 'Rare earths', 'titanium' => 'Titanium', 'tungsten' => 'Tungsten', 'antimony' => 'Antimony', 'magnesium' => 'Magnesium',
+            'manganese' => 'Manganese', 'gallium' => 'Gallium', 'germanium' => 'Germanium', 'lithium' => 'Lithium', 'cobalt' => 'Cobalt', 'nickel' => 'Nickel',
+            'graphite' => 'Graphite'];
     $links = [];
     foreach ($lib as $slug => $label) {
         $links[] = '<a href="p/' . $slug . '.html">' . oo_e($label) . '</a>';
@@ -161,8 +162,8 @@ function oo_static(bool $cs): string
     $h[] = '<p class="oo-lib"><b>' . oo_e($T('Library:', 'Knihovna:')) . '</b> ' . implode(' · ', $links)
         . ' · <a href="p/index.html">' . oo_e($T('all materials and sites', 'všechny suroviny a lokality')) . '</a> · <a href="p/about.html">' . oo_e($T('About', 'O projektu')) . '</a> · <a href="p/legal.html">' . oo_e($T('Imprint and licences', 'Právní informace')) . '</a></p>';
     $h[] = '<p class="oo-foot">' . oo_e($T(
-        'A Bohemia Defense project by David Madali · Prague. Public data only. Privacy: this page sends nothing you type anywhere and uses no cookies or analytics.',
-        'Projekt Bohemia Defense, David Madali · Praha. Jen veřejná data. Soukromí: tato stránka nikam neposílá nic, co napíšete, a nepoužívá cookies ani analytiku.'))
+        'A Bohemia Defense project by David Madali · Prague. Public data only. Privacy: no cookies or trackers; your email is sent only when you sign up.',
+        'Projekt Bohemia Defense, David Madali · Praha. Jen veřejná data. Soukromí: žádné cookies ani sledování; e-mail se odešle, jen když se přihlásíte.'))
         . ' <a href="' . oo_e(OO_BASE . ($cs ? '' : '?lang=cs')) . '">' . ($cs ? 'English' : 'Česky') . '</a></p>';
     $h[] = '</div>';
     return implode("\n", $h);
@@ -199,6 +200,15 @@ try {
             '<meta property="og:url" content="' . OO_BASE . '">' => '<meta property="og:url" content="' . OO_BASE . '?lang=cs">',
             '<meta property="og:locale" content="en_GB">' => '<meta property="og:locale" content="cs_CZ">',
             '<meta property="og:locale:alternate" content="cs_CZ">' => '<meta property="og:locale:alternate" content="en_GB">',
+            // the opening in Czech already on the server, as the atlas ends up showing it, so nothing changes after load
+            '<link rel="preload" href="fonts/hanken-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>' => '<link rel="preload" href="fonts/hanken-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>' . "\n" . '<link rel="preload" href="fonts/hanken-grotesk-latin-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>',
+            'Dependency Index <b>&nbsp;</b> <span>· China\'s share of EU imports</span>' => 'Index závislosti <b>&nbsp;</b> <span>· podíl Číny na dovozu do EU</span>',
+            '<h1 data-notr>See what your product<br><b>depends on.</b></h1>' => '<h1 data-notr>Zjistěte, na čem<br><b>závisí váš výrobek.</b></h1>',
+            '<p data-notr>The twelve critical minerals behind Europe\'s defence and space industry: who controls them, and what changes this week.</p>' => '<p data-notr>Dvanáct kritických surovin, na kterých stojí evropský obranný a&nbsp;kosmický průmysl: kdo je ovládá a&nbsp;co se tento týden mění.</p>',
+            '>Check your product in 60 seconds <svg' => '>Prověřte svůj výrobek za 60 sekund <svg',
+            '>Explore the globe <svg' => '>Prozkoumat glóbus <svg',
+            '>Assess your supply chain</a>' => '>Posoudit váš řetězec</a>',
+            '>Take the tour · 6 stops</button>' => '>Prohlídka · 6 zastávek</button>',
         ];
         foreach ($swap as $from => $to) {
             $i = strpos($page, $from);
