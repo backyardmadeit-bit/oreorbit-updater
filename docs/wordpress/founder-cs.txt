@@ -1,0 +1,55 @@
+<style>
+.dm-founder{--dm-rule:color-mix(in srgb,currentColor 16%,transparent);max-width:1040px;margin:0 auto;padding:clamp(24px,4vw,56px) 0;font-size:17px;line-height:1.65}
+.dm-founder *{box-sizing:border-box}
+.dm-founder .dm-head{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(24px,4vw,48px);align-items:end;padding-bottom:clamp(28px,4vw,44px);border-bottom:1px solid var(--dm-rule)}
+.dm-founder .dm-head img{width:220px;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:14px;display:block}
+.dm-founder h1{margin:0 0 14px;font-size:clamp(40px,6vw,72px);line-height:.95;letter-spacing:-.04em;font-weight:400}
+.dm-founder .dm-lede{margin:0;font-size:clamp(18px,1.8vw,21px);opacity:.85;max-width:44ch}
+.dm-founder .dm-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:clamp(16px,3vw,40px);padding:clamp(24px,3.5vw,40px) 0;border-bottom:1px solid var(--dm-rule)}
+.dm-founder h2{margin:0;font-size:16px;font-weight:600;opacity:.65;letter-spacing:.01em}
+.dm-founder .dm-row p{margin:0 0 12px;max-width:62ch}
+.dm-founder .dm-row p:last-child{margin-bottom:0}
+.dm-founder ul{margin:0;padding:0;list-style:none}
+.dm-founder li{padding:10px 0;border-top:1px solid var(--dm-rule);max-width:64ch}
+.dm-founder li:first-child{border-top:0;padding-top:0}
+.dm-founder li b{display:block;font-weight:600}
+.dm-founder a{color:inherit;text-underline-offset:4px}
+.dm-founder .dm-links{display:flex;flex-wrap:wrap;gap:10px 22px;font-weight:600}
+.dm-founder .dm-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.dm-founder .dm-cta a{color:inherit !important;display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:999px;border:1px solid var(--dm-rule);text-decoration:none;font-weight:600;font-size:15px;transition:border-color .2s}
+.dm-founder .dm-cta a:hover{border-color:currentColor}
+.dm-founder .dm-cta a.on,.dm-founder .dm-cta a.on:visited,.dm-founder .dm-cta a.on:hover{background:#eceee9 !important;color:#050607 !important;-webkit-text-fill-color:#050607 !important;border-color:#eceee9 !important}
+@media (max-width:720px){.dm-founder .dm-head,.dm-founder .dm-row{grid-template-columns:minmax(0,1fr)}.dm-founder .dm-head img{width:160px}}
+</style>
+<div class="dm-founder" lang="cs">
+  <div class="dm-head">
+    <img src="https://bohemiadefense.com/atlas/img/david-madali-founder.jpg" alt="David Madali" width="600" height="750" loading="lazy">
+    <div>
+      <h1>David Madali</h1>
+      <p class="dm-lede">Zakladatel Bohemia Defense. Pražský analytik obranného průmyslu, kritických surovin a&nbsp;kosmické ekonomiky a&nbsp;autor OreOrbit, otevřeného atlasu surovin, na kterých stojí evropská obrana.</p>
+    </div>
+  </div>
+  <div class="dm-row"><h2>Čemu se věnuji</h2><div>
+    <p>Obrana Evropy stojí na dvanácti surovinách a&nbsp;u&nbsp;devíti z&nbsp;nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. V&nbsp;Bohemia Defense analyzuji evropský obranný průmysl, bezpečnost a&nbsp;zahraniční politiku. V&nbsp;OreOrbit mapuji doly, rafinerie, námořní trasy a&nbsp;úzká místa, na kterých tyto suroviny závisejí.</p>
+  </div></div>
+  <div class="dm-row"><h2>Projekty</h2><ul>
+    <li><b>Bohemia Defense, od listopadu 2024</b>Nezávislé analýzy evropského obranného průmyslu, NATO, Ukrajiny a&nbsp;bezpečnosti v&nbsp;Africe, publikované zde a&nbsp;na LinkedInu, kde příspěvky dosahují až 450&nbsp;000 zobrazení.</li>
+    <li><b><a href="https://bohemiadefense.com/atlas/?lang=cs">OreOrbit</a></b>Bezplatný živý atlas dvanácti kritických surovin pro evropskou obranu a&nbsp;kosmonautiku: satelitní snímky 43 lokalit, lodě v&nbsp;klíčových úžinách, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a&nbsp;týdenní přehled toho, co se hýbe.</li>
+  </ul></div>
+  <div class="dm-row"><h2>V médiích</h2><div>
+    <p>Čínská služba BBC News mě citovala jako analytika k&nbsp;bezpečnosti návštěvy tchajwanské viceprezidentky v&nbsp;Praze, červenec 2025. <a href="https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad" rel="noopener">Číst článek</a></p>
+  </div></div>
+  <div class="dm-row"><h2>Zkušenosti</h2><ul>
+    <li><b>Ministerstvo zahraničních věcí ČR</b>Ekonomická diplomacie v&nbsp;kanceláři hlavního ekonoma: makroekonomické analýzy a&nbsp;podklady využité ministrem a&nbsp;obchodními delegacemi.</li>
+    <li><b>CzechTrade</b>Exportní poradenství; založil jsem neformální klastr Chytrá bezpečnost dvanácti firem z&nbsp;bezpečnostního průmyslu z&nbsp;ČR a&nbsp;Evropy.</li>
+    <li><b>VŠEM Praha</b>Ekonomie a&nbsp;management (Bc. 2025).</li>
+    <li><b>Kurzy</b>EUSPA, Agentura EU pro kosmický program: kosmické technologie a&nbsp;budování kosmického byznysu. Kontrarozvědná příprava NATO (ADL 135). OSINT.</li>
+  </ul></div>
+  <div class="dm-row"><h2>Spolupráce</h2><div>
+    <p>Začněte zdarma v&nbsp;atlasu OreOrbit. Monitoring vám ještě týž den řekne, když se něco změní u&nbsp;surovin, na kterých závisíte, a&nbsp;každé pondělí pošle osobní vydání s&nbsp;daty v&nbsp;příloze. Posouzení připravenosti připraví jednu výrobní řadu pro vaše vedení; rozsah a&nbsp;cenu domluvíme na úvodním 30minutovém hovoru zdarma.</p>
+    <div class="dm-cta"><a class="on" href="https://calendly.com/david-madali/30min" target="_blank" rel="noopener">Domluvit 30minutový hovor</a><a href="https://bohemiadefense.com/atlas/p/services-cs.html">Služby</a><a href="https://bohemiadefense.com/atlas/?lang=cs">Otevřít atlas</a></div>
+  </div></div>
+  <div class="dm-row"><h2>Kontakt</h2><div class="dm-links">
+    <a href="https://madali.cz/cs/" rel="me">madali.cz</a><a href="mailto:david@madali.cz">david@madali.cz</a><a href="https://www.linkedin.com/in/davidmadali/" rel="me">LinkedIn</a>
+  </div></div>
+</div>
