@@ -2025,6 +2025,24 @@ def feed_memory(prev):
     return mem[:12], "ok (snapshot of %s, %d materials, %d weeks kept)" % (snap.get("date"), len(snap["mats"]), len(mem[:12]))
 
 
+def feed_watch(prev):
+    """The dated watch list the atlas shows next to the news (live-data/watch.json), rebuilt from the deadlines kept in
+    data/reference.json, so a changed deadline needs one edit in the repo and no upload by hand."""
+    ref = current("data/reference.json")
+    if not isinstance(ref, dict) or not isinstance(ref.get("materials"), dict):
+        raise RuntimeError("could not read data/reference.json from the website")
+    seen, out = set(), []
+    for m in ref["materials"].values():
+        for d in (m.get("deadlines") or []) if isinstance(m, dict) else []:
+            if isinstance(d, dict) and d.get("id") and d.get("date") and d.get("title") and d["id"] not in seen:
+                seen.add(d["id"])
+                out.append(d)
+    if not out:
+        raise RuntimeError("data/reference.json has no deadlines")
+    out.sort(key=lambda x: (str(x["date"]), str(x["id"])))
+    return out, "ok (%d deadlines)" % len(out)       # upload() sends it only when it changed
+
+
 # ---------------------------------------------------------------- part six: the readable pages (library, About, Legal, sitemap)
 
 def feed_pages(prev):
@@ -2097,7 +2115,7 @@ def feed_social(prev):
 # ---------------------------------------------------------------- run
 
 INTERVAL_H = {"orbits": 2.5, "hazards": 2.5, "scenes": 2.5, "ships": 2.5, "hotspots": 11, "prices": 23, "traffic": 144,
-              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "memory": 160, "pages": 20, "social": 160}
+              "clouds": 2.5, "conflict": 144, "tenders": 144, "trade": 144, "so2": 144, "imagery": 144, "radar": 144, "news": 5.5, "brief": 2.5, "watch": 2.5, "memory": 160, "pages": 20, "social": 160}
 
 
 
@@ -2605,7 +2623,7 @@ def main():
     for name, fn in [("orbits", feed_orbits), ("hazards", feed_hazards), ("scenes", feed_scenes), ("ships", feed_ships),
                      ("hotspots", feed_hotspots), ("prices", feed_prices), ("traffic", feed_traffic),
                      ("clouds", feed_clouds), ("conflict", feed_conflict), ("tenders", feed_tenders),
-                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory), ("pages", feed_pages), ("social", feed_social)]:
+                     ("trade", feed_trade), ("so2", feed_so2), ("news", feed_news), ("brief", feed_brief), ("watch", feed_watch), ("imagery", feed_imagery), ("radar", feed_radar), ("memory", feed_memory), ("pages", feed_pages), ("social", feed_social)]:
         st = dict(status.get(name) or {})
         st["checked"] = iso()
         if ONLY and name not in ONLY:
@@ -2621,7 +2639,7 @@ def main():
             status[name] = st
             log("%-9s %s" % (name, st["status"]))
             continue
-        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "memory": "live-data/memory.json", "pages": "p/index.html", "social": "p/social.html"}.get(name, "live-data/live/%s.json" % name)
+        path = {"imagery": "data/imagery.json", "radar": "data/orbit-extras.json", "news": "live-data/news.json", "brief": "live-data/briefs.json", "watch": "live-data/watch.json", "memory": "live-data/memory.json", "pages": "p/index.html", "social": "p/social.html"}.get(name, "live-data/live/%s.json" % name)
         t0 = time.time()
         try:
             prev = current(path)
