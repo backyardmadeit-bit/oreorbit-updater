@@ -1045,21 +1045,23 @@ def china_controls_page(today):
           ("Oct 2025", "A wider package: more rare earths, rare-earth equipment and technology, lithium batteries and graphite anodes, superhard materials, and the 0.1% rule for foreign-made products."),
           ("Nov 2025", "China pauses most of the October 2025 package until 10 November 2026, and suspends the US ban on gallium, germanium and antimony until 27 November 2026."),
           ("Sep 2026", "The wider US–China trade truce is extended to 10 January 2027; the announcement does not mention the rare-earth pause."),
-          ("10 Nov 2026", "The pause on the October 2025 package is due to end."), ("27 Nov 2026", "The suspension of the US ban on gallium, germanium and antimony is due to end.")]
+          ("9 Nov 2026", "China extends the pause on the October 2025 package by two months, from 11 November 2026 to 10 January 2027."),
+          ("27 Nov 2026", "The suspension of the US ban on gallium, germanium and antimony is due to end."),
+          ("10 Jan 2027", "The extended pause on the October 2025 package is due to end, on the same day as the wider US–China trade truce.")]
     qas = [("What is China's 0.1% rule?",
-            "A rule announced in October 2025 under which products made anywhere in the world that contain at least 0.1% Chinese-origin rare earths by value would need a Chinese export licence. It was paused until 10 November 2026."),
+            "A rule announced in October 2025 under which products made anywhere in the world that contain at least 0.1% Chinese-origin rare earths by value would need a Chinese export licence. It is paused until 10 January 2027."),
            ("Which minerals need a Chinese export licence today?",
             "Among others gallium, germanium, antimony, tungsten and seven heavy rare earths including dysprosium and terbium. Licences are decided case by case, for every destination including Europe."),
-           ("What happens on 10 November 2026?",
-            "China's one-year pause on its October 2025 rare-earth package is due to end. As of late October 2026, no extension had been published. Check OreOrbit's deadline calendar for the latest status.")]
-    body = ('<article style="--c:#f5c45c"><p class="kicker"><i></i>Explainer · export controls · as of 30 October 2026</p><h1>China\'s export controls on critical minerals</h1>'
+           ("What happens on 10 January 2027?",
+            "China's pause on its October 2025 rare-earth package is due to end. The pause was first set to run until 10 November 2026; on 9 November 2026 China extended it by two months. The wider US–China trade truce runs to the same date. Check OreOrbit's deadline calendar for the latest status.")]
+    body = ('<article style="--c:#f5c45c"><p class="kicker"><i></i>Explainer · export controls · as of 10 November 2026</p><h1>China\'s export controls on critical minerals</h1>'
             '<p class="lede">Since 2023, China has put a growing list of critical minerals under export licensing. Here is the timeline, what is paused, and the dates to watch.</p>'
             '<section><h2>Timeline</h2><ul class="dates">%s</ul></section>%s'
-            '<section><h2>Sources</h2><ul class="plain"><li>China Ministry of Commerce announcements, including No. 46 (2024) and Nos. 55–58, 61, 62 and 70 (2025)</li><li>Reporting by Reuters, Bloomberg Government, Fastmarkets and CNBC</li></ul>'
+            '<section><h2>Sources</h2><ul class="plain"><li>China Ministry of Commerce announcements, including No. 46 (2024), Nos. 55–58, 61, 62 and 70 (2025) and the extension announced on 9 November 2026</li><li>Reporting by Reuters, Bloomberg Government, Fastmarkets, CNBC and Shanghai Metals Market</li></ul>'
             '<p class="small">Export-control decisions change at short notice. This page is updated when they do; dates on the live atlas update automatically.</p></section>%s'
             '<p class="open"><a class="cta" href="../">See the deadlines on the live atlas</a></p></article>') % (
         "".join('<li><time>%s</time><span>%s</span></li>' % (e(d), e(t)) for d, t in tl), qa_section(qas), cite_box(title, path, today))
-    desc = "A timeline of China's export controls on gallium, germanium, antimony, tungsten and rare earths, the 0.1% rule, and the November 2026 deadlines."
+    desc = "A timeline of China's export controls on gallium, germanium, antimony, tungsten and rare earths, the 0.1% rule, and what is paused until January 2027."
     return path, page(path, title, desc, body, [article_ld(path, title, desc, today, about="China's export controls on critical minerals"), faq_ld(path, qas)], today,
                       [("Atlas", ""), ("Library", "p/index.html"), ("China's export controls", path)])
 
@@ -1113,7 +1115,7 @@ def build(ref, live, cfg, today):
         guides = ('<section class="guides"><h2>Guides and archives</h2><ul class="lib">'
                   '<li><a href="space.html">Critical minerals for the space industry</a><span>Satellites, launchers and the minerals they need</span></li>'
                   '<li><a href="crma-article-24.html">Article 24 of the Critical Raw Materials Act</a><span>What large manufacturers must do, and the 2026 changes</span></li>'
-                  '<li><a href="china-export-controls.html">China\'s export controls on critical minerals</a><span>Timeline, the 0.1% rule and the November 2026 deadlines</span></li>'
+                  '<li><a href="china-export-controls.html">China\'s export controls on critical minerals</a><span>Timeline, the 0.1% rule and what is paused until January 2027</span></li>'
                   '<li><a href="briefs.html">Weekly briefs</a><span>Every Monday, the week in data</span></li>'
                   '<li><a href="dependency-index.html">OreOrbit Dependency Index</a><span>The monthly number, with every month on its own page</span></li></ul></section>')
         out["p/index.html"] = out["p/index.html"].replace('<ul class="lib">', guides + '<h2>Materials and sites</h2><ul class="lib">', 1)
