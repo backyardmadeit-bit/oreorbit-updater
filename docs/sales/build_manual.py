@@ -7,8 +7,8 @@
 
 Needs Playwright with Chromium: pip install playwright && python3 -m playwright install chromium
 
-Never type a price or a count here. The monitoring price, the Czech crown price and the booking link come
-from atlas/config.js; the numbers of minerals, sites and routes, and the tightest stage per mineral, come
+Never type a price or a count here. The monitoring price, the Czech crown price, the company name and IČO
+come from atlas/config.js; the numbers of minerals, sites and routes, and the tightest stage per mineral, come
 from atlas/data/reference.json; mineral colours from atlas/index.html and symbols from atlas/atlas-main.js.
 """
 import argparse
@@ -27,6 +27,7 @@ ATLAS = "https://bohemiadefense.com/atlas/"
 ATLAS_SHORT = "bohemiadefense.com/atlas"
 SITE_SHORT = "bohemiadefense.com"
 EMAIL = "madali@bohemiadefense.com"
+PLANS = {"en": ATLAS + "#teams", "cs": ATLAS + "?lang=cs#teams"}   # the plans section of the atlas
 OUT_NAME = {"en": "OreOrbit-guide-en.pdf", "cs": "OreOrbit-pruvodce-cs.pdf"}
 NB = "\u00a0"
 JPEG_Q = 80
@@ -66,7 +67,7 @@ def read_config():
         if not m or not m.group(1).strip():
             sys.exit("atlas/config.js: %s is missing or empty" % key)
         return m.group(1).strip()
-    return {k: get(k) for k in ("monitoringPrice", "monitoringPriceCzk", "bookingUrl", "company", "companyId")}
+    return {k: get(k) for k in ("monitoringPrice", "monitoringPriceCzk", "company", "companyId")}
 
 
 def read_reference():
@@ -154,7 +155,6 @@ def note_text(w, lang):
 
 def copy(lang, c, r):
     n_min, n_sites, n_routes, conc = r["minerals"], r["sites"], r["routes"], r["conc"]
-    book_short = re.sub(r"^https?://", "", c["bookingUrl"]).rstrip("/")
     if lang == "en":
         twelve = NUM_EN.get(n_min, str(n_min))
         price = "€%s <small>/ month</small>" % c["monitoringPrice"]
@@ -211,12 +211,12 @@ def copy(lang, c, r):
                         "Ask us one question a month. A person answers within two working days."],
                  "fine": "Includes a weekly data file for your minerals.",
                  "how": "Start: the Monitoring section of the atlas. Choose your minerals and pay by card."},
-                {"k": "03 · Readiness review", "pr": "Tailored", "sub": "Scope and price after a free 30-minute call.",
+                {"k": "03 · Readiness review", "pr": "Tailored", "sub": "Scope, timing and price by email.",
                  "li": ["One product line in two to three weeks.",
                         "Your parts register, and stress tests against real export controls.",
                         "The rules that decide who can supply you.",
                         "Slides your board can sign. Supports Article 24 of the Critical Raw Materials Act."],
-                 "how": "Start: a 30-minute call, " + book_short}],
+                 "how": "Start: write to " + EMAIL}],
             "alerts_h": "What a monitoring client hears about.",
             "alerts": ["A new export rule, licence decision or major news on one of their minerals, the same day.",
                        "Each deadline 30, 14, 7 and 1 day before it falls.",
@@ -227,14 +227,14 @@ def copy(lang, c, r):
             "p7_h": "Start with the quick check.<br><b>It takes a minute.</b>",
             "steps": [("Open the atlas", ATLAS_SHORT + ", no login. Run the quick check for what you make."),
                       ("Get the Monday brief", "Leave your email under This week. Every Monday: the deadlines and news for your minerals."),
-                      ("Choose how far to go", "Choose your minerals in the Monitoring section and pay by card, or book a 30-minute call about a readiness review.")],
+                      ("Choose how far to go", "Choose your minerals in the Monitoring section and pay by card. For a readiness review, write to us and we send the scope and price by email.")],
             "who_p1": ("Founder of Bohemia Defense. A Prague-based analyst of the defence industry, critical raw materials and the "
                        "space economy, and creator of OreOrbit."),
             "who_p2": ("Before Bohemia Defense: economic diplomacy at the Czech Ministry of Foreign Affairs, and export consulting at "
                        "CzechTrade, where he set up an informal cluster of twelve security-industry companies. BBC News Chinese has "
                        "quoted him as an analyst."),
-            "ct": ["Email", "Book a call", "Atlas", "Analysis"],
-            "book_label": "30 minutes, " + book_short,
+            "ct": ["Email", "Monitoring", "Atlas", "Analysis"],
+            "plans_label": "Plans and prices on the atlas",
             "id_line": "%s · IČO %s" % (c["company"], c["companyId"]),
             "copernicus": "Contains modified Copernicus Sentinel data %d.",
         }
@@ -293,12 +293,12 @@ def copy(lang, c, r):
                     "Jednou měsíčně se nás můžete na cokoli zeptat. Odpoví člověk do dvou pracovních dnů."],
              "fine": "Součástí je týdenní datový soubor pro vaše suroviny.",
              "how": "Začátek: sekce Monitoring v atlasu. Vyberete suroviny a zaplatíte kartou."},
-            {"k": "03 · Posouzení připravenosti", "pr": "Na míru", "sub": "Rozsah a cena po bezplatném 30minutovém hovoru.",
+            {"k": "03 · Posouzení připravenosti", "pr": "Na míru", "sub": "Rozsah, termín a cenu pošleme e-mailem.",
              "li": ["Jedna výrobní řada za dva až tři týdny.",
                     "Registr vašich dílů a zátěžové testy proti skutečným vývozním kontrolám.",
                     "Pravidla, která rozhodují, kdo vám smí dodávat.",
                     "Podklady, které vedení podepíše. Podporuje článek 24 nařízení o kritických surovinách."],
-             "how": "Začátek: 30minutový hovor, " + book_short}],
+             "how": "Začátek: napište na " + EMAIL}],
         "alerts_h": "O čem se klient monitoringu dozví.",
         "alerts": ["Nové vývozní pravidlo, rozhodnutí o licencích nebo důležitá zpráva k jeho surovinám, ještě týž den.",
                    "Každý termín 30, 14, 7 a 1 den předem.",
@@ -309,14 +309,14 @@ def copy(lang, c, r):
         "p7_h": "Začněte rychlou kontrolou.<br><b>Zabere minutu.</b>",
         "steps": [("Otevřete atlas", ATLAS_SHORT + ", bez přihlášení. Spusťte rychlou kontrolu pro to, co vyrábíte."),
                   ("Odebírejte pondělní přehled", "Nechte e-mail v části Tento týden. Každé pondělí termíny a zprávy pro vaše suroviny."),
-                  ("Zvolte, jak daleko jít", "V části Monitoring vyberte suroviny a zaplaťte kartou, nebo si domluvte 30minutový hovor o posouzení připravenosti.")],
+                  ("Zvolte, jak daleko jít", "V části Monitoring vyberte suroviny a zaplaťte kartou. O posouzení připravenosti nám napište a rozsah a cenu pošleme e-mailem.")],
         "who_p1": ("Zakladatel Bohemia Defense. Pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky "
                    "a autor OreOrbit."),
         "who_p2": ("Dříve ekonomická diplomacie na Ministerstvu zahraničních věcí ČR a exportní poradenství v CzechTrade, kde "
                    "založil neformální klastr Chytrá bezpečnost dvanácti firem z bezpečnostního průmyslu. Jako analytika ho "
                    "citovala čínská služba BBC News."),
-        "ct": ["E-mail", "Hovor", "Atlas", "Analýzy"],
-        "book_label": "30 minut, " + book_short,
+        "ct": ["E-mail", "Monitoring", "Atlas", "Analýzy"],
+        "plans_label": "Ceník v atlasu",
         "id_line": "%s · IČO %s" % (c["company"], c["companyId"]),
         "copernicus": "Obsahuje upravená data Copernicus Sentinel %d.",
     }
@@ -444,7 +444,7 @@ def build_html(lang):
         % (top(), t["p7_k"], t["p7_h"],
            "".join('<li><span class="n">%02d</span><h3>%s</h3><p>%s</p></li>' % (i + 1, a, b) for i, (a, b) in enumerate(t["steps"])),
            (IMG / "david-madali.jpg").as_uri(), t["who_p1"], t["who_p2"],
-           ct[0], EMAIL, EMAIL, ct[1], html.escape(c["bookingUrl"]), t["book_label"], ct[2], ATLAS, ATLAS_SHORT,
+           ct[0], EMAIL, EMAIL, ct[1], PLANS[lang], t["plans_label"], ct[2], ATLAS, ATLAS_SHORT,
            ct[3], SITE_SHORT, SITE_SHORT, t["id_line"], foot(t["copernicus"] % sd.year, "07")))
 
     fonts = (ROOT / "atlas" / "fonts" / "fonts.css").read_text(encoding="utf-8")
