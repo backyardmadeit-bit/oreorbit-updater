@@ -614,11 +614,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const imTxt = (tp) => `${tp.pct}${O.LANG === "cs" ? "\u00a0%" : "%"} ${O.fromCc(tp.cc)}`;   // build 56: "24 % z USA", "32 % z Norska" (was the nominative after "z")
     const stg = (w) => (w.x.what ? O.trStr(w.x.what) : O.stageTxt(w.k) || "").toLowerCase();   // build 56: the tightest stage in the page language; x.what is English in STAGES, its Czech is in CS
     let current = "drones", last = null;
-    function printResult() {
+    function printResult() {   // build 56: Czech dates (trStr), the tightest stage under each share, "94 % Čína"
       if (!last) return;
       ooHit("act:qc-pdf");
-      const day = O.fmtDay(new Date().toISOString().slice(0, 10)), strip = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent; };
-      const rows = last.rows.map((r) => `<tr><td><i style="background:${r.color}"></i><b>${esc(r.name)}</b><br><span>${esc(r.use)}</span></td><td><b>${esc(r.share)}</b><div class="bar"><div style="width:${r.pct || 0}%;background:${r.color}"></div></div></td><td>${esc(r.imp)}</td><td>${esc(r.lv)}</td></tr>`).join("");
+      const day = O.trStr(O.fmtDay(new Date().toISOString().slice(0, 10))), strip = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent; };
+      const rows = last.rows.map((r) => `<tr><td><i style="background:${r.color}"></i><b>${esc(r.name)}</b><br><span>${esc(r.use)}</span></td><td><b>${esc(r.share)}</b>${r.stage ? `<br><span>${esc(r.stage)}</span>` : ""}<div class="bar"><div style="width:${r.pct || 0}%;background:${r.color}"></div></div></td><td>${esc(r.imp)}</td><td>${esc(r.lv)}</td></tr>`).join("");
       const html = `<!doctype html><html lang="${O.LANG === "cs" ? "cs" : "en"}"><head><meta charset="utf-8"><title>OreOrbit quick check: ${esc(last.name)}</title><style>
         @page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;font:10.5pt/1.5 "Hanken Grotesk",Helvetica,Arial,sans-serif;color:#15181b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dfe2e4;padding-bottom:4mm;margin-bottom:8mm;font-size:9pt;color:#5b6267}
@@ -664,13 +664,14 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const sum = T(`${p[1]} typically depend on <b>${ms.length} of the twelve</b> critical minerals. For <b>${conc}</b> of them one country controls more than 65% of a stage${cn ? `, China in ${cn}` : ""}.`,
                     `${p[1]} obvykle závisí na <b>${ms.length} z dvanácti</b> kritických surovin. U <b>${conc}</b> z nich ovládá jedna země přes 65 % některé fáze${cn ? `, Čína u ${cn}` : ""}.`);
       const dl = next ? `<p class="qc-dl"><span>${T("Next deadline", "Nejbližší termín")}</span> <b>${esc(O.fmtDay(next.date))}</b> · ${esc(O.LANG === "cs" && next.title_cs ? next.title_cs : next.title)}</p>` : "";
-      last = { id, name: p[1], sum, dl: next ? [O.fmtDay(next.date), O.LANG === "cs" && next.title_cs ? next.title_cs : next.title] : null,
+      last = { id, name: p[1], sum, dl: next ? [O.trStr(O.fmtDay(next.date)), O.LANG === "cs" && next.title_cs ? next.title_cs : next.title] : null,
         rows: ms.map((m) => { const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, imp = O.importShare(m);
           let col = O.cssVar(m);
           const vm = /^var\((--[^),]+)/.exec(col || "");
           if (vm) col = getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim() || getComputedStyle(document.body).getPropertyValue(vm[1]).trim() || "#9aa1a5";
           return { m, name: O.mName(m), use: p[2][m], color: col, pct: x ? x.pct : null,
-            share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}` : T("China leads (no public world total)", "Vede Čína (veřejný světový údaj neexistuje)"),
+            share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}`.replace(/(\d)%/g, O.LANG === "cs" ? "$1\u00a0%" : "$1%") : T("China leads", "Vede Čína"),   // Czech "94 % Čína", as on the page
+            stage: x ? stg(w) : T("no public world total", "veřejný světový údaj neexistuje"),   // build 56: the PDF column says "tightest stage", so it shows it, as the page row does
             imp: imp && imp.tp ? `${imTxt(imp.tp)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
       // v43 funnel: 1. monitoring for exactly these minerals, 2. the full review, 3. a call (as a text link)
       const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
