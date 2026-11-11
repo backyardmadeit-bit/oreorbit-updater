@@ -901,6 +901,15 @@ TRADE_CODES = {
     "mg": [("810411", "Unwrought magnesium, 99.8% or more"), ("810419", "Other unwrought magnesium")],
     "mn": [("811100", "Manganese metal and articles"), ("260200", "Manganese ores")],
 }
+# Czech names of the trade items for Czech text (the same wording as the atlas's CS dictionary)
+TRADE_CS = {"Cobalt mattes and unwrought cobalt": "kobaltové kamínky a surový kobalt", "Cobalt oxides and hydroxides": "oxidy a hydroxidy kobaltu",
+            "Unwrought gallium": "surové galium", "Unwrought germanium": "surové germanium", "Artificial graphite": "syntetický grafit",
+            "Natural flake graphite": "přírodní vločkový grafit", "Lithium carbonate": "uhličitan lithný", "Lithium oxide and hydroxide": "oxid a hydroxid lithný",
+            "Unwrought nickel": "surový nikl", "Nickel mattes": "niklové kamínky", "Permanent magnets of metal": "kovové permanentní magnety",
+            "Rare-earth compounds": "sloučeniny vzácných zemin", "Rare-earth metals": "kovy vzácných zemin", "Unwrought antimony": "surový antimon",
+            "Antimony oxides": "oxidy antimonu", "Unwrought titanium (sponge)": "surový titan (houba)", "Titanium ores": "titanové rudy",
+            "Unwrought tungsten": "surový wolfram", "Tungsten ores": "wolframové rudy", "Unwrought magnesium, 99.8% or more": "neopracovaný hořčík, nejméně 99,8 %",
+            "Other unwrought magnesium": "ostatní neopracovaný hořčík", "Manganese metal and articles": "kovový mangan a výrobky z něj", "Manganese ores": "manganové rudy"}
 
 
 def jsonstat_rows(j):
@@ -1826,6 +1835,31 @@ MON_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 MON_CS = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"]
 MONTH_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 MONTH_CS = ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"]
+MONTH_CS_LOC = ["lednu", "únoru", "březnu", "dubnu", "květnu", "červnu", "červenci", "srpnu", "září", "říjnu", "listopadu", "prosinci"]  # "v září 2026"
+
+
+def _cs_pl(n, one, few, many):
+    """Czech plural: 1 zpráva, 2-4 zprávy, 5+ zpráv."""
+    return one if n == 1 else few if 2 <= n <= 4 else many
+
+
+def _cs_days(n):
+    return "za %d %s" % (n, _cs_pl(n, "den", "dny", "dní"))
+
+
+def _cs_z(n):
+    """Czech "z" or "ze" before a number, by how it is read ("ze 43", "z 59")."""
+    n = abs(int(round(n)))
+    t = n // 10
+    if n < 10:
+        ze = n in (2, 3, 4, 6, 7)
+    elif n < 20:
+        ze = n in (12, 13, 14, 16, 17)
+    elif n < 100:
+        ze = t in (2, 3, 4, 6, 7)
+    else:
+        ze = n < 200
+    return "ze" if ze else "z"
 
 
 def day_txt(d, cs):
@@ -1878,7 +1912,7 @@ def feed_brief(prev):
         mats_cs = ", ".join(MAT_NAME[m][1] for m in d["materials"] if m in MAT_NAME) or "Termín"
         pts.append({"materials": d["materials"], "source": d["source"] or "OreOrbit calendar", "url": d["url"],
                     "text": "%s: %s on %s, in %d days." % (mats_en, d["title"], day_txt(d["date"], False), n),
-                    "text_cs": "%s: %s, %s, za %d dní." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True), n)})
+                    "text_cs": "%s: %s (%s, %s)." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True), _cs_days(n))})
         for x in dls[:3]:
             if x["date"] <= (TODAY + dt.timedelta(days=90)).isoformat():
                 watch_en.append("%s: %s" % (day_txt(x["date"], False), x["title"]))
@@ -1891,7 +1925,7 @@ def feed_brief(prev):
             d7, sid = hot[0]
             pts.append({"materials": [smat.get(sid)] if smat.get(sid) else [], "source": "NASA FIRMS", "url": "https://firms.modaps.eosdis.nasa.gov",
                         "text": "Heat at the plants: %d of %d sites showed furnace-hot pixels in the last 7 days, %s the most often (%d of 7 days)." % (len(hot), len(hs), names.get(sid, sid), d7),
-                        "text_cs": "Teplo v závodech: %d z %d lokalit mělo za posledních 7 dní pixely horké jako pec, nejčastěji %s (%d ze 7 dní)." % (len(hot), len(hs), names.get(sid, sid), d7)})
+                        "text_cs": "Teplo v závodech: %d %s %d lokalit mělo za posledních 7 dní tepelnou anomálii, nejčastěji %s (%d ze 7 dní)." % (len(hot), _cs_z(len(hs)), len(hs), names.get(sid, sid), d7)})
     # 3. sulphur dioxide
     so = current("live-data/live/so2.json") or {}
     wk = (TODAY - dt.timedelta(days=9)).isoformat()
@@ -1900,7 +1934,7 @@ def feed_brief(prev):
         n, sid = so_hi[0]
         pts.append({"materials": [smat.get(sid)] if smat.get(sid) else [], "source": "NASA GIBS", "url": "https://worldview.earthdata.nasa.gov",
                     "text": "Sulphur dioxide: %s read above 2 Dobson units on %d of the days seen this week." % (names.get(sid, sid), n),
-                    "text_cs": "Oxid siřičitý: %s měl nad 2 Dobsonovy jednotky %s tohoto týdne." % (names.get(sid, sid), "v 1 viděném dni" if n == 1 else "v %d viděných dnech" % n)})
+                    "text_cs": "Oxid siřičitý: tento týden přesáhl nad %s 2 Dobsonovy jednotky %s s platným měřením." % (names.get(sid, sid), "v jednom dni" if n == 1 else "v %d dnech" % n)})
     # 4. armed conflict
     cf = current("live-data/live/conflict.json") or {}
     if cf.get("areas") and cf.get("to"):
@@ -1913,7 +1947,7 @@ def feed_brief(prev):
             y, mm = int(mo[:4]), int(mo[5:7])
             pts.append({"materials": [smat.get(w)] if smat.get(w) else [], "source": "UCDP", "url": "https://ucdp.uu.se/downloads/",
                         "text": "Armed conflict: %d events near the supply chain in %s %d, most of them around %s (%d)." % (tot, MONTH_EN[mm - 1], y, nm_en, n),
-                        "text_cs": "Ozbrojené konflikty: %d událostí poblíž dodavatelského řetězce v měsíci %s %d, nejvíc v okolí %s (%d)." % (tot, MONTH_CS[mm - 1], y, nm_cs, n)})
+                        "text_cs": "Ozbrojené konflikty: %d %s poblíž dodavatelského řetězce v %s %d, nejvíc v okolí %s (%d)." % (tot, _cs_pl(tot, "událost", "události", "událostí"), MONTH_CS_LOC[mm - 1], y, nm_cs, n)})
     # 5. EU defence tenders
     td = current("live-data/live/tenders.json") or {}
     sr, mons = td.get("series") or {}, td.get("months") or []
@@ -1925,8 +1959,8 @@ def feed_brief(prev):
             pts.append({"materials": [], "source": "TED", "url": "https://ted.europa.eu",
                         "text": "EU defence tenders: %d weapons, %d ammunition and %d explosives notices in %s, against monthly averages of %d, %d and %d over the year before." % (
                             last.get("weapons", 0), last.get("ammunition", 0), last.get("explosives", 0), MONTH_EN[mm - 1], avg.get("weapons", 0), avg.get("ammunition", 0), avg.get("explosives", 0)),
-                        "text_cs": "Obranné zakázky v EU: %d oznámení na zbraně, %d na munici a %d na výbušniny v měsíci %s, proti měsíčním průměrům %d, %d a %d za předchozí rok." % (
-                            last.get("weapons", 0), last.get("ammunition", 0), last.get("explosives", 0), MONTH_CS[mm - 1], avg.get("weapons", 0), avg.get("ammunition", 0), avg.get("explosives", 0))})
+                        "text_cs": "Obranné zakázky v EU: v %s %d oznámení na zbraně, %d na munici a %d na výbušniny (měsíční průměr za předchozí rok: %d, %d a %d)." % (
+                            MONTH_CS_LOC[mm - 1], last.get("weapons", 0), last.get("ammunition", 0), last.get("explosives", 0), avg.get("weapons", 0), avg.get("ammunition", 0), avg.get("explosives", 0))})
     # 6. China's share of EU imports, the highest this month
     tr = (current("live-data/live/trade.json") or {}).get("materials") or {}
     best = None
@@ -1944,7 +1978,7 @@ def feed_brief(prev):
         y, mm = y + (mm - 1) // 12, (mm - 1) % 12 + 1
         pts.append({"materials": [m], "source": "Eurostat Comext", "url": "https://ec.europa.eu/eurostat/comext/newxtweb/",
                     "text": "EU imports: China supplied %d%% of what the EU bought from outside the EU of %s (%s) in %s %d, the highest share among the products tracked." % (round(share * 100), label.lower(), MAT_NAME[m][0].lower(), MONTH_EN[mm - 1], y),
-                    "text_cs": "Dovoz do EU: Čína dodala %d %% toho, co EU nakoupila mimo EU, u položky %s (%s) v měsíci %s %d, nejvyšší podíl ze sledovaných produktů." % (round(share * 100), label, MAT_NAME[m][1].lower(), MONTH_CS[mm - 1], y)})
+                    "text_cs": "Dovoz do EU: Čína v %s %d dodala %d %% dovozu ze zemí mimo EU u položky %s (%s), nejvíc ze sledovaných položek." % (MONTH_CS_LOC[mm - 1], y, round(share * 100), TRADE_CS.get(label, label), MAT_NAME[m][1].lower())})
     # 7. the week's headlines
     news = current("live-data/news.json") or []
     week_news = [x for x in news if isinstance(x, dict) and str(x.get("date", "")) >= (TODAY - dt.timedelta(days=7)).isoformat()]
@@ -1963,7 +1997,7 @@ def feed_brief(prev):
     brief = {"id": monday, "week": monday, "auto": True, "writtenAt": TODAY.isoformat(),
              "title": "The week in data, %s" % day_txt(monday, False), "title_cs": "Týden v datech, %s" % day_txt(monday, True),
              "lede": ("%d stories on the " + _w_en(len(MAT_NAME)) + " materials in the last 7 days, %d of %d plants with furnace-hot pixels, and %d serious disaster alerts worldwide.") % (len(week_news), len(hot), len(hs) or len(CFG["sites"]), alerts),
-             "lede_cs": ("%d zpráv o " + _w_cs_gen(len(MAT_NAME)) + " surovinách za posledních 7 dní, %d z %d závodů s pixely horkými jako pec a %d vážných výstrah před katastrofami ve světě.") % (len(week_news), len(hot), len(hs) or len(CFG["sites"]), alerts),
+             "lede_cs": ("%d %s o " + _w_cs_gen(len(MAT_NAME)) + " surovinách za posledních 7 dní, %d %s %d závodů s tepelnou anomálií a %d %s před katastrofami ve světě.") % (len(week_news), _cs_pl(len(week_news), "zpráva", "zprávy", "zpráv"), len(hot), _cs_z(len(hs) or len(CFG["sites"])), len(hs) or len(CFG["sites"]), alerts, _cs_pl(alerts, "vážná výstraha", "vážné výstrahy", "vážných výstrah")),
              "points": pts[:8], "soWhat": "", "soWhat_cs": "", "watchNext": watch_en, "watchNext_cs": watch_cs}
     briefs = [b for b in briefs if b.get("week") != monday] + [brief]
     briefs.sort(key=lambda b: str(b.get("week") or b.get("id") or ""), reverse=True)
@@ -2258,11 +2292,11 @@ def _site_events():
             if last7 == 0 and before >= 4:
                 ev[sid + "|quiet"] = {"sid": sid, "m": s.get("m"), "kind": "quiet",
                                       "en": "%s: no furnace-hot pixels for 7 days, after %d hot days in the %d days before. A stoppage, or simply clouds." % (nm, before, len(prev)),
-                                      "cs": "%s: 7 dní bez pixelů horkých jako pec, předtím %d horkých dní z %d. Odstávka, nebo jen oblačnost." % (nm, before, len(prev))}
+                                      "cs": "%s: 7 dní bez tepelné anomálie, předtím anomálie v %d %s %d dní. Odstávka, nebo jen oblačnost." % (nm, before, _cs_z(len(prev)), len(prev))}
             elif last7 >= 2 and before == 0:
                 ev[sid + "|flare"] = {"sid": sid, "m": s.get("m"), "kind": "flare",
                                       "en": "%s: furnace-hot pixels on %d of the last 7 days, none in the %d days before. A start-up or a ramp-up." % (nm, last7, len(prev)),
-                                      "cs": "%s: pixely horké jako pec %d z posledních 7 dní, předtím %d dní žádné. Najíždění, nebo zvýšení výroby." % (nm, last7, len(prev))}
+                                      "cs": "%s: tepelná anomálie v %d ze 7 posledních dní, předtím %d dní žádná. Najíždění, nebo zvýšení výroby." % (nm, last7, len(prev))}
         ser = sorted((x.get("d"), x.get("near")) for x in ((so.get(sid) or {}).get("series") or [])
                      if x.get("d") and isinstance(x.get("near"), (int, float)))
         if len(ser) >= 2:
@@ -2397,7 +2431,7 @@ def send_mail():
             html = _mail_html(cs, "Vítejte · Pondělní přehled" if cs else "Welcome · The Monday brief",
                               "Hotovo. První přehled přijde v pondělí." if cs else "You're in. Your first brief arrives on Monday.",
                               ("Každé pondělí ráno dostanete týden v kritických surovinách pro: " if cs else "Every Monday morning you get the week in critical minerals for: ") + names + ".",
-                              [("Co v něm najdete" if cs else "What you'll get", [_esc(x) for x in (["Nejbližší termíny pro vaše suroviny", "Co se za týden pohnulo, se zdroji", "Odkaz na plná data v atlasu"] if cs else ["The next deadlines for your minerals", "What moved this week, with sources", "A link to the full data on the atlas"])]),
+                              [("Co v něm najdete" if cs else "What you'll get", [_esc(x) for x in (["Nejbližší termíny pro vaše suroviny", "Co se za týden změnilo, se zdroji", "Odkaz na plná data v atlasu"] if cs else ["The next deadlines for your minerals", "What moved this week, with sources", "A link to the full data on the atlas"])]),
                                ("Vaše suroviny" if cs else "Your minerals", [_esc("Jiné suroviny? V atlasu u pondělního přehledu klikněte na „změnit“ a přihlaste se znovu stejným e-mailem." if cs else "Different minerals? On the atlas, click “change” next to the Monday brief and sign up again with the same email.")])], unsub(sb))
         return subj, html
     for sb in subs:
@@ -2459,10 +2493,10 @@ def send_mail():
                 soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
                 if soon:
                     k = (dt.date.fromisoformat(soon[0]["date"]) - TODAY).days
-                    means.append(_esc(("%s: termín za %d dní. Ověřte, na kolik týdnů vám vystačí zásoby." % (nm, k)) if cs else ("%s: a deadline in %d days. Check how many weeks your stock covers." % (nm, k))))
+                    means.append(_esc(("%s: termín %s. Ověřte, na kolik týdnů vám vystačí zásoby." % (nm, _cs_days(k))) if cs else ("%s: a deadline in %d days. Check how many weeks your stock covers." % (nm, k))))
                 elif eu is not None and eu >= 50:
                     means.append(_esc(("%s: víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." % nm) if cs else ("%s: more than half of EU imports come from China. Keep a second source in progress." % nm)))
-            dl = ['<b>%s</b> · %s · %s' % (_esc(("za %d dní" if cs else "in %d days") % (dt.date.fromisoformat(d["date"]) - TODAY).days), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
+            dl = ['<b>%s</b> · %s · %s' % (_esc((_cs_days if cs else (lambda n: "in %d days" % n))((dt.date.fromisoformat(d["date"]) - TODAY).days)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
             wk = (TODAY - dt.timedelta(days=7)).isoformat()
             moved = ['%s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in news if str(n.get("date") or n.get("addedAt") or "") >= wk and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
             subj = ("OreOrbit · vaše pondělní vydání · " if cs else "OreOrbit · your Monday edition · ") + _day(latest["week"], cs)
@@ -2470,7 +2504,7 @@ def send_mail():
                               "Vaše suroviny tento týden" if cs else "Your minerals this week",
                               ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
                               [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
-                               ("Termíny" if cs else "Deadlines", dl), ("Co se pohnulo" if cs else "What moved", moved),
+                               ("Termíny" if cs else "Deadlines", dl), ("Co se změnilo" if cs else "What moved", moved),
                                ("Vaše lokality" if cs else "Your sites", _site_lines(sev, mins, cs)),
                                ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs, only_unusual=False)),
                                ("Další suroviny" if cs else "Your other minerals", [x for t in _other_terms(sb) for x in (['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(t, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for it in _other_news(state, t, pbudget)[:3]]
@@ -2498,7 +2532,7 @@ def send_mail():
             left = (dt.date.fromisoformat(d["date"]) - TODAY).days
             k = "%s|%s|%d" % (d["date"], d.get("title", "")[:40], left)
             if left in (30, 14, 7, 1) and _mins_ok(d.get("materials"), mins) and k not in st["dl"]:
-                due.append('<b>%s</b> · %s · %s' % (_esc(("za %d dní" % left) if cs else ("in %d days" % left)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
+                due.append('<b>%s</b> · %s · %s' % (_esc(_cs_days(left) if cs else ("in %d days" % left)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
                 st["dl"] = (st["dl"] + [k])[-200:]
         oth = []
         for term in _other_terms(sb):

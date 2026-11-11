@@ -183,7 +183,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const p = w.x.pct;
       const c = p >= 90 ? 3 : p > 65 ? 2 : p > 40 ? 1 : 0;
       pts += c;
-      if (c) why.push(T(`${w.x.who} makes ${O.pctTxt(w.x)} of world ${O.stageWhat(w.k, w.x)} (${O.mName(m).toLowerCase()})`, `${O.mName(m)}: ${O.pctTxt(w.x)} ${O.stageWhat(w.k, w.x)} je v zemi ${O.ctry(w.x.who)}`));
+      if (c) why.push(T(`${w.x.who} makes ${O.pctTxt(w.x)} of world ${O.stageWhat(w.k, w.x)} (${O.mName(m).toLowerCase()})`, `${O.mName(m)}, ${w.k === "mine" ? "těžba" : O.stageWhat(w.k, w.x)}: ${O.pctTxt(w.x)} ${O.inCtry(w.x.who)}`));
     }
     if (w && it.country && it.country === w.x.who) { pts += 2; why.push(T(`You buy it from ${w.x.who}, the dominant country`, `Kupujete ji ze země ${O.ctry(w.x.who)}, která trh ovládá`)); }
     else if (!it.country) { pts += 1; why.push(T("Origin not recorded", "Původ není uveden")); }
@@ -295,7 +295,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         <label class="as-wk"><span class="label">${T("For", "Na")} <b id="as-wk-v">${weeks}</b> ${T("weeks", "týdnů")}</span><input type="range" id="as-weeks" min="4" max="52" step="1" value="${weeks}"></label>
       </div>
       <p class="as-prec">${esc(O.trStr(sc.prec))}</p>
-      ${rows.length ? `<p class="as-sum1">${short.length ? T(`${short.length} of ${rows.length} parts run out before the ${weeks} weeks are over. The first goes in week ${first}.`, `${short.length} z ${rows.length} dílů dojde dřív, než ${weeks} týdnů uplyne. První v ${first}. týdnu.`) : T(`None of the ${rows.length} parts with recorded stock runs out within ${weeks} weeks.`, `Žádný z ${rows.length} dílů s uvedenými zásobami za ${weeks} týdnů nedojde.`)}</p>
+      ${rows.length ? `<p class="as-sum1">${short.length ? T(`${short.length} of ${rows.length} parts run out before the ${weeks} weeks are over. The first goes in week ${first}.`, `${short.length} ${O.zeZ(rows.length)} ${rows.length} dílů dojde dřív, než ${weeks} týdnů uplyne. První v ${first}. týdnu.`) : T(`None of the ${rows.length} parts with recorded stock runs out within ${weeks} weeks.`, `Žádný z ${rows.length} dílů s uvedenými zásobami za ${weeks} týdnů nedojde.`)}</p>
       <div class="as-runs" style="--span:${span}">
         <div class="as-axis" aria-hidden="true"><span>0</span><span style="left:${weeks / span * 100}%">${weeks} ${T("wk", "t.")}</span><span style="left:100%">${span}</span></div>
         ${rows.map((r) => `<div class="as-run st-${r.status}">
@@ -329,7 +329,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         <div class="as-chain">${chain.map(([k, x, note]) => `<div class="${x && x.pct > 65 ? "over" : ""}"><span class="label">${esc(O.stageTxt(k))}</span>${x ? `<b>${esc(O.pctTxt(x))}</b><span>${esc(O.ctry(x.who))}</span>` : `<span class="muted">${esc(note ? O.trStr(note) : T("No public figure", "Bez veřejného údaje"))}</span>`}</div>`).join("")}</div>
         ${sites.length ? `<div class="label as-sl">${T("Sites on the atlas, seen from orbit", "Lokality v atlasu, viděné z oběžné dráhy")}</div>
         <ul class="as-sites">${sites.map((s) => { const a = act(s.id); return `<li><button type="button" class="as-site" data-site="${esc(s.id)}"><span class="as-tn">${esc(s.name)}</span><span class="as-tp">${esc(O.ctry(s.country))} · ${esc(O.trStr(s.stage))}${O.ONLINE[s.id] ? ` · ${T("online", "v provozu")} ${esc(O.trStr(O.ONLINE[s.id]))}` : ""}</span></button>
-          <span class="as-sig">${a.h7 !== null ? `<span title="${esc(T("Days with furnace-hot pixels within 6 km (VIIRS), last 7 and 30 days", "Dny s pixely horkými jako pec do 6 km (VIIRS), posledních 7 a 30 dní"))}" class="${a.h7 ? "on" : ""}">${T("heat", "teplo")} ${a.h7}/7 · ${a.h30}/30</span>` : ""}${a.so2 !== null ? `<span title="${esc(T(`Days with SO₂ above 2 DU within 50 km (${so2Sat()})`, `Dny s SO₂ nad 2 DU do 50 km (${so2Sat()})`))}" class="${a.so2 ? "on" : ""}">SO₂ ${a.so2}/${a.so2n}</span>` : ""}${a.clear ? `<span title="${esc(T("Latest clear Sentinel-2 image", "Poslední jasný snímek Sentinel-2"))}">${T("clear", "jasno")} ${esc(O.fmtDay(a.clear))}</span>` : ""}</span></li>`; }).join("")}</ul>` : ""}
+          <span class="as-sig">${a.h7 !== null ? `<span title="${esc(T("Days with furnace-hot pixels within 6 km (VIIRS), last 7 and 30 days", "Dny s tepelnou anomálií do 6 km (VIIRS), posledních 7 a 30 dní"))}" class="${a.h7 ? "on" : ""}">${T("heat", "teplo")} ${a.h7}/7 · ${a.h30}/30</span>` : ""}${a.so2 !== null ? `<span title="${esc(T(`Days with SO₂ above 2 DU within 50 km (${so2Sat()})`, `Dny s SO₂ nad 2 DU do 50 km (${so2Sat()})`))}" class="${a.so2 ? "on" : ""}">SO₂ ${a.so2}/${a.so2n}</span>` : ""}${a.clear ? `<span title="${esc(T("Latest clear Sentinel-2 image", "Poslední jasný snímek Sentinel-2"))}">${T("clear", "jasno")} ${esc(O.fmtDay(a.clear))}</span>` : ""}</span></li>`; }).join("")}</ul>` : ""}
         <div class="label as-sl">${T("Options to consider", "Možnosti k posouzení")}</div>
         <ul class="as-opt">
           ${sp ? `<li>${sp.n ? T(`${sp.n} EU strategic projects`, `${sp.n} strategických projektů EU`) : T("EU strategic projects", "Strategické projekty EU")}${sp.named ? `: ${esc(sp.named.join(", "))}` : ""}</li>` : `<li>${T("No EU strategic project listed yet", "Zatím bez strategického projektu EU")}</li>`}
@@ -405,7 +405,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       <h1>${e(T("Critical raw materials: supply-chain risk assessment", "Kritické suroviny: posouzení rizik dodavatelského řetězce"))}</h1>
       <p class="meta">${reg.org ? e(reg.org) + " · " : ""}${e(T("Prepared on", "Připraveno"))} ${e(day)} · ${rated.length} ${e(plural(rated.length, "part", "parts", "díl", "díly", "dílů"))} · ${ms.length} ${e(T("of the 12 tracked materials", "z 12 sledovaných surovin"))}</p>
       <h2>${e(T("Summary", "Shrnutí"))}</h2>
-      <p>${e(T(`${cnt.high} parts rated high, ${cnt.med} medium and ${cnt.low} low.`, `Vysoké riziko: ${cnt.high} dílů, střední: ${cnt.med}, nízké: ${cnt.low}.`))} ${rows.length ? e(T(`If "${sc.title}" lasted ${weeks} weeks, ${rows.filter((r) => r.status === "short").length} of the ${rows.length} parts that carry ${O.mName(sc.m).toLowerCase()} would run out before it ended.`, `Kdyby výpadek „${O.trStr(sc.title)}“ trval ${weeks} týdnů, ${rows.filter((r) => r.status === "short").length} z ${rows.length} dílů obsahujících surovinu ${O.mName(sc.m).toLowerCase()} by došlo dřív, než skončí.`)) : ""}</p>
+      <p>${e(T(`${cnt.high} parts rated high, ${cnt.med} medium and ${cnt.low} low.`, `Vysoké riziko: ${cnt.high} dílů, střední: ${cnt.med}, nízké: ${cnt.low}.`))} ${rows.length ? e(T(`If "${sc.title}" lasted ${weeks} weeks, ${rows.filter((r) => r.status === "short").length} of the ${rows.length} parts that carry ${O.mName(sc.m).toLowerCase()} would run out before it ended.`, `Kdyby výpadek „${O.trStr(sc.title)}“ trval ${weeks} týdnů, ${rows.filter((r) => r.status === "short").length} ${O.zeZ(rows.length)} ${rows.length} dílů obsahujících surovinu ${O.mName(sc.m).toLowerCase()} by došlo dřív, než skončí.`)) : ""}</p>
       ${rated.filter((x) => x.r.level === "high").length ? `<h3>${e(T("Act on first", "Řešit nejdřív"))}</h3><ul>${rated.filter((x) => x.r.level === "high").map(({ it, r }) => `<li><b>${e(it.part)}</b> (${e(it.prog)}): ${e(r.why.join("; "))}</li>`).join("")}</ul>` : ""}
       <h2>${e(T("1. Register and risk rating", "1. Registr a hodnocení rizika"))}</h2>
       <table><thead><tr><th>${e(T("Product", "Výrobek"))}</th><th>${e(T("Part", "Díl"))}</th><th>${e(T("Materials", "Suroviny"))}</th><th>${e(T("Material from", "Surovina z"))}</th><th>${e(T("Stock", "Zásoby"))}</th><th>${e(T("Second source", "Druhý zdroj"))}</th><th>${e(T("Risk", "Riziko"))}</th><th>${e(T("Why", "Proč"))}</th></tr></thead><tbody>
@@ -611,15 +611,14 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (nav && !nav.querySelector('a[href="#check"]')) { const x = document.createElement("a"); x.href = "#check"; x.textContent = T("Quick check", "Rychlá kontrola"); nav.insertBefore(x, nav.firstChild); }
     const out = sec.querySelector(".qc-out");
     const PENT = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24, 27];   // v47: one note per mineral in ORDER (12); with ten, nickel and graphite were silent
-    let names = null;
-    try { names = new Intl.DisplayNames([O.LANG === "cs" ? "cs" : "en"], { type: "region" }); } catch (e) { names = null; }
-    const land = (cc) => { if (!cc) return ""; if (O.LANG === "cs" && cc === "CN") return "Číny"; try { return (names && names.of(cc)) || O.ctry(cc); } catch (e) { return O.ctry(cc); } };
+    const imTxt = (tp) => `${tp.pct}${O.LANG === "cs" ? "\u00a0%" : "%"} ${O.fromCc(tp.cc)}`;   // build 56: "24 % z USA", "32 % z Norska" (was the nominative after "z")
+    const stg = (w) => (w.x.what ? O.trStr(w.x.what) : O.stageTxt(w.k) || "").toLowerCase();   // build 56: the tightest stage in the page language; x.what is English in STAGES, its Czech is in CS
     let current = "drones", last = null;
-    function printResult() {
+    function printResult() {   // build 56: Czech dates (trStr), the tightest stage under each share, "94 % Čína"
       if (!last) return;
       ooHit("act:qc-pdf");
-      const day = O.fmtDay(new Date().toISOString().slice(0, 10)), strip = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent; };
-      const rows = last.rows.map((r) => `<tr><td><i style="background:${r.color}"></i><b>${esc(r.name)}</b><br><span>${esc(r.use)}</span></td><td><b>${esc(r.share)}</b><div class="bar"><div style="width:${r.pct || 0}%;background:${r.color}"></div></div></td><td>${esc(r.imp)}</td><td>${esc(r.lv)}</td></tr>`).join("");
+      const day = O.trStr(O.fmtDay(new Date().toISOString().slice(0, 10))), strip = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent; };
+      const rows = last.rows.map((r) => `<tr><td><i style="background:${r.color}"></i><b>${esc(r.name)}</b><br><span>${esc(r.use)}</span></td><td><b>${esc(r.share)}</b>${r.stage ? `<br><span>${esc(r.stage)}</span>` : ""}<div class="bar"><div style="width:${r.pct || 0}%;background:${r.color}"></div></div></td><td>${esc(r.imp)}</td><td>${esc(r.lv)}</td></tr>`).join("");
       const html = `<!doctype html><html lang="${O.LANG === "cs" ? "cs" : "en"}"><head><meta charset="utf-8"><title>OreOrbit quick check: ${esc(last.name)}</title><style>
         @page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;font:10.5pt/1.5 "Hanken Grotesk",Helvetica,Arial,sans-serif;color:#15181b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dfe2e4;padding-bottom:4mm;margin-bottom:8mm;font-size:9pt;color:#5b6267}
@@ -654,8 +653,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, lv = LV[rag.level] || null, imp = O.importShare(m);
         if (x && x.pct > 65) { conc++; if (x.who === "China") cn++; }
         (O.deadlinesFor(m) || []).forEach((d) => { if (O.daysUntil(d.date) >= 0 && (!next || d.date < next.date)) next = d; });
-        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc((x.what || O.stageTxt(w.k) || "").toLowerCase())}</span>` : `<b>${T("China leads", "Vede Čína")}</b> <span>${T("no public world total", "veřejný světový údaj neexistuje")}</span>`;
-        const im = imp && imp.tp ? `${imp.tp.pct}% ${T("from", "z")} ${esc(land(imp.tp.cc))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
+        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Vede Čína")}</b> <span>${T("no public world total", "veřejný světový údaj neexistuje")}</span>`;
+        const im = imp && imp.tp ? `${esc(imTxt(imp.tp))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
         return `<button type="button" class="qc-row" data-m="${m}" style="--c:${O.cssVar(m)}" title="${esc(T("Show on the globe", "Ukázat na glóbu"))}">
           <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
           <span class="qc-share">${share}<span class="qc-bar"><span style="width:${x ? Math.min(100, x.pct) : 0}%"></span></span></span>
@@ -665,14 +664,15 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const sum = T(`${p[1]} typically depend on <b>${ms.length} of the twelve</b> critical minerals. For <b>${conc}</b> of them one country controls more than 65% of a stage${cn ? `, China in ${cn}` : ""}.`,
                     `${p[1]} obvykle závisí na <b>${ms.length} z dvanácti</b> kritických surovin. U <b>${conc}</b> z nich ovládá jedna země přes 65 % některé fáze${cn ? `, Čína u ${cn}` : ""}.`);
       const dl = next ? `<p class="qc-dl"><span>${T("Next deadline", "Nejbližší termín")}</span> <b>${esc(O.fmtDay(next.date))}</b> · ${esc(O.LANG === "cs" && next.title_cs ? next.title_cs : next.title)}</p>` : "";
-      last = { id, name: p[1], sum, dl: next ? [O.fmtDay(next.date), O.LANG === "cs" && next.title_cs ? next.title_cs : next.title] : null,
+      last = { id, name: p[1], sum, dl: next ? [O.trStr(O.fmtDay(next.date)), O.LANG === "cs" && next.title_cs ? next.title_cs : next.title] : null,
         rows: ms.map((m) => { const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, imp = O.importShare(m);
           let col = O.cssVar(m);
           const vm = /^var\((--[^),]+)/.exec(col || "");
           if (vm) col = getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim() || getComputedStyle(document.body).getPropertyValue(vm[1]).trim() || "#9aa1a5";
           return { m, name: O.mName(m), use: p[2][m], color: col, pct: x ? x.pct : null,
-            share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}` : T("China leads (no public world total)", "Vede Čína (veřejný světový údaj neexistuje)"),
-            imp: imp && imp.tp ? `${imp.tp.pct}% ${T("from", "z")} ${land(imp.tp.cc)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
+            share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}`.replace(/(\d)%/g, O.LANG === "cs" ? "$1\u00a0%" : "$1%") : T("China leads", "Vede Čína"),   // Czech "94 % Čína", as on the page
+            stage: x ? stg(w) : T("no public world total", "veřejný světový údaj neexistuje"),   // build 56: the PDF column says "tightest stage", so it shows it, as the page row does
+            imp: imp && imp.tp ? `${imTxt(imp.tp)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
       // v43 funnel: 1. monitoring for exactly these minerals, 2. the full review, 3. a call (as a text link)
       const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
       const BK43 = O.safeUrl ? (O.safeUrl(C43.bookingUrl) || "mailto:david@madali.cz") : (C43.bookingUrl || "mailto:david@madali.cz");
@@ -792,8 +792,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       [/^Ships|^Lodě/i, T("Fewer ships through Bab-el-Mandeb or Malacca mean longer routes around Africa: two to three extra weeks and higher freight costs for anything coming from Asia.", "Méně lodí přes Bab al-Mandab nebo Malacký průliv znamená delší trasy kolem Afriky: o dva až tři týdny déle a vyšší přepravné u všeho z Asie.")],
       [/^Armed conflict|^Ozbrojen/i, T("Fighting near a mine or a route raises the risk of stoppages and the cost of insurance. It does not by itself mean output has stopped.", "Boje poblíž dolu nebo trasy zvyšují riziko výpadků a cenu pojištění. Samy o sobě neznamenají, že se výroba zastavila.")],
       [/^Europe's defence demand|^Poptávka/i, T("More tenders for weapons and ammunition mean more demand for the same scarce minerals, and longer delivery times from suppliers.", "Více zakázek na zbraně a munici znamená vyšší poptávku po stejných vzácných surovinách a delší dodací lhůty.")],
-      [/^Research|^Výzkum/i, T("More research on substitutes shows Europe looking for a way around a dependency. It takes years before it changes supply.", "Více výzkumu náhrad ukazuje, že Evropa hledá cestu, jak závislost obejít. Než to změní dodávky, trvá to roky.")],
-      [/^Heat|^Teplo/i, T("Furnace-hot pixels at a smelter or refinery usually mean it is running. Weeks without heat can mean a stoppage, or simply clouds.", "Pixely horké jako pec u huti nebo rafinerie obvykle znamenají, že běží. Týdny bez tepla mohou znamenat odstávku, nebo jen mraky.")],
+      [/^Research|^Výzkum/i, T("More research on substitutes shows Europe looking for a way around a dependency. It takes years before it changes supply.", "Přibývající výzkum náhrad ukazuje, že Evropa hledá, jak závislost obejít. Na dodávkách se to projeví až za roky.")],
+      [/^Heat|^Teplo/i, T("Furnace-hot pixels at a smelter or refinery usually mean it is running. Weeks without heat can mean a stoppage, or simply clouds.", "Tepelná anomálie u huti nebo rafinerie obvykle znamená, že běží. Týdny bez tepla mohou znamenat odstávku, nebo jen mraky.")],
       [/^Sulphur|^Oxid siřičitý/i, T("Sulphur dioxide over a smelter tracks how hard it is working: a sudden drop can be a slowdown, a rise a ramp-up.", "Oxid siřičitý nad hutí ukazuje, jak naplno pracuje: náhlý pokles může být útlum, nárůst rozjezd výroby.")],
     ];
     const sig = document.getElementById("signals");
@@ -863,7 +863,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const l = s.querySelector(".sec-head .label"); if (l && label) l.textContent = label;
       const h = s.querySelector(".sec-head h2"); if (h && h2) h.textContent = h2;
     };
-    name("monday", T("This week", "Tento týden"), T("What's moving this week.", "Co se tento týden hýbe."));
+    name("monday", T("This week", "Tento týden"), T("What's moving this week.", "Co se tento týden mění."));
     name("exposure", T("The twelve minerals", "Dvanáct surovin"));
     name("signals", T("Live evidence", "Živé důkazy"));
     name("rules", T("Deadlines and EU funding", "Termíny a peníze EU"));
@@ -878,7 +878,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const step = (n, href, t, s) => `<a href="${href}"><b>${n}</b><span>${esc(t)}<small>${esc(s)}</small></span></a>`;
       band.innerHTML = '<div class="inner">' +
         step(1, "#check", T("Check your product", "Prověřte svůj výrobek"), T("Which minerals it depends on, in 60 seconds", "Na kterých surovinách závisí, za 60 sekund")) +
-        step(2, "#monday", T("See what's moving this week", "Podívejte se, co se tento týden hýbe"), T("Status, deadlines and this week's changes", "Stav, termíny a změny tohoto týdne")) +
+        step(2, "#monday", T("See what's moving this week", "Podívejte se, co se tento týden mění"), T("Status, deadlines and this week's changes", "Stav, termíny a změny tohoto týdne")) +
         step(3, "#assess", T("Test your own parts list", "Otestujte vlastní seznam dílů"), T("A risk rating per part, in your browser", "Hodnocení rizika pro každý díl, ve vašem prohlížeči")) + '</div>';
       check.parentNode.insertBefore(band, check);
       band.querySelectorAll("a").forEach((a, i) => a.addEventListener("click", () => ooHit("act:step" + (i + 1))));
@@ -952,7 +952,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     // v19: the opening keeps one main button; the extra line above the headline stays out
     const h1x = document.querySelector("#hero-copy h1"), over = h1x && h1x.previousElementSibling;
     if (over && over.classList.contains("label")) { over.hidden = true; over.style.display = "none"; }
-    if (h1x && h1x.nextElementSibling && h1x.nextElementSibling.tagName === "P") h1x.nextElementSibling.textContent = T("See what your product depends on, who controls it, and what is moving this week.", "Zjistěte, na čem váš výrobek závisí, kdo to ovládá a co se tento týden hýbe.");
+    if (h1x && h1x.nextElementSibling && h1x.nextElementSibling.tagName === "P") h1x.nextElementSibling.textContent = T("See what your product depends on, who controls it, and what is moving this week.", "Zjistěte, na čem váš výrobek závisí, kdo to ovládá a co se tento týden mění.");
     // shared: a block header with tabs
     const block = (id, label, h2, p, tabs, cls) => {
       const s = document.createElement("section"); s.className = "section " + cls; s.id = id;
@@ -990,7 +990,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (band) {
       const step = (n, href, t, s) => `<a href="${href}"><b>${n}</b><span>${esc(t)}<small>${esc(s)}</small></span></a>`;
       band.innerHTML = step(1, "#check", T("Check your product", "Prověřte svůj výrobek"), T("Which minerals it depends on, in 60 seconds", "Na kterých surovinách závisí, za 60 sekund")) +
-        step(2, "#monday", T("See what's moving this week", "Podívejte se, co se tento týden hýbe"), T("Status, deadlines and this week's changes", "Stav, termíny a změny tohoto týdne")) +
+        step(2, "#monday", T("See what's moving this week", "Podívejte se, co se tento týden mění"), T("Status, deadlines and this week's changes", "Stav, termíny a změny tohoto týdne")) +
         step(3, "#assess", T("Test your own parts list", "Otestujte vlastní seznam dílů"), T("A risk rating per part, in your browser", "Hodnocení rizika pro každý díl, ve vašem prohlížeči"));
       band.querySelectorAll("a").forEach((a, i) => a.addEventListener("click", () => ooHit("act:step" + (i + 1))));
     }
@@ -1115,7 +1115,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
              T("Alerts on your materials, sites and deadlines, and one question a month answered within two working days.", "Upozornění na vaše suroviny, lokality a termíny a jednou měsíčně odpověď na vaši otázku do dvou pracovních dnů."), null,
              ask(T("OreOrbit monitoring", "OreOrbit: monitoring")), T("Ask about monitoring", "Zeptat se na monitoring")) +
         card(false, T("Briefings", "Briefingy"), esc(T("Tailored", "Na míru")), "",
-             T("For boards, associations and ministries: what is moving, and what it means for you.", "Pro vedení, asociace a ministerstva: co se hýbe a co to pro vás znamená."), null,
+             T("For boards, associations and ministries: what is moving, and what it means for you.", "Pro vedení, asociace a ministerstva: co se mění a co to pro vás znamená."), null,
              ask(T("OreOrbit briefing", "OreOrbit: briefing")), T("Ask about a briefing", "Zeptat se na briefing")) +
         `</div>` +
         `<div class="wx-steps"><p class="wx-k">${esc(T("How a review runs", "Jak posouzení probíhá"))}</p><ol>${steps.map(([a, b], k) => `<li style="--k:${k}"><span>${String(k + 1).padStart(2, "0")}</span><b>${esc(a)}</b><p>${esc(b)}</p></li>`).join("")}</ol></div>` +
@@ -1157,7 +1157,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     undark(); setTimeout(undark, 1500);
     // headings: light type with a bold second line
     const H = { check: [T("What does your product", "Na čem váš výrobek"), T("depend on?", "závisí?")],
-                monday: [T("What's moving", "Co se tento týden"), T("this week.", "hýbe.")],
+                monday: [T("What's moving", "Co se tento týden"), T("this week.", "mění.")],
                 signals: [T("What the open data", "Co říkají otevřená data"), T("says now.", "právě teď.")],
                 assess: [T("Your supply chain,", "Váš dodavatelský řetězec,"), T("assessed.", "posouzený.")],
                 rules: [T("The rules that decide", "Pravidla, která rozhodují,"), T("who can supply you.", "kdo vám smí dodávat.")],
@@ -1175,7 +1175,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const nx = document.querySelector("#mon-body .mon-next"); if (!nx) return;
         const n = (nx.querySelector(".mon-count") || {}).textContent || "", p = (nx.querySelector("p") || {}).textContent || "";
         const days = (n.match(/\d+/) || [])[0]; if (!days || !p) return;
-        const html = `<i></i><span class="hn-k">${esc(T("Next deadline", "Nejbližší termín"))}</span><span class="hn-d">${esc(T("in " + days + " days", "za " + days + " dní"))}</span><span class="hn-t">${esc(p.trim())}</span><span class="hn-a" aria-hidden="true">→</span>`;
+        const html = `<i></i><span class="hn-k">${esc(T("Next deadline", "Nejbližší termín"))}</span><span class="hn-d">${esc(T("in " + days + " days", "za " + days + " " + O.csPlural(days, "den", "dny", "dní")))}</span><span class="hn-t">${esc(p.trim())}</span><span class="hn-a" aria-hidden="true">→</span>`;
         if (a.innerHTML !== html) a.innerHTML = html;
       };
       fill(); const mb = $i("mon-body"); if (mb) new MutationObserver(fill).observe(mb, { childList: true, subtree: true });
@@ -1226,7 +1226,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
                     sb: [T("Antimony", "Antimon"), /antimon/i], ga: [T("Gallium", "Galium"), /gallium|galium/i], ge: [T("Germanium", "Germanium"), /germanium/i], li: [T("Lithium", "Lithium"), /lithium/i],
                     co: [T("Cobalt", "Kobalt"), /cobalt|kobalt/i], ni: [T("Nickel", "Nikl"), /nickel|nikl/i], gr: [T("Graphite", "Grafit"), /graphite|grafit/i] };
     const guess = (t) => Object.keys(NAMES).filter((k) => NAMES[k][1].test(t || ""));
-    const first = (t) => { const s = (t || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
+    const first = (t) => { const s = (t || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
     const dot = (ms) => (ms.length ? ms.slice(0, 3) : ["none"]).map((m) => `<i style="background:${m === "none" ? "rgba(236,238,233,.35)" : "var(--" + m + ")"}"></i>`).join("");
     const cap = document.createElement("p"); cap.className = "wk2-cap";
     const all = document.createElement("button"); all.type = "button"; all.className = "chip2 wk2-all"; all.textContent = T("All of Europe", "Celá Evropa");
@@ -1249,7 +1249,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const inSel = (ms) => !sel.length || !ms.length || ms.some((m) => sel.includes(m));
       const total = PK().querySelectorAll(".chip2[data-my]").length, isAll = !sel.length || sel.length === total;
       allE.setAttribute("aria-pressed", String(isAll));
-      const nm = sel.map((m) => { const c = PK().querySelector('.chip2[data-my="' + m + '"]'); return c ? c.textContent.trim() : m; }).join(", ");
+      // names in lower case: they sit mid-sentence ("8 surovin – vzácné zeminy, mangan")
+      const nm = sel.map((m) => { const c = PK().querySelector('.chip2[data-my="' + m + '"]'); return (c ? c.textContent.trim() : m).toLowerCase(); }).join(", ");
       const prod = window.ooProduct && window.ooQC && window.ooQC[window.ooProduct];
       const same = prod && prod.mins.length === sel.length && prod.mins.every((m) => sel.includes(m));
       const txt = isAll ? T("Showing all twelve minerals across Europe. Tap one to focus on the minerals you answer for.", "Zobrazeno všech dvanáct surovin v celé Evropě. Klepnutím se zaměříte na ty, za které odpovídáte.")
@@ -1266,12 +1267,12 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const html = `<div class="wk2-status">${status}</div>` +
         `<div class="wk2-grid"><div class="wk2-dl">${nx ? `<p class="wk2-k">${esc(T("Next deadline", "Nejbližší termín"))}</p><p class="wk2-big">${esc(nx.cd || nx.d)}</p><a class="wk2-dlt" href="${esc(nx.href)}" target="_blank" rel="noopener">${esc(nx.t)}</a><p class="wk2-date">${esc(nx.d.trim())}</p>` +
           (later.length ? `<ul class="wk2-later">${later.map((x) => `<li><span>${esc(x.d.trim())}</span><a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a></li>`).join("")}</ul>` : "") : ""}</div>` +
-        `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden pohnulo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : `<button type="button" data-k="${k}">${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
+        `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden změnilo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : `<button type="button" data-k="${k}">${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
         `<div class="wk2-foot"><button type="button" class="btn small" data-act="pack">${esc(T("Board pack · 7 slides", "Podklady pro vedení · 7 snímků"))}</button><a class="wk2-arch" href="p/briefs.html">${esc(T("All weekly briefs", "Všechny týdenní přehledy"))} →</a></div>`;
       if (html !== sig || boxE.innerHTML.length < 20) { sig = html; boxE.innerHTML = html; }
       lastFeed = feed;
       const s2 = document.querySelector(".steps-band a:nth-child(2) small");
-      if (s2 && nx && nx.cd) s2.textContent = T("Next deadline " + nx.cd, "Nejbližší termín " + nx.cd.replace(/^in /, "za ").replace(/days?$/, "dní"));
+      if (s2 && nx && nx.cd) s2.textContent = T("Next deadline " + nx.cd, "Nejbližší termín " + O.trStr(nx.cd));
     };
     document.addEventListener("click", (ev) => {
       if (!ev.target.closest("#monday .wk2")) return;
@@ -1368,7 +1369,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       setMinerals(q.mins);
       if (cin) {
         if (!follow) { follow = document.createElement("a"); follow.className = "qc-follow"; follow.href = "#monday"; cin.appendChild(follow); follow.addEventListener("click", () => ooHit("act:qc-follow")); }
-        follow.innerHTML = `<i></i><span>${esc(T("This week now follows the " + q.mins.length + " minerals in " + q.name.toLowerCase() + ".", "Sekce Tento týden teď sleduje " + q.mins.length + " surovin pro " + q.name.toLowerCase() + "."))}</span><b>${esc(T("See what is moving", "Co se hýbe"))} →</b>`;
+        follow.innerHTML = `<i></i><span>${esc(T("This week now follows the " + q.mins.length + " minerals in " + q.name.toLowerCase() + ".", "Sekce Tento týden teď sleduje " + q.mins.length + " " + O.csPlural(q.mins.length, "surovinu", "suroviny", "surovin") + ", na kterých stojí " + q.name.toLowerCase() + "."))}</span><b>${esc(T("See what is moving", "Co se mění"))} →</b>`;
       }
     });
     // the sign-up forms: the free Monday brief and paid monitoring
@@ -1443,7 +1444,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const day = (iso) => { const d = new Date(iso + "T12:00:00Z"); return isNaN(d) ? iso : (CS ? d.getUTCDate() + ". " + (d.getUTCMonth() + 1) + ". " + d.getUTCFullYear() : d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear()); };
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
     const left = (iso) => Math.round((new Date(iso + "T00:00:00") - t0) / 86400000);
-    const inTxt = (n) => n === 0 ? T("today", "dnes") : n === 1 ? T("tomorrow", "zítra") : T("in " + n + " days", "za " + n + " dní");
+    const inTxt = (n) => n === 0 ? T("today", "dnes") : n === 1 ? T("tomorrow", "zítra") : T("in " + n + " days", "za " + n + " " + O.csPlural(n, "den", "dny", "dní"));
     /* This week: deadlines, the latest brief and the news straight from the data */
     let BRIEF = null;
     fetch((C.dataBase || "live-data/") + "briefs.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((b) => { if (Array.isArray(b) && b.length) { BRIEF = b.slice().sort((x, y) => String(y.week).localeCompare(String(x.week)))[0]; } if (typeof window.ooWeekRender === "function") window.ooWeekRender(); }).catch(() => {});
@@ -1454,7 +1455,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         .map((d) => ({ t: (CS && d.title_cs) || d.title, href: d.url || "", d: day(d.date), cd: inTxt(left(d.date)), ms: d.materials || [] }));
       let mine = dls.filter((x) => inSel(x.ms)); if (!mine.length) mine = dls;
       const items = [];
-      const first = (s) => { s = String(s || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
+      /* first sentence only: a sentence ends at a period followed by a capital, so "15. listopadu" does not end one */
+      const first = (s) => { s = String(s || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
       ((BRIEF && BRIEF.points) || []).forEach((p) => { const tx = first((CS && p.text_cs) || p.text || ""); if (tx) items.push({ t: tx, ms: p.materials || [], href: p.url || "", meta: p.source || "" }); });
       const news = (O.NEWS || []).slice().sort((a, b) => String(b.addedAt || b.date).localeCompare(String(a.addedAt || a.date)));
       news.forEach((n) => { const tt = (CS && n.title_cs) || n.title; if (tt) items.push({ t: tt, ms: n.materials || [], href: n.url || "", meta: day(n.date || n.addedAt) + " · " + (n.source || "") }); });
@@ -1774,7 +1776,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 55"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 56"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1825,7 +1827,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 55 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 56 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
