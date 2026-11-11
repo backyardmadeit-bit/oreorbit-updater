@@ -15,7 +15,7 @@ Seven A4 pages in English and Czech that explain the atlas, Free vs Monitoring, 
 Nothing countable is typed in the script:
 
 - price, price in CZK, company name and IČO: `atlas/config.js`
-- number of minerals, sites and routes, "nine of the twelve", each mineral's tightest stage and its source: `atlas/data/reference.json`
+- number of minerals, sites and routes, "ten of the twelve", each mineral's tightest stage and its source: `atlas/data/reference.json`
 - mineral symbols: `ELEM` in `atlas/atlas-main.js`; mineral colours: CSS variables in `atlas/index.html` (dark palette for the chips, light palette for the bars); Czech names: `MAT_CS` in `updater/oreorbit_pages.py`
 
 So after a price or count change, rebuilding is enough. The copy itself (EN and CS) is in `copy()` in `build_manual.py`.

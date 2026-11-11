@@ -5,7 +5,7 @@ Truth is computed, never typed in:
   minerals      len(reference.json order)
   sites         len(reference.json sites)
   routes        entries in ROUTES in atlas/atlas-main.js
-  concentrated  minerals whose tightest stage has one country above 65 % ("nine of the twelve")
+  concentrated  minerals whose tightest stage has one country above 65 % ("ten of the twelve")
 
 A number next to a minerals / sites / routes word (English or Czech, digits or words) is reported when it is
 close to the truth but not equal to it (an old or a future total), so "3 minerals" in a product stays quiet

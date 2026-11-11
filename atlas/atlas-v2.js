@@ -415,7 +415,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       <table><thead><tr><th>${e(T("Material", "Surovina"))}</th><th>${e(T("Mining", "Těžba"))}</th><th>${e(T("Refining", "Rafinace"))}</th><th>${e(T("Component", "Komponenta"))}</th><th>${e(T("Sites on the atlas", "Lokality v atlasu"))}</th></tr></thead><tbody>
       ${ms.map((m) => { const s = O.STAGES[m], cell = (x, n) => x ? `${e(O.pctTxt(x))} ${e(O.ctry(x.who))}` : e(n ? O.trStr(n) : "–"); return `<tr><td><b>${e(O.mName(m))}</b></td><td>${cell(s.mine, s.mineNote)}</td><td>${cell(s.refine, s.refineNote)}</td><td>${cell(s.part, null)}</td><td>${e(O.SITES.filter((x) => x.m === m).map((x) => `${x.name} (${O.ctry(x.country)})`).join(", ") || "–")}</td></tr>`; }).join("")}
       </tbody></table>
-      <p class="small">${e(T("Top-country share of world output at each stage (USGS Mineral Commodity Summaries 2025 and 2026, IEA Global Critical Minerals Outlook 2025). This maps the material, not your suppliers' own sourcing; confirm the latter with them.", "Podíl největší země na světové produkci v každé fázi (USGS Mineral Commodity Summaries 2025 a 2026, IEA Global Critical Minerals Outlook 2025). Mapuje surovinu, ne vlastní nákupy vašich dodavatelů; ty si ověřte u nich."))}</p>
+      <p class="small">${e(T("Top-country share of world output at each stage (USGS Mineral Commodity Summaries 2026, IEA Global Critical Minerals Outlook 2026). This maps the material, not your suppliers' own sourcing; confirm the latter with them.", "Podíl největší země na světové produkci v každé fázi (USGS Mineral Commodity Summaries 2026, IEA Global Critical Minerals Outlook 2026). Mapuje surovinu, ne vlastní nákupy vašich dodavatelů; ty si ověřte u nich."))}</p>
       <h2>${e(T("3. Stress test", "3. Zátěžový test"))}: ${e(O.trStr(sc.title))}, ${weeks} ${e(T("weeks", "týdnů"))}</h2>
       <p class="small">${e(O.trStr(sc.prec))}</p>
       ${rows.length ? `<table><thead><tr><th>${e(T("Part", "Díl"))}</th><th>${e(T("Product", "Výrobek"))}</th><th>${e(T("Stock", "Zásoby"))}</th><th>${e(T("Result", "Výsledek"))}</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${e(r.it.part)}</td><td>${e(r.it.prog)}</td><td>${e(fmtW(r.it.stock))}</td><td>${r.status === "short" ? `<span class="high">${e(T(`Runs out in week ${r.it.stock}`, `Dojde v ${r.it.stock}. týdnu`))}</span>` : r.status === "covered" ? e(T("Covered", "Pokryto")) : r.status === "unknown" ? e(T("Stock not recorded", "Zásoby neuvedeny")) : e(T("Bought elsewhere: check upstream origin", "Nakoupeno jinde: ověřte původ suroviny"))}</td></tr>`).join("")}</tbody></table>` : `<p>${e(T("No part on the list carries this material.", "Žádný díl v seznamu tuto surovinu neobsahuje."))}</p>`}
@@ -1776,7 +1776,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 56"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 57"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1827,7 +1827,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 56 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 57 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

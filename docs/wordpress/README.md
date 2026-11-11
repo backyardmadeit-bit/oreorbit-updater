@@ -1,5 +1,9 @@
 # WordPress (bohemiadefense.com)
 
+## 11. 11. 2026: podíly surovin podle USGS 2026 a IEA 2026 (build 57)
+
+V `home-en.html` a `home-cs.html` má mřížka dvanácti surovin (atributy `data-share` / `data-pct`) nová čísla nejtěsnější fáze, stejná jako atlas: titan 70 % Čína, wolfram 79 % Čína, antimon 36 % Čína, kobalt >75 % Čína (rafinace; těžba v DR Kongu je 74 %), nikl 67 % Indonésie, grafit 94 % Čína. Ostatní beze změny. Postup vložení je stejný jako níže (celý kód do widgetu HTML, pak Purge All Caches). Stránky zakladatele („u devíti z nich ovládá Čína…“) a `jsonld-sitewide.html` platí dál.
+
 ## 11. 11. 2026: karta Monitoring (build 54)
 
 V `home-en.html` a `home-cs.html` má karta „2 · Monitoring“ místo výčtu funkcí tři sliby jako atlas a stránky služeb (hlídáme nepřetržitě · ozveme se, když se něco změní, a každé pondělí · jedna otázka měsíčně, odpoví člověk do dvou pracovních dnů) a drobným písmem týdenní datový soubor. Postup vložení je stejný jako níže (celý kód do widgetu HTML, pak Purge All Caches).
