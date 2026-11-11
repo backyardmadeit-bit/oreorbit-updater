@@ -1,4 +1,10 @@
-# WordPress (bohemiadefense.com): úpravy z 6. 11. 2026
+# WordPress (bohemiadefense.com)
+
+## 11. 11. 2026: karta Monitoring (build 54)
+
+V `home-en.html` a `home-cs.html` má karta „2 · Monitoring“ místo výčtu funkcí tři sliby jako atlas a stránky služeb (hlídáme nepřetržitě · ozveme se, když se něco změní, a každé pondělí · jedna otázka měsíčně, odpoví člověk do dvou pracovních dnů) a drobným písmem týdenní datový soubor. Postup vložení je stejný jako níže (celý kód do widgetu HTML, pak Purge All Caches).
+
+## Úpravy z 6. 11. 2026
 
 ## Nejjednodušší cesta: celý kód úvodní stránky
 
