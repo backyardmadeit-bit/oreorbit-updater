@@ -3,6 +3,7 @@
 
   python3 docs/sales/build_manual.py              # both PDFs, from the screenshots in docs/sales/img
   python3 docs/sales/build_manual.py --shots      # first take fresh screenshots of the live atlas
+  python3 docs/sales/build_manual.py --shots --from http://127.0.0.1:8765/   # shots from a local preview of an unmerged branch
   python3 docs/sales/build_manual.py --lang cs --html   # one language; also keep the HTML beside the PDF
 
 Needs Playwright with Chromium: pip install playwright && python3 -m playwright install chromium
@@ -53,8 +54,8 @@ WHAT_CS = {"Sintered magnets": "slinuté magnety", "Titanium sponge": "titanová
            "Primary gallium": "primární galium", "Lithium chemicals": "lithiové chemikálie",
            "Battery-grade graphite": "bateriový grafit"}
 KIND = {"mine": ("mining", "těžba"), "refine": ("refining", "zpracování"), "part": ("parts", "díly")}
-NOTE_CS = {"Jan": "led.", "Feb": "úno.", "Mar": "bře.", "Apr": "dub.", "May": "kvě.", "Jun": "čvn.", "Jul": "čvc.",
-           "Aug": "srp.", "Sep": "zář.", "Oct": "říj.", "Nov": "lis.", "Dec": "pro.", "capacity": "kapacita"}
+# source notes in Czech: whole month names ("IEA, říjen 2025"), Czech has no common three-letter months
+NOTE_CS = dict(zip("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(), MON_CS), capacity="kapacita")
 
 
 # ---------------------------------------------------------------- data from the repo
@@ -247,14 +248,14 @@ def copy(lang, c, r):
         "cover_k": "Pro výrobce z obranného a kosmického průmyslu",
         "cover_h": "Zjistěte, na čem<br><b>závisí váš výrobek.</b>",
         "cover_lede": "%s kritických surovin, na kterých stojí evropský obranný a kosmický průmysl: kdo je ovládá a co se tento týden mění." % twelve.capitalize(),
-        "proof": ["Pro každého, bez přihlášení", "Aktualizováno denně", "Citováno v BBC News Chinese"],
+        "proof": ["Pro každého, bez přihlášení", "Aktualizováno denně", "Citováno v čínské službě BBC News"],
         "p2_k": "01 · Co je OreOrbit",
         "p2_h": "Jedna mapa surovin,<br><b>které vaše výrobky potřebují.</b>",
         "p2_b1": ("OreOrbit je veřejný atlas %d kritických surovin, na kterých stojí evropský obranný a kosmický průmysl. "
                   "Ze satelitních a otevřených dat sleduje %d dolů, rafinerií a závodů a %d obchodních tras, spolu s termíny, "
                   "které mohou zastavit dodávku: vývozní kontroly, kvóty a pravidla původu.") % (n_min, n_sites, n_routes),
         "p2_b2": ("Je pro lidi, kteří odpovídají za dodávky: nákup, vývoj, řízení rizik a vedení. Za minutu uvidíte, které suroviny "
-                  "výrobek potřebuje, kdo je ovládá a co se tento týden hýbe."),
+                  "výrobek potřebuje, kdo je ovládá a co se tento týden mění."),
         "stats": [(n_min, "kritických surovin"), (n_sites, "dolů, rafinerií a závodů sledovaných z oběžné dráhy"),
                   (n_routes, "obchodních tras a úzkých hrdel"),
                   ("%d z %d" % (conc, n_min), "má fázi, kde jedna země drží víc než 65 %")],
@@ -267,20 +268,20 @@ def copy(lang, c, r):
         "p3_cols": [("Lokality", "Doly, rafinerie a závody, každý s provozovatelem, zdroji a posledním jasným satelitním snímkem."),
                     ("Trasy a řeky", "Lodě v úzkých hrdlech, hladiny Rýna a Labe a ozbrojené konflikty poblíž dodavatelského řetězce."),
                     ("Suroviny", "%s surovin je ve spodní liště glóbu. Vyberete jednu a uvidíte jen její lokality a nejužší místo." % twelve.capitalize())],
-        "shots_note": "Snímky obrazovky z živého atlasu, %s. Obsahuje upravená data Copernicus Sentinel %d.",
+        "shots_note": "Snímky obrazovky ze živého atlasu, %s. Obsahuje upravená data Copernicus Sentinel %d.",
         "p4_k": "03 · Rychlá kontrola",
         "p4_h": "Vyberte, co vyrábíte.<br><b>Uvidíte, co to potřebuje.</b>",
         "p4_lede": ("Drony, munice, optika, radary, obrněná vozidla, letectví a kosmonautika, baterie. U každé suroviny: k čemu ve "
                     "výrobku slouží, nejužší místo, odkud EU dováží a míra rizika, která se mění se zprávami."),
         "p4_cap": "Rychlá kontrola pro drony, %s. Vysoké riziko znamená, že jedna země ovládá víc než 65 %% některé fáze a tento týden se něco děje.",
         "p5_k": "04 · Tento týden",
-        "p5_h": "Co se pohnulo<br><b>a co přijde.</b>",
-        "p5_cap": "Tento týden nastavený na suroviny v dronech: nejbližší termín, data po něm a co se pohnulo ve zprávách a v satelitních datech.",
-        "p5_side_h": "Důkazy v pozadí.",
+        "p5_h": "Co se změnilo<br><b>a co přijde.</b>",
+        "p5_cap": "Sekce Tento týden nastavená na suroviny pro drony: nejbližší termín, další termíny a co se změnilo ve zprávách a v satelitních datech.",
+        "p5_side_h": "Na čem to stojí.",
         "p5_side": ("Sedm živých signálů z otevřených a satelitních dat: dovoz do EU, lodě v úzkých hrdlech, ozbrojené konflikty, "
                     "poptávka evropské obrany, výzkum náhrad, teplo v závodech a oxid siřičitý nad hutěmi. Každý se otevře do plných dat."),
         "p6_k": "05 · Plány",
-        "p6_h": "Začněte zdarma. Buďte upozorněni.<br><b>Buďte připraveni.</b>",
+        "p6_h": "Začněte zdarma.<br>O změnách se dozvíte včas.<br><b>Budete připraveni.</b>",
         "plans": [
             {"k": "01 · Zdarma", "pr": "0" + NB + "€", "sub": "Pro každého, bez přihlášení.",
              "li": ["Atlas: všechny lokality, trasy a suroviny na glóbu.", "Rychlá kontrola pro váš výrobek.",
@@ -302,7 +303,7 @@ def copy(lang, c, r):
         "alerts_h": "O čem se klient monitoringu dozví.",
         "alerts": ["Nové vývozní pravidlo, rozhodnutí o licencích nebo důležitá zpráva k jeho surovinám, ještě týž den.",
                    "Každý termín 30, 14, 7 a 1 den předem.",
-                   "Řeka příliš nízko pro nákladní lodě v Kaubu, Duisburgu nebo Drážďanech.",
+                   "Hladina Rýna nebo Labe v Kaubu, Duisburgu nebo Drážďanech klesne pod mez pro nákladní lodě.",
                    "Závod z jeho seznamu, který podle satelitních dat o teple a oxidu siřičitém utichne nebo se rozjede."],
         "p6_note": "Monitoring zrušíte kdykoli. Když nevidíte přínos, do měsíce vám vrátíme peníze.",
         "p7_k": "06 · Jak začít",
@@ -471,13 +472,13 @@ CROPS = [("check", "#check .inner", "#check .qc-p", "#check .qc-key"),
          ("signals", "#signals .inner", "#signals .sec-head", "#signals .inner")]
 
 
-def capture(langs):
+def capture(langs, src=ATLAS):
     from playwright.sync_api import sync_playwright
     args = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
     with sync_playwright() as p:
         b = p.chromium.launch(args=args)
         for lang in langs:
-            url = ATLAS + ("?lang=cs" if lang == "cs" else "")
+            url = src + ("?lang=cs" if lang == "cs" else "")
             ctx = b.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1.25)
             pg = ctx.new_page()
             pg.goto(url, wait_until="load", timeout=90000)
@@ -513,7 +514,7 @@ def capture(langs):
             print("captured %s (atlas errors: %s)" % (lang, errs))
             ctx.close()
         b.close()
-    (IMG / "shots.json").write_text(json.dumps({"date": dt.date.today().isoformat(), "from": ATLAS}) + "\n", encoding="utf-8")
+    (IMG / "shots.json").write_text(json.dumps({"date": dt.date.today().isoformat(), "from": src}) + "\n", encoding="utf-8")
 
 
 def render(langs, out_dir, keep_html):
@@ -545,12 +546,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--lang", choices=["en", "cs"], action="append", help="build one language (default: both)")
     ap.add_argument("--shots", action="store_true", help="take fresh screenshots of the live atlas first")
+    ap.add_argument("--from", dest="src", default=ATLAS,
+                    help="atlas to take the screenshots from (default: the live atlas); links in the PDF always point to the live atlas")
     ap.add_argument("--html", action="store_true", help="keep the HTML next to the PDF")
     ap.add_argument("--out", default=str(HERE), help="output folder (default: docs/sales)")
     a = ap.parse_args()
     langs = a.lang or ["en", "cs"]
     if a.shots:
-        capture(langs)
+        capture(langs, a.src if a.src.endswith("/") else a.src + "/")
     render(langs, Path(a.out).resolve(), a.html)
 
 

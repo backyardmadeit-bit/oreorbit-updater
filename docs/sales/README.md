@@ -27,11 +27,12 @@ Needs Python 3.9+ with `playwright` and Chromium (`pip install playwright && pla
 ```bash
 python3 docs/sales/build_manual.py              # both languages, existing screenshots
 python3 docs/sales/build_manual.py --shots      # retake screenshots from the live atlas first
+python3 docs/sales/build_manual.py --shots --from http://127.0.0.1:8765/   # screenshots from a local preview of an unmerged atlas branch
 python3 docs/sales/build_manual.py --lang cs    # one language
 python3 docs/sales/build_manual.py --html --out /tmp/guide   # also keep the HTML (for review or text scans)
 ```
 
-`--shots` opens `https://bohemiadefense.com/atlas/` (and `?lang=cs`) in headless Chromium with software WebGL, takes the globe, the Mittersill site drawer, the gallium mineral drawer, the quick check for drones, This week and the live signals, and records the date. It prints the atlas error count (`window.ooErrs`); it should be 0.
+`--shots` opens `https://bohemiadefense.com/atlas/` (and `?lang=cs`) in headless Chromium with software WebGL, takes the globe, the Mittersill site drawer, the gallium mineral drawer, the quick check for drones, This week and the live signals, and records the date. It prints the atlas error count (`window.ooErrs`); it should be 0. `--from URL` takes the screenshots from another copy of the atlas (for example a local server over `atlas/` of a branch that is not deployed yet, with `live-data/` taken from the live site); links in the PDF still point to the live atlas, and `img/shots.json` records where the screenshots came from.
 
 The build fails (non-zero exit) if any page runs over its A4 height, so text changes cannot silently clip a page.
 
@@ -41,4 +42,4 @@ After a rebuild, run the consistency scan on the HTML copy too:
 python3 docs/sales/build_manual.py --html --out /tmp/guide && python3 tools/consistency_scan.py --pages /tmp/guide
 ```
 
-Known gap: the Czech quick check in the atlas still shows some stage names in English (for example "sintered magnets", "primary gallium"), and the Czech screenshots show that until the atlas is fixed.
+The screenshots of 11 November 2026 were taken from atlas build 56 (PR #24, Czech stage names and wording) before it was deployed, with the weekly brief rebuilt by that branch's robot and the other live data from the live site. Retake them from the live atlas once PR #24 is deployed and the robot has rewritten the brief (Actions → Update with `force`, or after Monday).
