@@ -1588,7 +1588,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `<div class="pl3-col pl3-a"><p class="pl3-k">01 · ${esc(T("Free", "Zdarma"))}</p><p class="pl3-price">€0</p><p class="pl3-sub">${esc(T("Open to everyone, no login.", "Pro každého, bez přihlášení."))}</p>` +
           li([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Titulky tohoto týdne"), T("The Monday brief by email", "Pondělní přehled e-mailem")]) + `</div>` +
         `<div class="pl3-col pl3-b"><p class="pl3-k">02 · ${esc(T("Monitoring", "Monitoring"))}</p><p class="pl3-price">${esc(CS ? PRICE + " €" : "€" + PRICE)}<small>${esc(T(" / month", " / měsíc"))}${CS && C.monitoringPriceCzk ? esc(" · asi " + C.monitoringPriceCzk + " Kč") : ""}</small></p><p class="pl3-sub">${esc(T("Pay by card. Cancel anytime.", "Platba kartou. Zrušíte kdykoli.")) }</p>` +
-          li([T("A same-day alert when something changes for your minerals", "Upozornění ještě v den, kdy se u vašich surovin něco změní"), T("A personal Monday edition for your minerals", "Osobní pondělní vydání pro vaše suroviny"), T("Deadline reminders 30, 14 and 7 days ahead", "Připomínky termínů 30, 14 a 7 dní předem"), T("Site alerts and a weekly data file (CSV)", "Upozornění z lokalit a týdenní data v CSV")]) + `</div>` +
+          li([T("We watch your minerals, their sites and deadlines around the clock.", "Sledujeme vaše suroviny, jejich lokality a termíny nepřetržitě."), T("You hear from us when something changes, and every Monday.", "Ozveme se, když se něco změní, a každé pondělí."), T("Ask us one question a month. A person answers within two working days.", "Jednou měsíčně se nás můžete na cokoli zeptat. Odpoví člověk do dvou pracovních dnů.")]) + `<p class="pl3-fine">${esc(T("Includes a weekly data file for your minerals.", "Součástí je týdenní datový soubor pro vaše suroviny."))}</p></div>` +
         `<div class="pl3-col pl3-c"><p class="pl3-k">03 · ${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="pl3-price">${esc(T("Tailored", "Na míru"))}</p><p class="pl3-sub">${esc(T("Scope and price after a free 30-minute call.", "Rozsah a cena po bezplatném 30minutovém hovoru."))}</p>` +
           li([T("One product line in two to three weeks", "Jedna výrobní řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení, článek 24 CRMA")]) + `</div>` +
         `<div class="pl3-act pl3-x"><button type="button" class="btn ghost" data-go="brief">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</button></div>` +
@@ -1770,7 +1770,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 53"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 54"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1821,7 +1821,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 53 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 54 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
