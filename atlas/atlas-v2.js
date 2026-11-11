@@ -614,6 +614,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     let names = null;
     try { names = new Intl.DisplayNames([O.LANG === "cs" ? "cs" : "en"], { type: "region" }); } catch (e) { names = null; }
     const land = (cc) => { if (!cc) return ""; if (O.LANG === "cs" && cc === "CN") return "Číny"; try { return (names && names.of(cc)) || O.ctry(cc); } catch (e) { return O.ctry(cc); } };
+    const stg = (w) => (w.x.what ? O.trStr(w.x.what) : O.stageTxt(w.k) || "").toLowerCase();   // build 56: the tightest stage in the page language; x.what is English in STAGES, its Czech is in CS
     let current = "drones", last = null;
     function printResult() {
       if (!last) return;
@@ -654,7 +655,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, lv = LV[rag.level] || null, imp = O.importShare(m);
         if (x && x.pct > 65) { conc++; if (x.who === "China") cn++; }
         (O.deadlinesFor(m) || []).forEach((d) => { if (O.daysUntil(d.date) >= 0 && (!next || d.date < next.date)) next = d; });
-        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc((x.what || O.stageTxt(w.k) || "").toLowerCase())}</span>` : `<b>${T("China leads", "Vede Čína")}</b> <span>${T("no public world total", "veřejný světový údaj neexistuje")}</span>`;
+        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Vede Čína")}</b> <span>${T("no public world total", "veřejný světový údaj neexistuje")}</span>`;
         const im = imp && imp.tp ? `${imp.tp.pct}% ${T("from", "z")} ${esc(land(imp.tp.cc))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
         return `<button type="button" class="qc-row" data-m="${m}" style="--c:${O.cssVar(m)}" title="${esc(T("Show on the globe", "Ukázat na glóbu"))}">
           <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
@@ -1774,7 +1775,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 55"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 56"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1825,7 +1826,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 55 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 56 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
