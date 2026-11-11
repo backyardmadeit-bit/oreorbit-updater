@@ -696,7 +696,7 @@ def about_page_cs(ref, cfg, today):
 <li>Živý atlas %(n_sites)d dolů, rafinerií a továren na magnety, %(n_routes)s a úzkých míst mezi nimi.</li>
 <li>Satelitní snímky každé lokality každý týden: fotografie Sentinel-2, odlesněná plocha od roku 2018, radar Sentinel-1 a tepelné mapy Landsat.</li>
 <li>Signály každých pár hodin: teplo v závodech, lodě v úžinách, zemětřesení a výstrahy, konflikty u dodavatelského řetězce.</li>
-<li>Měsíční data o dovozu do EU a termíny vývozních kontrol, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a týdenní přehled toho, co se hýbe.</li>
+<li>Měsíční data o dovozu do EU a termíny vývozních kontrol, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a týdenní přehled toho, co se mění.</li>
 <li>Pro firmy: monitoring surovin, na kterých závisíte, a posouzení připravenosti jedné výrobní řady pro vaše vedení. Viz <a href="services-cs.html">služby</a>.</li>
 <li><a href="index.html">Knihovna</a> stránek o každé surovině a lokalitě k citaci (anglicky) a měsíční <a href="dependency-index-cs.html">Index závislosti</a>.</li>
 </ul></section>

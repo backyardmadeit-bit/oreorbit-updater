@@ -34,7 +34,7 @@
   </div></div>
   <div class="dm-row"><h2>Projekty</h2><ul>
     <li><b>Bohemia Defense, od listopadu 2024</b>Nezávislé analýzy evropského obranného průmyslu, NATO, Ukrajiny a&nbsp;bezpečnosti v&nbsp;Africe, publikované zde a&nbsp;na LinkedInu, kde příspěvky dosahují až 450&nbsp;000 zobrazení.</li>
-    <li><b><a href="https://bohemiadefense.com/atlas/?lang=cs">OreOrbit</a></b>Bezplatný živý atlas dvanácti kritických surovin pro evropskou obranu a&nbsp;kosmonautiku: satelitní snímky 43 lokalit, lodě v&nbsp;klíčových úžinách, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a&nbsp;týdenní přehled toho, co se hýbe.</li>
+    <li><b><a href="https://bohemiadefense.com/atlas/?lang=cs">OreOrbit</a></b>Bezplatný živý atlas dvanácti kritických surovin pro evropskou obranu a&nbsp;kosmonautiku: satelitní snímky 43 lokalit, lodě v&nbsp;klíčových úžinách, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a&nbsp;týdenní přehled toho, co se mění.</li>
   </ul></div>
   <div class="dm-row"><h2>V médiích</h2><div>
     <p>Čínská služba BBC News mě citovala jako analytika k&nbsp;bezpečnosti návštěvy tchajwanské viceprezidentky v&nbsp;Praze, červenec 2025. <a href="https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad" rel="noopener">Číst článek</a></p>
