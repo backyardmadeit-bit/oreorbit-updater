@@ -4562,6 +4562,10 @@ const COUNTRY_CS = { China: "Čína", "United States": "Spojené státy", Austra
 const ctry = (c) => LANG === "cs" ? (COUNTRY_CS[c] || c) : c;
 const ISO2 = { CN: ["China", "Čína"], US: ["United States", "USA"], GB: ["United Kingdom", "Spojené království"], CH: ["Switzerland", "Švýcarsko"], NO: ["Norway", "Norsko"], JP: ["Japan", "Japonsko"], KR: ["South Korea", "Jižní Korea"], VN: ["Vietnam", "Vietnam"], PH: ["Philippines", "Filipíny"], MY: ["Malaysia", "Malajsie"], TW: ["Taiwan", "Tchaj-wan"], IN: ["India", "Indie"], TR: ["Türkiye", "Turecko"], RU: ["Russia", "Rusko"], KZ: ["Kazakhstan", "Kazachstán"], TJ: ["Tajikistan", "Tádžikistán"], MM: ["Myanmar", "Myanmar"], TH: ["Thailand", "Thajsko"], BO: ["Bolivia", "Bolívie"], ZA: ["South Africa", "Jihoafrická rep."], AU: ["Australia", "Austrálie"], CA: ["Canada", "Kanada"], CL: ["Chile", "Chile"], AR: ["Argentina", "Argentina"], BR: ["Brazil", "Brazílie"], MG: ["Madagascar", "Madagaskar"], SL: ["Sierra Leone", "Sierra Leone"], MN: ["Mongolia", "Mongolsko"], BI: ["Burundi", "Burundi"], RW: ["Rwanda", "Rwanda"], CD: ["DR Congo", "DR Kongo"], ZM: ["Zambia", "Zambie"], MZ: ["Mozambique", "Mosambik"], ID: ["Indonesia", "Indonésie"], UA: ["Ukraine", "Ukrajina"], RS: ["Serbia", "Srbsko"], IL: ["Israel", "Izrael"], AE: ["UAE", "SAE"], SG: ["Singapore", "Singapur"], HK: ["Hong Kong", "Hongkong"], MX: ["Mexico", "Mexiko"], PE: ["Peru", "Peru"], UZ: ["Uzbekistan", "Uzbekistán"], GE: ["Georgia", "Gruzie"], AM: ["Armenia", "Arménie"], LA: ["Laos", "Laos"], EG: ["Egypt", "Egypt"], MA: ["Morocco", "Maroko"], NG: ["Nigeria", "Nigérie"], XS: ["Serbia", "Srbsko"] };
 const iso2 = (c) => ISO2[c] ? (LANG === "cs" ? ISO2[c][1] : ISO2[c][0]) : c;
+/* build 56: "from <country>" in EU import lines. Czech needs the genitive and z/ze, so every ISO2 partner has its phrase; an unknown code falls back to "ze země <name>" */
+const ISO2_FROM_CS = { CN: "z Číny", US: "z USA", GB: "ze Spojeného království", CH: "ze Švýcarska", NO: "z Norska", JP: "z Japonska", KR: "z Jižní Koreje", VN: "z Vietnamu", PH: "z Filipín", MY: "z Malajsie", TW: "z Tchaj-wanu", IN: "z Indie", TR: "z Turecka", RU: "z Ruska", KZ: "z Kazachstánu", TJ: "z Tádžikistánu", MM: "z Myanmaru", TH: "z Thajska", BO: "z Bolívie", ZA: "z Jihoafrické republiky", AU: "z Austrálie", CA: "z Kanady", CL: "z Chile", AR: "z Argentiny", BR: "z Brazílie", MG: "z Madagaskaru", SL: "ze Sierry Leone", MN: "z Mongolska", BI: "z Burundi", RW: "ze Rwandy", CD: "z DR Kongo", ZM: "ze Zambie", MZ: "z Mosambiku", ID: "z Indonésie", UA: "z Ukrajiny", RS: "ze Srbska", IL: "z Izraele", AE: "ze SAE", SG: "ze Singapuru", HK: "z Hongkongu", MX: "z Mexika", PE: "z Peru", UZ: "z Uzbekistánu", GE: "z Gruzie", AM: "z Arménie", LA: "z Laosu", EG: "z Egypta", MA: "z Maroka", NG: "z Nigérie", XS: "ze Srbska" };
+const ccName = (c) => { if (ISO2[c]) return iso2(c); try { return new Intl.DisplayNames([LANG === "cs" ? "cs" : "en"], { type: "region" }).of(c) || c; } catch (e) { return c; } };
+const fromCc = (c) => LANG === "cs" ? ooNb0(ISO2_FROM_CS[c] || "ze země " + ccName(c)) : "from " + ccName(c);
 const AS_OF = "2026-10-23";
 
 /* ---- 1. the US sourcing rule for defence contracts (DFARS 252.225-7052) ---- */
@@ -4891,8 +4895,8 @@ function lensHtml(m) {
   let body = "";
   if (lensPick === "exec") {
     body = `<ul class="lens-list">
-      ${top ? li(`<b>${esc(pctTxt(top))}</b> of world ${esc((top.what || "mine output").toLowerCase())} comes from ${esc(top.who)} (${esc(top.note)}).`, `<b>${esc(pctTxt(top))}</b> světové produkce (${esc(trStr(top.what || "mine output").toLowerCase())}) pochází z: ${esc(ctry(top.who))} (${esc(top.note)}).`) : ""}
-      ${tt ? li(`EU imports of ${esc(rows[0].label.toLowerCase())} in ${tt.y}: <b>${fmtEur(tt.eur)}</b>, ${tt.pct}% from ${esc(iso2(tt.cc))}.`, `Dovoz do EU (${esc((TRADE_CS[rows[0].label] || rows[0].label).toLowerCase())}) v roce ${tt.y}: <b>${fmtEur(tt.eur)}</b>, ${tt.pct} % z: ${esc(iso2(tt.cc))}.`) : ""}
+      ${top ? li(`<b>${esc(pctTxt(top))}</b> of world ${esc((top.what || "mine output").toLowerCase())} comes from ${esc(top.who)} (${esc(top.note)}).`, `<b>${esc(pctTxt(top))}</b> světové produkce (${esc(trStr(top.what || "mine output").toLowerCase())}) pochází ${esc(CTRY_GEN[top.who] ? ooNb0("z " + CTRY_GEN[top.who]) : "z: " + ctry(top.who))} (${esc(top.note)}).`) : ""}
+      ${tt ? li(`EU imports of ${esc(rows[0].label.toLowerCase())} in ${tt.y}: <b>${fmtEur(tt.eur)}</b>, ${tt.pct}% from ${esc(iso2(tt.cc))}.`, `Dovoz do EU (${esc((TRADE_CS[rows[0].label] || rows[0].label).toLowerCase())}) v roce ${tt.y}: <b>${fmtEur(tt.eur)}</b>, ${tt.pct} % ${esc(fromCc(tt.cc))}.`) : ""}
       ${li(risk.hz.length || risk.cf.length ? `Right now: ${risk.hz.length ? `${risk.hz.length} live hazard${risk.hz.length > 1 ? "s" : ""}` : ""}${risk.hz.length && risk.cf.length ? " and " : ""}${risk.cf.length ? `armed conflict near ${risk.cf.map((x) => esc(x.s.name)).join(", ")}` : ""} near its sites.` : "No live hazard or recorded armed conflict near its sites on this atlas.",
         risk.hz.length || risk.cf.length ? `Právě teď: ${risk.hz.length ? `${risk.hz.length} živé hrozby` : ""}${risk.hz.length && risk.cf.length ? " a " : ""}${risk.cf.length ? `ozbrojený konflikt u: ${risk.cf.map((x) => esc(x.s.name)).join(", ")}` : ""} v blízkosti jeho lokalit.` : "U jeho lokalit v atlasu teď není žádná živá hrozba ani zaznamenaný ozbrojený konflikt.")}
       ${wl.length ? li(`Next date: <b>${esc(fmtDay(wl[0].date))}</b> · ${esc(wl[0].title)}`, `Nejbližší termín: <b>${esc(fmtDay(wl[0].date))}</b> · ${esc(wl[0].title)}`) : ""}
@@ -4901,7 +4905,7 @@ function lensHtml(m) {
   } else if (lensPick === "buy") {
     body = `<ol class="lens-list check">
       ${DFARS.mats[m] ? li(`Ask every supplier where the material was mined, refined and made. From 1 January 2027 US defence work cannot use ${m === "ree" ? "magnets" : "tungsten"} from China, Russia, Iran or North Korea at any stage.`, `Zjistěte u každého dodavatele, kde byl materiál vytěžen, rafinován a vyroben. Od 1. ledna 2027 nesmí americké obranné zakázky použít ${m === "ree" ? "magnety" : "wolfram"} z Číny, Ruska, Íránu ani Severní Koreje v žádné fázi.`) : ""}
-      ${tt ? li(`Concentration: ${tt.pct}% of EU ${esc(rows[0].label.toLowerCase())} imports come from ${esc(iso2(tt.cc))}${tt.pct > 65 ? ", above the EU's 65% benchmark" : ""}.`, `Koncentrace: ${tt.pct} % dovozu do EU (${esc((TRADE_CS[rows[0].label] || rows[0].label).toLowerCase())}) pochází z: ${esc(iso2(tt.cc))}${tt.pct > 65 ? ", nad hranicí 65 %, kterou si EU stanovila" : ""}.`) : ""}
+      ${tt ? li(`Concentration: ${tt.pct}% of EU ${esc(rows[0].label.toLowerCase())} imports come from ${esc(iso2(tt.cc))}${tt.pct > 65 ? ", above the EU's 65% benchmark" : ""}.`, `Koncentrace: ${tt.pct} % dovozu do EU (${esc((TRADE_CS[rows[0].label] || rows[0].label).toLowerCase())}) pochází ${esc(fromCc(tt.cc))}${tt.pct > 65 ? ", nad hranicí 65 %, kterou si EU stanovila" : ""}.`) : ""}
       ${li(`Sources outside China on this atlas: ${outside.length ? outside.map((s) => `<button class="linkbtn" data-site="${s.id}">${esc(s.name)}</button>`).join(", ") : "none yet"}.`, `Zdroje mimo Čínu v tomto atlasu: ${outside.length ? outside.map((s) => `<button class="linkbtn" data-site="${s.id}">${esc(s.name)}</button>`).join(", ") : "zatím žádné"}.`)}
       ${m === "w" ? li(`Check smelters against the <a href="${RMI_LISTS[0].u}" target="_blank" rel="noopener">RMI conformant list</a>; tungsten falls under the EU Conflict Minerals Regulation.`, `Ověřte hutě na <a href="${RMI_LISTS[0].u}" target="_blank" rel="noopener">seznamu RMI</a>; wolfram spadá pod nařízení EU o konfliktních minerálech.`) : ""}
       ${LIVE.prices && LIVE.prices.items && (LIVE.prices.items[m] || LIVE.prices.items[m + "_spot"]) ? li("Price trend: see the price chart below.", "Vývoj ceny: viz graf ceny níže.") : ""}
@@ -4991,7 +4995,7 @@ function teamListHtml() {
     }
     if (kind === "mat" && MATERIALS[id]) {
       const tt = tradeRows(id).length ? tradeTop(tradeRows(id)[0]) : null;
-      return `<li><button class="row-btn" data-mat="${id}"><i class="dot" style="background:${cssVar(id)}"></i><span><span class="rb-name">${esc(trStr(MATERIALS[id].name))}</span><span class="rb-sub">${tt ? T(`EU imports ${tt.y}: ${tt.pct}% from ${iso2(tt.cc)}`, `Dovoz do EU ${tt.y}: ${tt.pct} % z: ${iso2(tt.cc)}`) : ""}</span></span><small>${T("material", "surovina")}</small></button></li>`;
+      return `<li><button class="row-btn" data-mat="${id}"><i class="dot" style="background:${cssVar(id)}"></i><span><span class="rb-name">${esc(trStr(MATERIALS[id].name))}</span><span class="rb-sub">${tt ? T(`EU imports ${tt.y}: ${tt.pct}% ${fromCc(tt.cc)}`, `Dovoz do EU ${tt.y}: ${tt.pct} % ${fromCc(tt.cc)}`) : ""}</span></span><small>${T("material", "surovina")}</small></button></li>`;
     }
     return "";
   }).join("")}</ul></div>`;
@@ -5250,7 +5254,7 @@ function ragFor(m) {
 const RAG_TXT = { red: ["Red", "Červená"], amber: ["Amber", "Oranžová"], green: ["Green", "Zelená"] };
 const ragTxt = (l) => T(RAG_TXT[l][0], RAG_TXT[l][1]);
 const ccOf = (who) => CC_OF[who] || null;
-const CTRY_GEN = { China: "Číny", "DR Congo": "DR Kongo", Indonesia: "Indonésie", Australia: "Austrálie" };
+const CTRY_GEN = { China: "Číny", "DR Congo": "DR Kongo", Indonesia: "Indonésie", Australia: "Austrálie", "South Africa": "Jihoafrické republiky" };
 const CTRY_ACC = { China: "Čínu", "DR Congo": "DR Kongo", Indonesia: "Indonésii", Australia: "Austrálii" };
 const ctryGen = (c) => CTRY_GEN[c] || ctry(c), ctryAcc = (c) => CTRY_ACC[c] || ctry(c);
 function importShare(m) {
@@ -5436,7 +5440,7 @@ function renderMondayV13() {
         <span class="mon-big">${r.w ? `<b>${esc(pctTxt(r.w.x))}</b><small>${esc(ctry(r.w.x.who))} · ${esc(stageTxt(r.w.k).toLowerCase())}</small>` : `<b>–</b><small>${T("no public world figure", "bez veřejného světového údaje")}</small>`}</span>
         <span class="mon-why">${r.why.length ? esc(r.why.join(" · ")) : T("Nothing moving this week.", "Tento týden bez pohybu.")}</span>
         <span class="mon-rows">
-          <span><em>${T("EU imports", "Dovoz do EU")}</em>${imp ? esc(T(`${imp.tp.pct}% from ${iso2(imp.tp.cc)}, ${imp.tp.y}`, `${imp.tp.pct} % z: ${iso2(imp.tp.cc)}, ${imp.tp.y}`)) : esc(LIVE.trade ? T("no data", "bez dat") : T("loading", "načítám"))}</span>
+          <span><em>${T("EU imports", "Dovoz do EU")}</em>${imp ? esc(T(`${imp.tp.pct}% ${fromCc(imp.tp.cc)}, ${imp.tp.y}`, `${imp.tp.pct} % ${fromCc(imp.tp.cc)}, ${imp.tp.y}`)) : esc(LIVE.trade ? T("no data", "bez dat") : T("loading", "načítám"))}</span>
           <span><em>${T("Next", "Další")}</em>${dl ? esc(`${dl.when ? trStr(dl.when) : fmtDay(dl.date)} · ${daysUntil(dl.date) === 0 ? T("today", "dnes") : T(`${daysUntil(dl.date)} days`, `${daysUntil(dl.date)} dní`)}`) : T("no dated deadline", "bez data")}</span>
         </span>
       </button>`;
@@ -6263,7 +6267,7 @@ function renderMonday() {
         <span class="mon-big">${r.w ? `<b data-count>${esc(pctTxt(r.w.x))}</b><small>${esc(ctry(r.w.x.who))} · ${esc(stageTxt(r.w.k).toLowerCase())}</small>` : `<b>–</b><small>${T("no public world figure", "bez veřejného světového údaje")}</small>`}</span>
         <span class="mon-why">${r.why.length ? esc(r.why.join(" · ")) : T("Nothing moving this week.", "Tento týden bez pohybu.")}</span>
         <span class="mon-rows">
-          <span><em>${T("EU imports", "Dovoz do EU")}</em>${imp ? esc(T(`${imp.tp.pct}% from ${iso2(imp.tp.cc)}, ${imp.tp.y}`, `${imp.tp.pct} % z: ${iso2(imp.tp.cc)}, ${imp.tp.y}`)) : esc(LIVE.trade ? T("no data", "bez dat") : T("loading", "načítám"))}</span>
+          <span><em>${T("EU imports", "Dovoz do EU")}</em>${imp ? esc(T(`${imp.tp.pct}% ${fromCc(imp.tp.cc)}, ${imp.tp.y}`, `${imp.tp.pct} % ${fromCc(imp.tp.cc)}, ${imp.tp.y}`)) : esc(LIVE.trade ? T("no data", "bez dat") : T("loading", "načítám"))}</span>
           <span><em>${T("Next", "Další")}</em>${dl ? esc(`${dl.when ? trStr(dl.when) : fmtDay(dl.date)} · ${daysUntil(dl.date) === 0 ? T("today", "dnes") : T(`${daysUntil(dl.date)} days`, `${daysUntil(dl.date)} dní`)}`) : T("no dated deadline", "bez data")}</span>
         </span>
       </button>`;
@@ -7331,7 +7335,7 @@ window.OO = {
   T, esc, safeUrl, fmtDay, daysUntil, todayIso, toast, cssVar, reduceMotion,
   get LANG() { return LANG; }, get NEWS() { return NEWS; }, get DEADLINES() { return DEADLINES; }, get layers() { return layers; }, setLayer: (k, on) => setLayer(k, on), renderSecList: () => renderSecList(), get SND() { return typeof SND !== "undefined" ? SND : null; },
   SITES, SITE_BY_ID, MATERIALS, STAGES, SYSTEMS, SYS_ICON, ORDER, PIN, SCENARIOS, EU_SP, EOL_RIR, ONLINE, PART_KEYS, STRATEGIC, LIVE,
-  worstOf, ragFor, deadlinesFor, newsFor, importShare, mName, stageTxt, stageWhat, ctry, pctTxt, trStr, chainOf,
+  worstOf, ragFor, deadlinesFor, newsFor, importShare, mName, stageTxt, stageWhat, ctry, pctTxt, trStr, chainOf, fromCc,
   showSite(id) { goGlobe(); select(id, true); },
   showMaterial(m) { goGlobe(); setFilter(m, true); },
   showParts(parts, name) {

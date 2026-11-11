@@ -611,9 +611,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (nav && !nav.querySelector('a[href="#check"]')) { const x = document.createElement("a"); x.href = "#check"; x.textContent = T("Quick check", "Rychlá kontrola"); nav.insertBefore(x, nav.firstChild); }
     const out = sec.querySelector(".qc-out");
     const PENT = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24, 27];   // v47: one note per mineral in ORDER (12); with ten, nickel and graphite were silent
-    let names = null;
-    try { names = new Intl.DisplayNames([O.LANG === "cs" ? "cs" : "en"], { type: "region" }); } catch (e) { names = null; }
-    const land = (cc) => { if (!cc) return ""; if (O.LANG === "cs" && cc === "CN") return "Číny"; try { return (names && names.of(cc)) || O.ctry(cc); } catch (e) { return O.ctry(cc); } };
+    const imTxt = (tp) => `${tp.pct}${O.LANG === "cs" ? "\u00a0%" : "%"} ${O.fromCc(tp.cc)}`;   // build 56: "24 % z USA", "32 % z Norska" (was the nominative after "z")
     const stg = (w) => (w.x.what ? O.trStr(w.x.what) : O.stageTxt(w.k) || "").toLowerCase();   // build 56: the tightest stage in the page language; x.what is English in STAGES, its Czech is in CS
     let current = "drones", last = null;
     function printResult() {
@@ -656,7 +654,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         if (x && x.pct > 65) { conc++; if (x.who === "China") cn++; }
         (O.deadlinesFor(m) || []).forEach((d) => { if (O.daysUntil(d.date) >= 0 && (!next || d.date < next.date)) next = d; });
         const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Vede Čína")}</b> <span>${T("no public world total", "veřejný světový údaj neexistuje")}</span>`;
-        const im = imp && imp.tp ? `${imp.tp.pct}% ${T("from", "z")} ${esc(land(imp.tp.cc))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
+        const im = imp && imp.tp ? `${esc(imTxt(imp.tp))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
         return `<button type="button" class="qc-row" data-m="${m}" style="--c:${O.cssVar(m)}" title="${esc(T("Show on the globe", "Ukázat na glóbu"))}">
           <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
           <span class="qc-share">${share}<span class="qc-bar"><span style="width:${x ? Math.min(100, x.pct) : 0}%"></span></span></span>
@@ -673,7 +671,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           if (vm) col = getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim() || getComputedStyle(document.body).getPropertyValue(vm[1]).trim() || "#9aa1a5";
           return { m, name: O.mName(m), use: p[2][m], color: col, pct: x ? x.pct : null,
             share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}` : T("China leads (no public world total)", "Vede Čína (veřejný světový údaj neexistuje)"),
-            imp: imp && imp.tp ? `${imp.tp.pct}% ${T("from", "z")} ${land(imp.tp.cc)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
+            imp: imp && imp.tp ? `${imTxt(imp.tp)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
       // v43 funnel: 1. monitoring for exactly these minerals, 2. the full review, 3. a call (as a text link)
       const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
       const BK43 = O.safeUrl ? (O.safeUrl(C43.bookingUrl) || "mailto:david@madali.cz") : (C43.bookingUrl || "mailto:david@madali.cz");
