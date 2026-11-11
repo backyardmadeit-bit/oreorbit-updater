@@ -1248,7 +1248,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const inSel = (ms) => !sel.length || !ms.length || ms.some((m) => sel.includes(m));
       const total = PK().querySelectorAll(".chip2[data-my]").length, isAll = !sel.length || sel.length === total;
       allE.setAttribute("aria-pressed", String(isAll));
-      const nm = sel.map((m) => { const c = PK().querySelector('.chip2[data-my="' + m + '"]'); return c ? c.textContent.trim() : m; }).join(", ");
+      // names in lower case: they sit mid-sentence ("8 surovin – vzácné zeminy, mangan")
+      const nm = sel.map((m) => { const c = PK().querySelector('.chip2[data-my="' + m + '"]'); return (c ? c.textContent.trim() : m).toLowerCase(); }).join(", ");
       const prod = window.ooProduct && window.ooQC && window.ooQC[window.ooProduct];
       const same = prod && prod.mins.length === sel.length && prod.mins.every((m) => sel.includes(m));
       const txt = isAll ? T("Showing all twelve minerals across Europe. Tap one to focus on the minerals you answer for.", "Zobrazeno všech dvanáct surovin v celé Evropě. Klepnutím se zaměříte na ty, za které odpovídáte.")

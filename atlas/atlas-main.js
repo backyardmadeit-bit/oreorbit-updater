@@ -34,7 +34,7 @@ const CS_LEVEL = { red: "červená", orange: "oranžová", yellow: "žlutá", gr
 const CS_RX = [
   [/^Live sunlight · (\d\d:\d\d) UTC$/, (m, t) => `Skutečné osvětlení · ${t} UTC`],
   [/^Sunlight (\d\d:\d\d) UTC$/, (m, t) => `Osvětlení ${t} UTC`],
-  [/^(\d+) near supply chain$/, (m, n) => `${n} u dodavatelského řetězce`],
+  [/^(\d+) near supply chain$/, (m, n) => `${n} ${csPlural(+n, "hrozba", "hrozby", "hrozeb")} u dodavatelského řetězce`],
   [/^in (\d+) days?$/, (m, n) => `za ${n} ${csPlural(+n, "den", "dny", "dní")}`],
   [/^in (\d+ d \d+ h|\d+ h \d+ min|\d+ min \d+ s)$/, (m, x) => `za ${x}`],
   [/^now$/, () => "teď"],
@@ -4778,8 +4778,8 @@ function conflictMarkers() {
   return groups.map((c, i) => ({
     id: "cf-" + i, kind: "CF", src: "UCDP", lat: c.lat, lng: c.lng, t: parseDay(c.last), n: c.n, deaths: c.deaths, area: c.w,
     title: T(`Armed conflict: ${c.n} event${c.n > 1 ? "s" : ""}`, `Ozbrojený konflikt: ${c.n} událostí`), place: `${c.where}, ${c.country}`,
-    detail: T(`${c.n} events and ${c.deaths} deaths recorded nearby, ${cfPeriod()}. Last: ${fmtDay(c.last)}.`, `${c.n} událostí a ${c.deaths} úmrtí v okolí, ${cfPeriod()}. Poslední: ${fmtDay(c.last)}.`),
-    url: "https://ucdp.uu.se/", short: `${c.n} ${c.n === 1 ? T("event", "událost") : T("events", "udál.")}`, color: "#d2b0ff", r: 0.0062 + Math.min(0.026, Math.sqrt(c.n) * 0.0016),
+    detail: T(`${c.n} events and ${c.deaths} deaths recorded nearby, ${cfPeriod()}. Last: ${fmtDay(c.last)}.`, `${c.n} ${csPlural(c.n, "událost", "události", "událostí")} a ${c.deaths} úmrtí v okolí, ${cfPeriod()}. Poslední: ${fmtDay(c.last)}.`),
+    url: "https://ucdp.uu.se/", short: `${c.n} ${T(c.n === 1 ? "event" : "events", csPlural(c.n, "událost", "události", "událostí"))}`, color: "#d2b0ff", r: 0.0062 + Math.min(0.026, Math.sqrt(c.n) * 0.0016),
     pp: c.n >= 100 ? 1100 : c.n >= 25 ? 1600 : c.n >= 5 ? 2200 : 3200, amp: c.n >= 100 ? 2.4 : c.n >= 25 ? 2.0 : c.n >= 5 ? 1.6 : 1.1, big: c.n >= 10
   }));
 }

@@ -1912,7 +1912,7 @@ def feed_brief(prev):
         mats_cs = ", ".join(MAT_NAME[m][1] for m in d["materials"] if m in MAT_NAME) or "Termín"
         pts.append({"materials": d["materials"], "source": d["source"] or "OreOrbit calendar", "url": d["url"],
                     "text": "%s: %s on %s, in %d days." % (mats_en, d["title"], day_txt(d["date"], False), n),
-                    "text_cs": "%s: %s, %s, %s." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True), _cs_days(n))})
+                    "text_cs": "%s: %s (%s, %s)." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True), _cs_days(n))})
         for x in dls[:3]:
             if x["date"] <= (TODAY + dt.timedelta(days=90)).isoformat():
                 watch_en.append("%s: %s" % (day_txt(x["date"], False), x["title"]))
