@@ -924,3 +924,5 @@ p.oo-cons { margin: 0; cursor: default; }
 
 /* v53: the footer's small print stays quiet but readable (contrast about 6:1 on the dark background) */
 .site-foot .legal, .site-foot .legal span, .oo-build { color: #8b9296; }
+/* build 54: monitoring as three promises, the data file as small print */
+.pl3-fine { margin: 0 0 8px; font-size: 13px; color: var(--dim, #a3aaae); }
