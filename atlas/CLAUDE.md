@@ -1,0 +1,153 @@
+# atlas/CLAUDE.md — the OreOrbit atlas (`bohemiadefense.com/atlas`)
+
+The root `CLAUDE.md` covers the rules, deploy, minerals, business model, brand and checks. This file is atlas detail.
+This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex skips it.
+
+## Files (repo `atlas/` → WEDOS `atlas/`)
+- **`index.html`**: page shell, CSS variables (mineral colours `--ree … --mn`), static SEO copy, JSON-LD. Script tags carry `?v=` cache-busters: **bump them on every change**.
+- **`index.php`**: serves `index.html` with a server-rendered news/brief block for crawlers and sends `Cache-Control: no-store`. For Czech it swaps the title, meta and hero texts (see builds 49 and 52).
+- **`atlas-main.js`**: the core.
+  - Data tables: `GROUPS/ORDER, PIN, MATERIALS, STAGES, STRATEGIC, SYSTEMS, SITES, ROUTES, PROD, CENTROID, ELEM, DEADLINES`, plus the `CS` dictionary.
+  - Globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base.
+  - `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
+- **`atlas-v2.js`**: layered additions `v20 … v48` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel).
+  - The footer shows `build NN` (currently **58**).
+  - `?debug=1` shows a diagnostics panel. Errors are counted via `count.php`.
+- **`atlas-v2.css`**: styles, appended per version.
+- **`config.js`**: public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
+- **`data/reference.json`**: the **single source of truth for the library pages**.
+  - Contents: `materials{info,stages,worst,deadlines,euSp,rir}`, `sites` (43), `order` (12), `routes` (11 ids, which must match `ROUTES` in `atlas-main.js`, or the scan fails), `scenarios`, `online`.
+  - Keep it in sync with `atlas-main.js` (extract via node; see the Phase 4 history).
+  - **A deadline lives in three places:**
+    - `DEADLINES` in `atlas-main.js`. The Monday emails read `DEADLINES` from the live page.
+    - `ROAD` in `atlas-main.js`.
+    - `materials.*.deadlines` here, with `id`, `detail` and `addedAt`. The robot copies these to `live-data/watch.json`.
+  - A moved deadline gets a new `id`.
+- **`data/other-minerals.json`**: the allow-list of minerals a monitoring client can add beyond the tracked twelve.
+  - Fields: `other` (id, en, cs, news query `q`, aliases `aka`); `tracked` (aliases that map typed names to tracked ids); `max` 3.
+  - Read by the atlas autocomplete (v44), by `other-lib.php` (`oo_other_ids()`, used by `go-pay.php` and `stripe-webhook.php`; only these ids pass) and by the robot (`_other_terms`, `_other_news`).
+  - Clients' `other` column holds ids like `cu,sn`. Older free text is matched by name or kept as typed.
+- **PHP endpoints:**
+  - `subscribe.php`: free brief sign-up → CSV, welcome email. Replies before sending mail.
+  - `go-pay.php`: redirect to the Stripe Payment Link, with the minerals hex-encoded in `client_reference_id` as `mins|other|lang`.
+  - `stripe-webhook.php`: activates and deactivates paid clients, sends the welcome email. Answers Stripe before emailing.
+  - `manage.php`: → Stripe customer portal.
+  - `subs-export.php`: the robot reads subscribers and state through it. Same key as `update.php`.
+  - `unsubscribe.php`.
+  - `stats.php`: private and key-protected. Traffic, data freshness from `live-data/live/runstatus.json`, subscriber list + CSV, paying-client delivery table.
+  - `mail-test.php`.
+  - `mail-lib.php`: branded HTML email, SMTP 465 → 587 → `mail()` fallback, welcome emails, `oo_reply_now`.
+  - `count.php`: anonymous event counter, key format `^[a-z0-9:-]{1,40}$`.
+- **Server-only config** (never commit, never show; templates are `*.example.php`):
+  - `pay-config.php`: `payment_link`, `webhook_secret`, `portal_link`
+  - `mail-config.php`: SMTP user and password
+  - `update-config.php`: key hash
+- **`subs/`** (not web-readable):
+  - `subscribers.csv` (`date, plan, email, minerals, product, lang, other`)
+  - `monitoring-active.txt` (paying emails, managed by the webhook)
+  - `state.json` (robot state + delivery log)
+  - `unsubscribed.txt`, `welcomed.txt`, `customers.json`
+- **Known harmless 404s:** `textures/earth-day-hi.jpg`, `earth-night-hi.jpg`. They were never uploaded; the globe falls back to the normal textures.
+
+## Pitfalls (learned the hard way)
+- **The atlas rebuilds DOM it owns** (e.g. `#mon-pick`, the whole This week section in EN). Never keep element references: look them up afresh (`PK()`), delegate clicks, and keep the 150 ms safety check. Use `window.ooSetMy(list)` to set the whole selection at once.
+- **The translation pass re-applies old CS strings after load.** **Pin** new texts (v31 `pin()` with canonical HTML, Czech spaces applied), or they revert.
+- **MutationObservers must not react to their own writes.** That caused page freezes twice.
+- **If the hero copy changes in JS** (v17 `clarity()`, v29 `keep()`, v31 `pin()`), change the static HTML and the `index.php` Czech swaps too (build 52).
+
+## Done in earlier builds
+- **Build 43 (funnel):** the quick check result leads to a primary CTA, "Get alerts for these N minerals".
+  - `.qc-mon` sets the plan via `window.ooMonSet`, scrolls to `#teams .pl3-b` and counts `act:qc-mon`.
+  - The full review is the secondary option; the call is a text link.
+- **Build 44 (validation):** "Other minerals" are chips from `data/other-minerals.json`.
+  - Autocomplete, with an inline error, and payment blocked for unknown words. Tracked names are added to the selection.
+  - The same allow-list runs in `go-pay.php` and the webhook.
+  - The robot shows "no news found in the last 14 days" per quiet term in the paid Monday edition, and lists quiet terms in David's delivery report (`state.other[term].first/hit`).
+- **Build 46 (globe):**
+  - Ships are drawn after the clouds (`renderOrder 3/4`) with a neutral light-disc/dark-rim marker sized by zoom (`shipMarkTex`, hidden close in).
+  - Site labels show from `cam.dist < 2.45`, placed by priority (selected, hovered, filtered mineral, nearest centre). Collision boxes also avoid ship and hazard labels, and the count is capped by zoom.
+  - The robot uses `s2_clear_scene(relaxed=True)` for pictures over 30 days old: scenes < 80 % cloud, box ≥ 75 % clear, stores `nowClearPct`.
+  - The drawer shows "Last clear view: date, N days ago" with a link to the radar view, or "Partly cloudy: X % clear".
+- **Build 47:**
+  - Picking anything during the guided tour ends it: `leaveTourForPick()` is in every `select*`, and the drawer is hidden while `body.touring`.
+  - Globe legend `#glegend`: shown when `cam.dist > 1.85`, no drawer is open and no tour is running. It is foldable, remembered in `localStorage oo-legend`.
+  - Quick check levels are High / Medium / Low risk, with a key line and the reasons as a tooltip.
+  - `PENT` has 12 notes.
+- **Build 49 (audit fixes):**
+  - One `h1` per page. The static SEO heading is `h2.oo-h1`, styled like the old h1.
+  - `index.php` swaps `<title>`, `og:title` and `twitter:title` by regex for Czech, so they follow `index.html`.
+  - First load uses 1k textures and the small cloud layer.
+  - The 4 hi-res cloud tiles load on desktop 4 s after start (idle), or as soon as the visitor explores. Never on phones (`LITE`).
+  - The 2k texture upgrade waits for `body.exploring` on small screens, and is skipped on slow connections (`saveData`, 2g/3g).
+- **Build 50 (mobile speed):**
+  - All atlas scripts load with `defer`.
+  - On phones (`LITE`) the globe stays still until the visitor touches the canvas, explores, starts the tour or picks something. `woke = false` means one picture, redrawn only when something outside the animations changes. The opening sweep is skipped. Desktop is unchanged.
+  - Earth textures and three.js are cached for a year: `ExpiresByType` sits inside the `FilesMatch`, because it wins over `ExpiresDefault`.
+- **Build 51:**
+  - No consent checkbox on the sign-up forms. Submitting a brief form is the consent; a plain notice line (`p.oo-cons`) says what happens, with the privacy link.
+  - The page still sends `consent: true`, which `subscribe.php` requires.
+  - Monitoring goes straight to Stripe (`.pl3-pay`), so it has no email form.
+- **Build 52 (no layout shift):**
+  - The opening in `index.html` is written exactly as the atlas ends up showing it:
+    - the Dependency Index badge as an invisible `.idx-badge.idx-wait` placeholder that `headerAndBadge()` fills
+    - label hidden
+    - headline with `<br>`
+    - `#cta-check` + a ghost "Explore the globe" button
+    - assess hidden
+  - `index.php` swaps those texts to Czech on the server, so nothing moves or changes language after load.
+  - The three latin fonts are preloaded (Czech adds Hanken latin-ext).
+- **Build 53:** the footer small print (`#oo-who`, `#oo-pub`, `.oo-build`) is `#8b9296`, contrast 6.4:1. PageSpeed mobile for the atlas was 72 / 97 / 100 / 100 before it, with CLS 0.
+- **Build 54:** the Monitoring plan is three promises instead of a feature list:
+  - watch around the clock
+  - you hear from us when something changes, and every Monday
+  - one question a month, answered by a person within two working days
+
+  The weekly data file is small print (`.pl3-fine`). The same wording is in the services pages (EN/CS), the legal page, the paid welcome emails (`mail-lib.php`, robot `_welcome`) and a "Your question" section in the paid Monday edition. Clients ask by replying to any monitoring email; David answers.
+- **Build 55:** the unused older plan layouts in `atlas-v2.js` (`renderTeams`, v20, v24, v25, v26; replaced on the page by v27 `.pl3`) read the monitoring price from `config.js` (`MP`) and carry the build 54 promises. No typed price is left in the atlas JS (no €390, no €500 briefings).
+- **Build 56 (quick check stages in Czech):**
+  - The Czech quick check shows the tightest stage in Czech ("94 % Čína slinuté magnety").
+  - `STAGES[m].*.what` is English and its Czech lives in `CS`. Any code that prints `x.what` must pass it through `trStr()` *before* `toLowerCase()`: the translation pass only matches the capitalised key.
+  - `CS` now says "Primární hořčík" and "Elektrolytický mangan", matching the Czech sales guide.
+  - Czech "from <country>" in EU import lines (quick check rows and PDF, drawer, lists) comes from `fromCc(cc)` in `atlas-main.js`.
+    - `ISO2_FROM_CS` holds the genitive with z/ze: "z Norska", "z USA", "ze Švýcarska". It is exported as `OO.fromCc`.
+    - A new partner code in `ISO2` needs its phrase there, otherwise the page shows "ze země <name>".
+  - Text built by concatenation never meets the translation pass, so it goes through `ctry()` / `trStr()` / `T()` in JS. This covers the drawer source line "Kdo ji těží", stage notes, the hidden `#cp-table` and the downloaded one-page brief.
+  - Site places are translated by the full "place, country" key in `CS`, so a new site needs one. Countries go through `COUNTRY_CS`.
+  - For Czech, the one-page brief applies `csNumbers` to its text (not the CSS).
+- **Build 56 (language and Czech wording):**
+  - **Language in the URL:**
+    - `?lang=cs|en` wins over the stored choice and is remembered.
+    - Switching language goes to that language's URL (`?lang=cs`, or none for English), so `index.php` renders the opening in it.
+  - **Translation patterns:** a `CS_RX` pattern must never half-translate. "Explore X" stays English unless X has a Czech key.
+  - **Countries:**
+    - "In <country>" in Czech goes through `inCtry(c)` (`CTRY_LOC`: "v Číně", "na Ukrajině"; never "v zemi Čína"). The genitive goes through `ctryGen` (`CTRY_GEN`).
+    - Feed country names (GDACS place lists, UCDP countries and "Government of X" actors) go through `csCountry()`: `COUNTRY_CS` first, then the browser's `Intl.DisplayNames`.
+    - Globe hazard labels show at most three places plus "+N" (`hzShort`).
+  - **Grammar helpers:**
+    - Plurals: `csPlural` in the atlas; `_cs_pl` and `_cs_days` in the robot.
+    - "z"/"ze" before a number: `zeZ` / `_cs_z` ("ze 43", "z 59").
+    - Months in the locative ("v září 2026"): `MON_CS_LOC` and `monthLoc`; the robot uses `MONTH_CS_LOC`.
+  - **Wording:**
+    - "co se mění", not "co se hýbe"
+    - "Co se změnilo", not "pohnulo"
+    - "tepelná anomálie", not "pixely horké jako pec"
+    - "Přehled tohoto týdne", not "Brief"
+  - The Czech copy says "AI agent", never "Claude".
+  - Changing the English of a CS key (method paragraph, changelog) means re-keying its Czech, or the Czech page shows English.
+- **Build 56 (cutting and robot Czech):**
+  - Text cut to its first sentence (`first()` in atlas-v2 This week and the brief strip) ends only at "period, space, capital letter", so Czech dates ("15. listopadu") are not cut.
+  - The robot's weekly brief `text_cs` uses `TRADE_CS` for the Comext product names (a new `TRADE_CODES` label needs its Czech there) and natural word order (no "v srpnu 2026 97 %").
+  - The live brief keeps the text it was written with. After a wording change in `feed_brief`, run Actions → Update with `force`, or wait for Monday.
+  - Satellite day counts in Czech say "dní s měřením" / "s platným měřením" (not "viděných dní").
+- **Build 57 (data audit, 11 Nov 2026):**
+  - Every world share, tonnage and source moved to USGS MCS 2026 (2025 data) and IEA GCMO 2026: W 79 %, Sb 36 %, Ti sponge 70 %, Li mine Australia 32 %, Co mine DR Congo 74 %, Ni Indonesia 67 %, battery graphite 94 %.
+  - Cobalt's tightest stage is now refining (>75 % China).
+  - The ammunition system's chokepoint is tungsten.
+  - Jadar (care and maintenance since Nov 2025) and Vittangi (final investment decision targeted for early 2027) have no online date.
+  - `ROAD` adds the EU's second strategic-project call (46 projects, 9 Oct 2026).
+  - The hero card reads `${over} of ${ORDER.length}`.
+  - The findings table with sources is in the PR.
+- **Build 58 (SEO/GEO, 12 Nov 2026):**
+  - JSON-LD in `index.html` carries the same `knowsAbout` as the library pages (see `updater/CLAUDE.md`).
+  - The school was dropped from the team credit in `atlas-v2.js`.
+  - The readiness review is scoped and priced in the free 30-minute intro call.
