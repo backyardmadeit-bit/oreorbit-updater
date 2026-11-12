@@ -7,7 +7,8 @@ set -euo pipefail
 
 # Paths the deploy must never write: server-only secrets, personal data, stats, and everything the
 # robot owns (see ALLOWED in atlas/update.php). Most are git-ignored; this is the safety net.
-PROTECTED='^atlas/((pay|mail|update)-config\.php$|.*\.example\.php$|subs/|stats/|live-data/|img/|p/|sitemap\.xml$|data/terrain/|data/(imagery|orbit-extras|timelapse|landsat|emit)\.json$|(.*/)?\.DS_Store$)'
+# CLAUDE.md files are notes for Claude: tracked in git, never uploaded.
+PROTECTED='^atlas/((pay|mail|update)-config\.php$|.*\.example\.php$|subs/|stats/|live-data/|img/|p/|sitemap\.xml$|data/terrain/|data/(imagery|orbit-extras|timelapse|landsat|emit)\.json$|(.*/)?\.DS_Store$|(.*/)?CLAUDE\.md$)'
 
 if [ "$RANGE" = "all" ]; then
   git ls-files -- atlas/ > /tmp/candidates

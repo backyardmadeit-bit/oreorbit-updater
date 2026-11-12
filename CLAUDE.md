@@ -1,104 +1,126 @@
 # CLAUDE.md — OreOrbit / Bohemia Defense / madali.cz
 
-Owner: David Madali, Prague (sole trader, IČO 22229957, not a VAT payer). Bohemia Defense is a **project/brand, not a company**.
-Mac user. Reply to David in Czech unless he writes in English. Be technical and brief.
+This repo is **public**. Keep personal, sales and account details out of it, and out of every file Claude writes here.
+
+This file is the hub. More detail loads when you work in a folder:
+- [`atlas/CLAUDE.md`](atlas/CLAUDE.md): atlas files, PHP endpoints, build notes 47–58, Czech wording rules, atlas pitfalls.
+- [`updater/CLAUDE.md`](updater/CLAUDE.md): robot feeds, emails, mail safety net, library pages, SEO/GEO.
+- `docs/wordpress/README.md`: WordPress pages and the site-wide JSON-LD.
+- `docs/sales/README.md`: the sales guide PDF.
+
+Owner: David Madali, Prague, a sole trader (IČO 22229957, not a VAT payer). Bohemia Defense is a **project/brand, not a company**.
+Reply to David in Czech unless he writes in English. Be technical and brief.
 
 ## Working rules (non-negotiable)
-- **Every change goes through a PR branch.** Validate the whole update (checks below), then merge to `main`. Never push straight to `main`.
-- **Never commit secrets.** Keys live in GitHub Secrets and in server-only PHP files (see Secrets). Never print them in chat or logs.
-- **Verify, don't assume.** Before claiming "done", run the checks, render the page, and scan the *built output* (not just source) for stale numbers.
-- After any change to visible counts (minerals, sites, routes), run the consistency scan (see Checks) across all three sites **and images** (OG images contain text).
+- **Every change goes through a PR branch.**
+  - Validate the whole update (checks below).
+  - Claude pushes the branch and opens the PR with `gh`; David merges. Never push straight to `main`.
+  - Several sessions may share one checkout: work in a worktree, never switch branches or stash there, and commit only your own files.
+- **Never commit secrets.** Keys live in GitHub Secrets and in server-only PHP files (see `atlas/CLAUDE.md`). Never print them in chat or logs.
+- **Verify, don't assume.** Before claiming "done", run the checks, render the page, and scan the *built output* (not just the source) for stale numbers.
+- After any change to visible counts (minerals, sites, routes), run the consistency scan (see Checks) across all three sites **and images**: OG images contain text.
 
 ## The three sites
 | Site | Stack | Hosting / deploy |
 |---|---|---|
-| `bohemiadefense.com/atlas` (OreOrbit) | static HTML/JS (three.js globe) + small PHP endpoints | WEDOS shared hosting, folder `/www/domains/bohemiadefense.com/atlas`; source in this repo (`atlas/`), auto-deployed over FTPS after merge (see Atlas deploy) |
-| `bohemiadefense.com` | WordPress (Rank Math, W3 Total Cache); homepage + founder pages are Custom HTML blocks | WEDOS; HTML pasted into WP pages `home`, `cs`, `david-madali`, `david-madali-cz`; root files (`llms.txt`) via WebFTP |
-| `madali.cz` | static HTML (EN `index.html`, CS `cs/index.html`) | GitHub Pages repo |
+| `bohemiadefense.com/atlas` (OreOrbit) | static HTML/JS (three.js globe) + small PHP endpoints | WEDOS shared hosting, folder `/www/domains/bohemiadefense.com/atlas`. Source is `atlas/` in this repo, auto-deployed over FTPS after merge (see Atlas deploy). |
+| `bohemiadefense.com` | WordPress (Elementor, Rank Math, W3 Total Cache) | WEDOS. HTML is pasted by hand into the home pages (EN/CS) and the founder pages `david-madali` and `david-madali-cz`. Root files (`llms.txt`) go up via WebFTP. See `docs/wordpress/`. |
+| `madali.cz` | static HTML (EN `index.html`, CS `cs/index.html`) | GitHub Pages, repo `backyardmadeit-bit/madali.cz` |
 
-Robot: GitHub repo `oreorbit-updater` (Python), workflow `.github/workflows/update.yml`, cron **every 3 hours**, plus a daily heartbeat commit (`last-run.txt`) that keeps the schedule alive (GitHub disables schedules after 60 days without repo activity in public repos).
+Robot:
+- Python in `updater/`, workflow `.github/workflows/update.yml`, cron **every 3 hours**.
+- A daily heartbeat commit (`last-run.txt`) keeps the schedule alive: GitHub disables schedules after 60 days without repo activity in public repos.
 
 ## Atlas deploy (since 2026-11-04)
-- Source of truth for hand-written atlas files is `atlas/` in this repo. **Do not edit the atlas via WebFTP any more**: the next deploy overwrites server files with the repo version.
-- Workflow `.github/workflows/deploy-atlas.yml` + `.github/scripts/deploy-atlas.sh` (lftp over FTPS, cert verified, temp file + rename):
-  - **PR:** read-only check — logs in, verifies `index.html`, `atlas-main.js`, `update.php` exist (login must land in the atlas folder), lists what the merge would upload.
-  - **Push to `main`:** uploads only atlas files changed in that push. **Never deletes** on the server (files removed in git are reported as a notice and must be removed by hand).
+- The source of truth for hand-written atlas files is `atlas/` in this repo. **Do not edit the atlas via WebFTP any more**: the next deploy overwrites server files with the repo version.
+- Workflow `.github/workflows/deploy-atlas.yml` + `.github/scripts/deploy-atlas.sh` (lftp over FTPS, certificate verified, temp file + rename):
+  - **PR:** read-only check. It logs in, verifies that `index.html`, `atlas-main.js` and `update.php` exist (the login must land in the atlas folder), and lists what the merge would upload.
+  - **Push to `main`:** uploads only the atlas files changed in that push. **It never deletes** on the server: files removed in git are reported as a notice and must be removed by hand.
   - **Manual run** (Actions → Deploy atlas → Run workflow, `full`): uploads every tracked atlas file.
-- FTP account `w366378_atlas`, chrooted to the atlas folder (remote paths are relative to `atlas/`). GitHub Secrets: `FTP_HOST`, `FTP_USER`, `FTP_PASS`; optional repo variable `FTP_VERIFY_CERT=no` if the certificate ever stops matching.
-- **Not in the repo and never deployed** (git-ignored and skipped by the script's `PROTECTED` regex): server-only configs (templates `*.example.php` are in the repo), `subs/*`, `stats/*` (only their `.htaccess` is tracked), and everything the robot owns on the server via `update.php` `ALLOWED`: `live-data/`, `img/`, `p/`, `sitemap.xml`, `data/terrain/`, `data/{imagery,orbit-extras,timelapse,landsat,emit}.json`. If `ALLOWED` in `update.php` changes, update `PROTECTED` and `.gitignore` too.
-- Pushing: `gh` is installed via Homebrew at `/opt/homebrew/bin/gh` (not on the default PATH; prefix `export PATH=/opt/homebrew/bin:$PATH`), logged in as `backyardmadeit-bit` with `repo` + `workflow` scopes; `git push` over HTTPS uses the macOS keychain. Claude pushes branches and opens PRs; David merges.
-- Build 47: picking anything during the guided tour ends it (`leaveTourForPick()` in every `select*`; the drawer is hidden while `body.touring`); globe legend `#glegend` (shown when `cam.dist > 1.85`, no drawer open, not touring; foldable, remembered in `localStorage oo-legend`); quick check levels are High / Medium / Low risk with a key line and the reasons as tooltip; `PENT` has 12 notes.
-- Build 49 (audit fixes): one `h1` per page (the static SEO heading is `h2.oo-h1`, styled like the old h1); `index.php` swaps `<title>`, `og:title`, `twitter:title` by regex for Czech, so they follow `index.html`; first load uses 1k textures and the small cloud layer; the 4 hi-res cloud tiles load on desktop 4 s after start (idle) or as soon as the visitor explores, never on phones (`LITE`); the 2k texture upgrade waits for `body.exploring` on small screens and is skipped on slow connections (`saveData`, 2g/3g).
-- Build 50 (mobile speed): all atlas scripts load with `defer`; on phones (`LITE`) the globe stays still (`woke = false`: one picture, redrawn only when something outside the animations changes) until the visitor touches the canvas, explores, starts the tour or picks something, and the opening sweep is skipped; desktop unchanged. Earth textures and three.js are cached for a year (`ExpiresByType` inside the `FilesMatch`, because it wins over `ExpiresDefault`).
-- Build 51: no consent checkbox on the sign-up forms. Submitting a brief form is the consent; a plain notice line (`p.oo-cons`) says what happens, with the privacy link. The page still sends `consent: true`, which `subscribe.php` requires. Monitoring goes straight to Stripe (`.pl3-pay`), so it has no email form.
-- Build 52 (no layout shift): the opening in `index.html` is written as the atlas ends up showing it (Dependency Index badge as an invisible `.idx-badge.idx-wait` placeholder that `headerAndBadge()` fills, label hidden, headline with `<br>`, `#cta-check` + ghost "Explore the globe", assess hidden), and `index.php` swaps those texts to Czech on the server, so nothing moves or changes language after load. If the hero copy changes in JS (v17 `clarity()`, v29 `keep()`, v31 `pin()`), change the static HTML and the `index.php` Czech swaps too. The three latin fonts are preloaded (Czech adds Hanken latin-ext).
-- Build 53: the footer small print (`#oo-who`, `#oo-pub`, `.oo-build`) is `#8b9296` (contrast 6.4:1); PageSpeed mobile for the atlas was 72 / 97 / 100 / 100 before it, with CLS 0.
-- Build 54: the Monitoring plan is three promises instead of a feature list (watch around the clock · you hear from us when something changes and every Monday · one question a month answered by a person within two working days), with the weekly data file as small print (`.pl3-fine`). The same wording is in the services pages (EN/CS), the legal page, the paid welcome emails (`mail-lib.php`, robot `_welcome`) and a "Your question" section in the paid Monday edition. Clients ask by replying to any monitoring email; David answers.
-- Build 55: the unused older plan layouts in `atlas-v2.js` (`renderTeams`, v20, v24, v25, v26; replaced on the page by v27 `.pl3`) read the monitoring price from `config.js` (`MP`) and carry the build 54 promises; no typed price (no €390, no €500 briefings) is left in the atlas JS.
-- Build 56: the Czech quick check shows the tightest stage in Czech ("94 % Čína slinuté magnety"). `STAGES[m].*.what` is English; its Czech lives in `CS`, so any code that prints `x.what` must pass it through `trStr()` *before* `toLowerCase()` (the translation pass only matches the capitalised key). `CS` now says "Primární hořčík" and "Elektrolytický mangan", matching the Czech sales guide. Czech "from <country>" in EU import lines (quick check rows and PDF, drawer, lists) comes from `fromCc(cc)` in `atlas-main.js` (`ISO2_FROM_CS`: genitive with z/ze, "z Norska", "z USA", "ze Švýcarska"; exported as `OO.fromCc`); a new partner code in `ISO2` needs its phrase there, otherwise it shows "ze země <name>". Text built by concatenation (drawer source line "Kdo ji těží", stage notes, the hidden `#cp-table`, the downloaded one-page brief) never meets the translation pass, so it goes through `ctry()` / `trStr()` / `T()` in JS; site places are translated by the full "place, country" key in `CS` (a new site needs one), countries by `COUNTRY_CS`. The one-page brief applies `csNumbers` to its text (not the CSS) for Czech.
-- Build 56 (language and Czech wording): `?lang=cs|en` in the URL wins over the stored choice and is remembered; switching language goes to that language's URL (`?lang=cs`, or none for English), so `index.php` renders the opening in it. A `CS_RX` pattern must never half-translate: "Explore X" stays English unless X has a Czech key. "In <country>" in Czech goes through `inCtry(c)` (`CTRY_LOC`: "v Číně", "na Ukrajině"; never "v zemi Čína"), genitive through `ctryGen` (`CTRY_GEN`). Feed country names (GDACS place lists, UCDP countries and "Government of X" actors) go through `csCountry()` (COUNTRY_CS, then the browser's `Intl.DisplayNames`); globe hazard labels show at most three places plus "+N" (`hzShort`). Plurals with `csPlural` (atlas) / `_cs_pl`, `_cs_days` (robot); "z"/"ze" before a number with `zeZ` / `_cs_z` ("ze 43", "z 59"); months in the locative ("v září 2026": `MON_CS_LOC`, `monthLoc`; robot `MONTH_CS_LOC`). Wording: "co se mění" (not "co se hýbe"), "Co se změnilo" (not "pohnulo"), "tepelná anomálie" (not "pixely horké jako pec"), "Přehled tohoto týdne" (not "Brief"). The Czech copy says "AI agent", never "Claude". Changing the English of a CS key (method paragraph, changelog) means re-keying its Czech, or the Czech page shows English.
-- Build 56 (cutting and robot Czech): text cut to its first sentence (`first()` in atlas-v2 This week and the brief strip) ends only at "period, space, capital letter", so Czech dates ("15. listopadu") are not cut. The robot's weekly brief `text_cs` uses `TRADE_CS` for the Comext product names (a new `TRADE_CODES` label needs its Czech there) and natural word order (no "v srpnu 2026 97 %"). The live brief keeps the text it was written with: after a wording change in `feed_brief`, run Actions → Update with `force` (or wait for Monday). Satellite day counts in Czech say "dní s měřením" / "s platným měřením" (not "viděných dní").
-- Build 57 (data audit, 11 Nov 2026): every world share, tonnage and source moved to USGS MCS 2026 (2025 data) and IEA GCMO 2026 (W 79%, Sb 36%, Ti sponge 70%, Li mine Australia 32%, Co mine DR Congo 74%, Ni Indonesia 67%, battery graphite 94%); cobalt's tightest stage is now refining (>75% China); the ammunition system's chokepoint is tungsten; Jadar (care and maintenance since Nov 2025) and Vittangi (final investment decision targeted early 2027) have no online date; ROAD adds the EU's second strategic-project call (46 projects, 9 Oct 2026). Hero card reads `${over} of ${ORDER.length}`. Findings table with sources is in the PR.
-- Known harmless 404s: `textures/earth-day-hi.jpg`, `earth-night-hi.jpg` (never uploaded; the globe falls back to the normal textures).
+- A dedicated FTP account is chrooted to the atlas folder, so remote paths are relative to `atlas/`.
+  - Credentials: GitHub Secrets `FTP_HOST`, `FTP_USER`, `FTP_PASS`.
+  - Optional repo variable `FTP_VERIFY_CERT=no`, if the certificate ever stops matching.
+- **Never deployed** (skipped by the script's `PROTECTED` regex):
+  - Also git-ignored:
+    - server-only configs (the `*.example.php` templates are in the repo)
+    - `subs/*` and `stats/*` (only their `.htaccess` is tracked)
+    - everything the robot owns on the server via `update.php` `ALLOWED`: `live-data/`, `img/`, `p/`, `sitemap.xml`, `data/terrain/`, `data/{imagery,orbit-extras,timelapse,landsat,emit}.json`
+  - Tracked but never uploaded: `atlas/CLAUDE.md` (notes for Claude).
+  - If `ALLOWED` in `update.php` changes, update `PROTECTED` and `.gitignore` too.
 
-## Atlas files (repo `atlas/` → WEDOS `atlas/`)
-- `index.html` — page shell, CSS variables (mineral colours `--ree … --mn`), static SEO copy. Script tags carry `?v=` cache-busters: **bump them on every change**.
-- `index.php` — serves `index.html` with a server-rendered news/brief block for crawlers; sends `Cache-Control: no-store`.
-- `atlas-main.js` — core: data tables (`GROUPS/ORDER, PIN, MATERIALS, STAGES, STRATEGIC, SYSTEMS, SITES, ROUTES, PROD, CENTROID, ELEM, DEADLINES, CS` dictionary), globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base. `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
-- `atlas-v2.js` — layered additions `v20 … v48` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel). Footer shows `build NN` (currently **58**). `?debug=1` shows a diagnostics panel; errors are counted via `count.php`.
-- `atlas-v2.css` — styles, appended per version.
-- `config.js` — public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
-- `data/reference.json` — **single source of truth for the library pages**: `materials{info,stages,worst,deadlines,euSp,rir}`, `sites` (43), `order` (12), `routes` (11 ids, must match `ROUTES` in `atlas-main.js`; the scan fails otherwise), `scenarios`, `online`. Keep it in sync with `atlas-main.js` (extract via node, see Phase 4 history). A deadline lives in three places: `DEADLINES` and `ROAD` in `atlas-main.js` (the Monday emails read `DEADLINES` from the live page) and `materials.*.deadlines` here (with `id`, `detail`, `addedAt`; the robot copies these to `live-data/watch.json`). A moved deadline gets a new `id`.
-- `data/other-minerals.json` — allow-list of minerals a monitoring client can add beyond the tracked twelve (`other`: id, en, cs, news query `q`, aliases `aka`; `tracked`: aliases that map typed names to tracked ids; `max` 3). Read by the atlas autocomplete (v44), `other-lib.php` (`oo_other_ids()`, used by `go-pay.php` and `stripe-webhook.php`; only these ids pass) and the robot (`_other_terms`, `_other_news`). Clients' `other` column holds ids like `cu,sn`; older free text is matched by name or kept as typed.
-- PHP: `subscribe.php` (free brief sign-up → CSV, welcome email, replies before sending mail), `go-pay.php` (redirect to Stripe Payment Link, minerals hex-encoded in `client_reference_id` as `mins|other|lang`), `stripe-webhook.php` (activates/deactivates paid clients, welcome email, answers Stripe before emailing), `manage.php` (→ Stripe customer portal), `subs-export.php` (robot reads subscribers + state; same key as `update.php`), `unsubscribe.php`, `stats.php` (private, key-protected: traffic, data freshness from `live-data/live/runstatus.json`, subscriber list + CSV, paying-client delivery table), `mail-test.php`, `mail-lib.php` (branded HTML email, SMTP 465→587→`mail()` fallback, welcome emails, `oo_reply_now`), `count.php` (anonymous event counter, key format `^[a-z0-9:-]{1,40}$`).
-- Server-only config (never commit, never show): `pay-config.php` (`payment_link`, `webhook_secret`, `portal_link`), `mail-config.php` (SMTP user/pass), `update-config.php` (key hash).
-- `subs/` (not web-readable): `subscribers.csv` (`date, plan, email, minerals, product, lang, other`), `monitoring-active.txt` (paying emails, managed by the webhook), `state.json` (robot state + delivery log), `unsubscribed.txt`, `welcomed.txt`, `customers.json`.
-
-## Robot (`updater/`)
-- `oreorbit_update.py` — feeds with intervals (`INTERVAL_H`): orbits, hazards (GDACS, USGS quakes, **river gauges** PEGELONLINE: Kaub, Duisburg, Dresden), scenes, ships (AISStream; cargo types 70–79 only, fair share per box), hotspots (FIRMS), prices, traffic (PortWatch), clouds, conflict (UCDP), tenders (TED), trade (Eurostat Comext, `TRADE_CODES`), so2, imagery (Sentinel-2 cloud < 40, Landsat < 25), radar, news (RSS + GDELT `NEWS_GROUPS` + **US Federal Register BIS rules**), brief (rule-based weekly brief), watch (rebuilds `live-data/watch.json`, the dated list the atlas shows beside the news, from the deadlines in `data/reference.json`), pages, social. Uploads only changed files (md5) and writes `runstatus.json` every run.
-- Email module `send_mail()`: free Monday brief (per subscriber minerals/language), paid personal Monday edition (status, "what it means", deadlines, what moved, rivers, other minerals), same-day alerts (new news, deadline reminders 30/14/7/1, river state changes, other-mineral news via GDELT once a day, max 8 queries/run), welcome fallback for anyone the website did not welcome, delivery log `state["log"]`, Monday delivery report to David.
-- Mail safety net (`_mail_step`): the mail step's state goes into `runstatus.json` as source `mail` (`stats.php` shows an Emails row); a run where `send_mail()` raises, SMTP secrets are missing or none of the emails went out counts as a failure, and 2 failures in a row turn the run red so GitHub emails David (data feeds: 3). Partial failures stay green and show in the Monday delivery report.
-- `oreorbit_pages.py` — builds ~87 library pages (`p/*.html`, EN; CS for services/about/index), sitemap, embeds, social cards. Meta descriptions go through `meta_desc()` (whole sentences up to 160 characters, else cut at a word with …); `og:description` keeps the full text. **Dependency Index stays on the original ten** (`INDEX_TEN`); Mg/Mn are stored in `extra` beside it.
-- SEO/GEO (12 Nov 2026, atlas build 58: JSON-LD, and the school dropped from the team credit in `atlas-v2.js`): `p/faq.html` + `p/faq-cs.html` (`faq_qas()`: twelve answers computed from `reference.json` and live data, visible text = `FAQPage` JSON-LD, stable anchors such as `#dependencies`, `#monitoring` / `#zavislosti` that `llms.txt` links to; do not rename them). `person_full()` / `org_full()` / `knows_ld()` (`KNOWS`: Wikidata + Wikipedia ids) feed the About and FAQ pages; the same `knowsAbout` is copied by hand into `atlas/index.html`, `docs/wordpress/jsonld-sitewide.html` and madali.cz. The BD root `llms.txt` lives in `docs/wordpress/llms.txt` (uploaded by hand via WebFTP). The readiness review is scoped and priced in a free 30-minute intro call everywhere, the sales guide PDF included (David, 12 Nov 2026). No degree or school in public copy or JSON-LD (no `alumniOf`).
-- `config.json` — `sites` (43, for imagery/heat/SO2), `shipBoxes` (23, with `mins` for mineral ports), `sats`, `fred`, `portwatch`.
-- Secrets (GitHub): `ATLAS_KEY`, `FIRMS_MAP_KEY`, `FRED_API_KEY`, `AISSTREAM_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`; atlas deploy: `FTP_HOST`, `FTP_USER`, `FTP_PASS`.
-
-## Minerals (12) — ids, colours, order
+## Minerals (12): ids, colours, order
 `ree` Nd #a78bfa · `ti` Ti #fb923c · `w` W #facc15 · `sb` Sb #a9b8cc · `mg` Mg #2dd4bf · `mn` Mn #e879f9 · `ga` Ga #22d3ee · `ge` Ge #4ade80 · `li` Li #f472b6 · `co` Co #60a5fa · `ni` Ni #a3e635 · `gr` C #e4e4e7
-Mg and Mn were added in Nov 2026 (USGS MCS 2026: Mg China 86% of primary metal; Mn ore South Africa 38%, Mn metal China >95% per SMM). Adding a mineral touches: atlas tables (all of them, incl. `STAGES`, `ELEM`, `BUILD`, CSS vars, quick check `P` in atlas-v2, `SYSTEMS.parts`), PHP allow-lists (`go-pay.php`, `stripe-webhook.php`, `mail-lib.php` names), `data/other-minerals.json` (`tracked` aliases; remove the mineral from `other` if it was there), robot (`MAT_NAME`, `NEWS_Q`, `NEWS_KW`, `NEWS_GROUPS`, `TRADE_CODES`, `config.json`), pages (`SLUG`, `COL`, `MAT_CS`, `PRODUCTS`), `reference.json`, BD homepage + founder pages, madali.cz (`COL`, buttons, names, `__D.sites`), brand book p.11/p.21, OG image, `llms.txt`.
-Counts today: **12 minerals, 43 sites, 11 trade routes**. "Ten of the twelve" have a stage where one country holds >65% (China in nine at some stage; nickel is Indonesia, 67% of mine output). Since build 57 the atlas figures are USGS MCS 2026 (2025 data) and IEA GCMO 2026.
+
+Mg and Mn were added in Nov 2026. Sources: USGS MCS 2026 for Mg (China 86 % of primary metal) and Mn ore (South Africa 38 %); SMM for Mn metal (China >95 %).
+
+**Adding a mineral touches:**
+- atlas tables: all of them, incl. `STAGES`, `ELEM`, `BUILD`, the CSS vars, quick check `P` in atlas-v2 and `SYSTEMS.parts`
+- PHP allow-lists: `go-pay.php`, `stripe-webhook.php`, `mail-lib.php` names
+- `data/other-minerals.json`: `tracked` aliases; remove the mineral from `other` if it was there
+- robot: `MAT_NAME`, `NEWS_Q`, `NEWS_KW`, `NEWS_GROUPS`, `TRADE_CODES`, `config.json`
+- pages: `SLUG`, `COL`, `MAT_CS`, `PRODUCTS`
+- `reference.json`
+- BD homepage and founder pages
+- madali.cz: `COL`, buttons, names, `__D.sites`
+- brand book p. 11 and p. 21
+- OG image
+- `llms.txt`
+
+**Counts today: 12 minerals, 43 sites, 11 trade routes.**
+- "Ten of the twelve" have a stage where one country holds >65 %. China holds it in nine; for nickel it is Indonesia, 67 % of mine output.
+- Since build 57 the atlas figures come from USGS MCS 2026 (2025 data) and IEA GCMO 2026.
 
 ## Business model
-Free (atlas, quick check, This week; with an email: Monday brief + all live-data panels in full) · **Monitoring €49/month** (Stripe, cancel anytime, 30-day money-back on request, refunds manual in Stripe): **one question a month answered by David within two working days** (reply to any monitoring email), same-day alerts, personal Monday edition, deadline reminders, **site alerts** (`_site_events`: heat quiet 7 days after 4+ hot days / start-up / first SO2 > 2 DU in 30 days, for the sites of the client's minerals) and **a weekly CSV attached to the Monday edition** (`_data_csv`: monthly EU imports, daily heat and SO2 per site) · Readiness review (tailored, via 30-min call; **no published price**, the old €4,900 / €2,900 is void as of 2026-11-06). Price comes from `config.js` everywhere (services pages are patched in `build()`; never type a price).
-Flow: plans → `go-pay.php` → Stripe → webhook → `monitoring-active.txt` + welcome → robot emails. Cancellation: Stripe portal → webhook removes client.
+- **Free:** atlas, quick check, This week. With an email address: the Monday brief, plus all live-data panels in full.
+- **Monitoring, €49/month** (Stripe):
+  - Cancel anytime. 30-day money-back on request; refunds are done by hand in Stripe.
+  - **One question a month, answered by David within two working days.** Clients ask by replying to any monitoring email.
+  - Same-day alerts, personal Monday edition, deadline reminders.
+  - **Site alerts** (`_site_events`), for the sites of the client's minerals: heat goes quiet for 7 days after 4+ hot days, a start-up, or the first SO2 > 2 DU in 30 days.
+  - **A weekly CSV attached to the Monday edition** (`_data_csv`): monthly EU imports, daily heat and SO2 per site.
+- **Readiness review:** tailored, scoped and priced in a free 30-minute intro call. **No published price**: the old €4,900 / €2,900 is void as of 2026-11-06.
+- **The price comes from `config.js` everywhere.** The services pages are patched in `build()`. Never type a price.
+- **Flow:** plans → `go-pay.php` → Stripe → webhook → `monitoring-active.txt` + welcome email → robot emails. Cancellation: Stripe portal → webhook removes the client.
 
 ## Brand & copy rules (brand book v1.1)
-- Dark first: bg #050607, paper #eceee9, single signal green #3ddc97 (small green text on light: #0f6b46). Fonts: Hanken Grotesk, DM Mono.
-- Signet: planet outline, orbit −28°, green satellite. Same mark + favicon everywhere.
-- Labels in sentence case, no letter-spacing. Headlines are declarative sentences ending with a period. British English. Czech: non-breaking space after single-letter words; natural, not literal translations. No hype words, emoji or exclamation marks in public copy.
-- Mineral colours never mark state or buttons; always next to a symbol or name.
-- Public pages: never mention Claude/AI tooling or data-source know-how beyond required licence credits (Copernicus in footer, others on the legal page). Show IČO, never the home address. Never mention the Ing. studies.
+- Dark first: background #050607, paper #eceee9, one signal green #3ddc97 (small green text on light: #0f6b46). Fonts: Hanken Grotesk, DM Mono.
+- Signet: planet outline, orbit at −28°, green satellite. The same mark and favicon everywhere.
+- Labels in sentence case, no letter-spacing. Headlines are declarative sentences ending with a period. British English.
+- Czech: a non-breaking space after single-letter words. Natural, not literal, translations.
+- No hype words, emoji or exclamation marks in public copy.
+- Mineral colours never mark state or buttons, and always sit next to a symbol or name.
+- Public pages:
+  - Never mention Claude/AI tooling, or data-source know-how beyond the required licence credits (Copernicus in the footer, the others on the legal page).
+  - Show the IČO, never the home address.
+  - No degree or school in public copy or JSON-LD (no `alumniOf`).
 
-## Known pitfalls (learned the hard way)
-- The atlas **rebuilds DOM it owns** (e.g. `#mon-pick`, the whole This week section in EN). Never keep element references; look up afresh (`PK()`), delegate clicks, and keep the 150 ms safety check. Use `window.ooSetMy(list)` to set the whole selection at once.
-- The atlas's translation pass re-applies old CS strings after load; **pin** new texts (v31 `pin()` with canonical HTML, Czech spaces applied) or they revert.
-- MutationObservers must not react to their own writes (caused page freezes twice).
-- Text inside **images** is invisible to text scans — re-render OG images when counts change (`og-oreorbit-v2.png` is rendered from HTML with real site coordinates).
-- Social platforms cache OG images by URL: change the filename, then re-scrape (LinkedIn Post Inspector, Facebook Sharing Debugger).
-- WEDOS SMTP from PHP can be slow or blocked: always reply to the browser/Stripe first (`oo_reply_now`), then send mail; the robot re-sends welcomes that did not go out.
+## Cross-site pitfalls
+- Text inside **images** is invisible to text scans. Re-render OG images when counts change (`og-oreorbit-v2.png` is rendered from HTML with real site coordinates).
+- Social platforms cache OG images by URL. Change the filename, then re-scrape (LinkedIn Post Inspector, Facebook Sharing Debugger).
+- WEDOS SMTP from PHP can be slow or blocked. Always reply to the browser or Stripe first (`oo_reply_now`), then send mail. The robot re-sends welcome emails that did not go out.
 
 ## Checks before merge
-0. Atlas changes: the PR's "Deploy atlas" check must pass (it also runs `node --check` on `atlas/*.js`); after merge, confirm the deploy run succeeded and the live files match the repo (md5 of a few changed files).
-1. `node --check` all JS; `python3 -m py_compile` robot files; PHP bracket balance (no PHP CLI locally) or `php -l` if available.
-2. Build the library: `python3 tools/build_pages.py OUT` (reference/config from the repo, robot data from local `atlas/` or the live site); all pages build, JSON-LD parses. Runs in CI (`.github/workflows/checks.yml`).
-3. Consistency scan: `python3 tools/consistency_scan.py --pages OUT [--remote]`. Truth is computed (minerals, sites, routes from `reference.json`; "ten of the twelve" = minerals whose `worst` stage is above 65 %). Flags numbers near minerals/sites/routes words (EN + CS, digits and words) that are close to the truth but wrong. Allow-list in the script (`ALLOW`: Dependency Index ten, score out of 9, EU strategic projects, changelog); archived briefs (`p/brief-*.html`, `p/briefs.html`) are notes only. JSON-LD blocks are scanned too (search engines show them). Runs in CI on every PR and fails it; `--remote` scans the WordPress pages and madali.cz as warnings. WordPress has a hand-made site-wide JSON-LD block (not Rank Math) with prices and counts: see `docs/wordpress/`. Images are still not covered: re-render OG images by hand.
-4. Headless render (Playwright) of atlas EN and CS (`?debug=1`): no `ooErrs`, quick check → This week sync, phone width 390 px without overflow.
-5. Dry-run `send_mail()` with stubbed SMTP and subscribers for free, paid and alert paths.
+0. **Atlas changes:** the PR's "Deploy atlas" check must pass (it also runs `node --check` on `atlas/*.js`). After merge, confirm that the deploy run succeeded and that the live files match the repo (md5 of a few changed files).
+1. **Syntax:** `node --check` all JS; `python3 -m py_compile` the robot files; PHP bracket balance (no PHP CLI locally), or `php -l` if available.
+2. **Build the library:** `python3 tools/build_pages.py OUT` (reference and config from the repo; robot data from local `atlas/` or the live site). All pages build and the JSON-LD parses. Runs in CI (`.github/workflows/checks.yml`).
+3. **Consistency scan:** `python3 tools/consistency_scan.py --pages OUT [--remote]`.
+   - The truth is computed: minerals, sites and routes from `reference.json`; "ten of the twelve" = minerals whose `worst` stage is above 65 %.
+   - It flags numbers near minerals/sites/routes words (EN + CS, digits and words) that are close to the truth but wrong.
+   - Allow-list in the script (`ALLOW`): Dependency Index ten, score out of 9, EU strategic projects, changelog.
+   - Archived briefs (`p/brief-*.html`, `p/briefs.html`) are notes only.
+   - JSON-LD blocks are scanned too, because search engines show them.
+   - Files named `CLAUDE.md` are skipped, since they quote old numbers on purpose.
+   - Runs in CI on every PR and fails it. `--remote` scans the WordPress pages and madali.cz as warnings. WordPress has a hand-made site-wide JSON-LD block (not Rank Math) with prices and counts: see `docs/wordpress/`.
+   - Images are still not covered: re-render OG images by hand.
+4. **Headless render** (Playwright) of the atlas in EN and CS (`?debug=1`): no `ooErrs`, quick check → This week sync, phone width 390 px without overflow.
+5. **Dry-run `send_mail()`** with stubbed SMTP and subscribers, for the free, paid and alert paths.
 
 ## Open tasks (from the last brief)
-1. ~~**Funnel**~~ done in build 43: quick check result → primary CTA "Get alerts for these N minerals" (`.qc-mon`, sets the plan via `window.ooMonSet`, scrolls to `#teams .pl3-b`, counts `act:qc-mon`), full review secondary, call as a text link.
-2. ~~**Validation**~~ done in build 44: "Other minerals" = chips from `data/other-minerals.json` with autocomplete, inline error and payment blocked for unknown words, tracked names added to the selection; same allow-list in `go-pay.php`/webhook; robot shows "no news found in the last 14 days" per quiet term in the paid Monday edition and lists quiet terms in David's delivery report (`state.other[term].first/hit`).
+1. ~~**Funnel**~~ done in build 43. Details in `atlas/CLAUDE.md`.
+2. ~~**Validation**~~ done in build 44. Details in `atlas/CLAUDE.md`.
 3. ~~**Free vs paid**~~ done in build 45 (see Business model). The old €390 / analyst-note copy in the unused v20–v26 layouts was replaced in build 55.
-4. ~~**Globe**~~ done in build 46: ships drawn after the clouds (`renderOrder 3/4`) with a neutral light-disc/dark-rim marker sized by zoom (`shipMarkTex`, hidden close in); site labels from `cam.dist < 2.45`, placed by priority (selected, hovered, filtered mineral, nearest centre) with collision boxes that also avoid ship and hazard labels, capped by zoom; robot `s2_clear_scene(relaxed=True)` for pictures over 30 days old (scenes < 80 % cloud, box ≥ 75 % clear, stores `nowClearPct`); drawer shows "Last clear view: date, N days ago" with a link to the radar view, or "Partly cloudy: X % clear".
-5. **Content automation:** done for the robot (build 43+): library index, About EN/CS, social cards, brief lede, welcome fallbacks and `mail-lib.php` compute counts (`oreorbit_pages.counts()`, `w_en()`, `w_cs()`); consistency scan runs in CI. Still static (guarded by the scan, not computed): atlas `index.html`/`index.php` SEO copy and the atlas JS strings.
-6. **Higher-value services:** data API/feed, multi-seat team alerts, BOM screening (see brief).
+4. ~~**Globe**~~ done in build 46. Details in `atlas/CLAUDE.md`.
+5. **Content automation:**
+   - Done for the robot (build 43+): the library index, About EN/CS, social cards, the brief lede, welcome fallbacks and `mail-lib.php` compute counts (`oreorbit_pages.counts()`, `w_en()`, `w_cs()`). The consistency scan runs in CI.
+   - Still static (guarded by the scan, not computed): atlas `index.html`/`index.php` SEO copy and the atlas JS strings.
+6. **Higher-value services:** data API/feed, multi-seat team alerts, BOM screening (see the brief).
