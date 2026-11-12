@@ -51,7 +51,8 @@ WHO_CS = {"China": "Čína", "DR Congo": "DR Kongo", "Indonesia": "Indonésie", 
 WHAT_CS = {"Sintered magnets": "slinuté magnety", "Titanium sponge": "titanová houba",
            "Primary magnesium metal": "primární hořčík", "Electrolytic manganese metal": "elektrolytický mangan",
            "Primary gallium": "primární galium", "Lithium chemicals": "lithiové chemikálie",
-           "Battery-grade graphite": "bateriový grafit"}
+           "Battery-grade graphite": "bateriový grafit",
+           "Refined cobalt": "rafinovaný kobalt"}
 KIND = {"mine": ("mining", "těžba"), "refine": ("refining", "zpracování"), "part": ("parts", "díly")}
 # source notes in Czech: whole month names ("IEA, říjen 2025"), Czech has no common three-letter months
 NOTE_CS = dict(zip("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(), MON_CS), capacity="kapacita")
