@@ -1,5 +1,16 @@
 # WordPress (bohemiadefense.com)
 
+## 12. 11. 2026: SEO/GEO
+
+Čtyři věci k ručnímu vložení:
+
+1. **Úvodní stránky**: `home-en.html` a `home-cs.html` (Elementor 5581 a 6312, postup níže). Nové je jen to, že nadpis „Founded by David Madali“ / „Zakladatel David Madali“ je vždy na jednom řádku (ověřeno na 320, 390 a 1280 px).
+2. **JSON-LD pro celý web**: obsahem `jsonld-sitewide.html` nahraď celý ruční blok JSON-LD (postup v oddílu 3 níže; hledej dnes `"@id": "https://madali.cz/#person"`). Person a Organization mají nově rozšířené `knowsAbout` (témata s odkazy na Wikidata a Wikipedii), popis, místo a datum založení; WebApplication OreOrbit má `about`. Ceny a počty beze změny. Bez `alumniOf` (vysoká škola se nikde neuvádí).
+3. **`llms.txt` v kořeni webu**: nahraj [`llms.txt`](llms.txt) přes WebFTP do `/www/domains/bohemiadefense.com/` (přepsat stávající). Nově obsahuje oddíl Questions and answers s odkazy přímo na jednotlivé odpovědi FAQ (EN i CS), oddíl Key facts (CRMA, čínská pauza do 10. 1. 2027), opravený řádek o čínských kontrolách a odkaz na 30minutový úvodní hovor (Calendly).
+4. **Stránky zakladatele** (`david-madali`, `david-madali-cz`): z oddílu Background / Zkušenosti vypusť řádek s vysokou školou („University of Economics and Management, Prague … (Bc. 2025)“, v CS „VŠEM Praha … (Bc. 2025)“). Celý aktuální kód je v [`founder-en.txt`](founder-en.txt) a [`founder-cs.txt`](founder-cs.txt).
+
+Potom W3 Total Cache → Purge All Caches a ověř `https://bohemiadefense.com/llms.txt`.
+
 ## 11. 11. 2026: podíly surovin podle USGS 2026 a IEA 2026 (build 57)
 
 V `home-en.html` a `home-cs.html` má mřížka dvanácti surovin (atributy `data-share` / `data-pct`) nová čísla nejtěsnější fáze, stejná jako atlas: titan 70 % Čína, wolfram 79 % Čína, antimon 36 % Čína, kobalt >75 % Čína (rafinace; těžba v DR Kongu je 74 %), nikl 67 % Indonésie, grafit 94 % Čína. Ostatní beze změny. Postup vložení je stejný jako níže (celý kód do widgetu HTML, pak Purge All Caches). Stránky zakladatele („u devíti z nich ovládá Čína…“) a `jsonld-sitewide.html` platí dál.

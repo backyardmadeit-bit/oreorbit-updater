@@ -42,7 +42,6 @@
   <div class="dm-row"><h2>Zkušenosti</h2><ul>
     <li><b>Ministerstvo zahraničních věcí ČR</b>Ekonomická diplomacie v&nbsp;kanceláři hlavního ekonoma: makroekonomické analýzy a&nbsp;podklady využité ministrem a&nbsp;obchodními delegacemi.</li>
     <li><b>CzechTrade</b>Exportní poradenství; založil jsem neformální klastr Chytrá bezpečnost dvanácti firem z&nbsp;bezpečnostního průmyslu z&nbsp;ČR a&nbsp;Evropy.</li>
-    <li><b>VŠEM Praha</b>Ekonomie a&nbsp;management (Bc. 2025).</li>
     <li><b>Kurzy</b>EUSPA, Agentura EU pro kosmický program: kosmické technologie a&nbsp;budování kosmického byznysu. Kontrarozvědná příprava NATO (ADL 135). OSINT.</li>
   </ul></div>
   <div class="dm-row"><h2>Spolupráce</h2><div>
