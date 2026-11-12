@@ -2,11 +2,12 @@
 
 ## 12. 11. 2026: SEO/GEO
 
-Tři věci k ručnímu vložení:
+Čtyři věci k ručnímu vložení:
 
 1. **Úvodní stránky**: `home-en.html` a `home-cs.html` (Elementor 5581 a 6312, postup níže). Nové je jen to, že nadpis „Founded by David Madali“ / „Zakladatel David Madali“ je vždy na jednom řádku (ověřeno na 320, 390 a 1280 px).
-2. **JSON-LD pro celý web**: obsahem `jsonld-sitewide.html` nahraď celý ruční blok JSON-LD (postup v oddílu 3 níže; hledej dnes `"@id": "https://madali.cz/#person"`). Person a Organization mají nově rozšířené `knowsAbout` (témata s odkazy na Wikidata a Wikipedii), popis, místo a datum založení; WebApplication OreOrbit má `about`. Ceny a počty beze změny.
-3. **`llms.txt` v kořeni webu**: nahraj [`llms.txt`](llms.txt) přes WebFTP do `/www/domains/bohemiadefense.com/` (přepsat stávající). Nově obsahuje oddíl Questions and answers s odkazy přímo na jednotlivé odpovědi FAQ (EN i CS), oddíl Key facts (CRMA, čínská pauza do 10. 1. 2027), opravený řádek o čínských kontrolách a posouzení připravenosti „scoped and priced by email“.
+2. **JSON-LD pro celý web**: obsahem `jsonld-sitewide.html` nahraď celý ruční blok JSON-LD (postup v oddílu 3 níže; hledej dnes `"@id": "https://madali.cz/#person"`). Person a Organization mají nově rozšířené `knowsAbout` (témata s odkazy na Wikidata a Wikipedii), popis, místo a datum založení; WebApplication OreOrbit má `about`. Ceny a počty beze změny. Bez `alumniOf` (vysoká škola se nikde neuvádí).
+3. **`llms.txt` v kořeni webu**: nahraj [`llms.txt`](llms.txt) přes WebFTP do `/www/domains/bohemiadefense.com/` (přepsat stávající). Nově obsahuje oddíl Questions and answers s odkazy přímo na jednotlivé odpovědi FAQ (EN i CS), oddíl Key facts (CRMA, čínská pauza do 10. 1. 2027), opravený řádek o čínských kontrolách a odkaz na 30minutový úvodní hovor (Calendly).
+4. **Stránky zakladatele** (`david-madali`, `david-madali-cz`): z oddílu Background / Zkušenosti vypusť řádek s vysokou školou („University of Economics and Management, Prague … (Bc. 2025)“, v CS „VŠEM Praha … (Bc. 2025)“). Celý aktuální kód je v [`founder-en.txt`](founder-en.txt) a [`founder-cs.txt`](founder-cs.txt).
 
 Potom W3 Total Cache → Purge All Caches a ověř `https://bohemiadefense.com/llms.txt`.
 

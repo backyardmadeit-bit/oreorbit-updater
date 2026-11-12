@@ -528,7 +528,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
             <div class="label">${T("Who is behind OreOrbit", "Kdo stojí za OreOrbit")}</div>
             <h3>David Madali</h3>
             <p>${T("A Prague-based analyst of the defence industry, critical raw materials and the space economy, founder of Bohemia Defense and creator of OreOrbit.", "Pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky, zakladatel Bohemia Defense a autor OreOrbit.")}</p>
-            <p class="tm-cred">${T("Quoted by BBC News as an analyst. Background in economic diplomacy at the Czech Ministry of Foreign Affairs and in export consulting at CzechTrade, where he set up the “Chytrá bezpečnost” (Smart Security) cluster of 12 security-industry companies. Economist (University of Economics and Management, Prague), with EUSPA training in space technologies and building a space business.", "Jako analytika ho citovala BBC News. Zkušenosti z ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a z exportního poradenství v CzechTrade, kde založil klastr „Chytrá bezpečnost“ dvanácti firem z bezpečnostního průmyslu. Ekonom (VŠEM Praha) s kurzy EUSPA o kosmických technologiích a budování kosmického byznysu.")}</p>
+            <p class="tm-cred">${T("Quoted by BBC News as an analyst. Background in economic diplomacy at the Czech Ministry of Foreign Affairs and in export consulting at CzechTrade, where he set up the “Chytrá bezpečnost” (Smart Security) cluster of 12 security-industry companies. EUSPA training in space technologies and building a space business.", "Jako analytika ho citovala BBC News. Zkušenosti z ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a z exportního poradenství v CzechTrade, kde založil klastr „Chytrá bezpečnost“ dvanácti firem z bezpečnostního průmyslu. Kurzy EUSPA o kosmických technologiích a budování kosmického byznysu.")}</p>
             <p class="tm-links"><a href="https://madali.cz/" target="_blank" rel="me noopener">madali.cz</a><a href="https://www.linkedin.com/in/davidmadali/" target="_blank" rel="me noopener">LinkedIn</a><a href="https://bohemiadefense.com/" target="_blank" rel="noopener">Bohemia Defense</a><a href="https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad" target="_blank" rel="noopener" title="${esc(T("BBC News Chinese, July 2025", "BBC News, čínská služba, červenec 2025"))}">BBC News</a></p>
           </div>
         </div>
@@ -1776,7 +1776,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 57"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 58"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1827,7 +1827,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 57 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 58 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

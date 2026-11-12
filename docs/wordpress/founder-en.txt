@@ -42,7 +42,6 @@
   <div class="dm-row"><h2>Background</h2><ul>
     <li><b>Czech Ministry of Foreign Affairs</b>Economic diplomacy in the office of the chief economist: macroeconomic analysis and briefings used by the Minister and trade delegations.</li>
     <li><b>CzechTrade</b>Export consulting; set up Chytrá bezpečnost, an informal cluster of 12 security-industry companies from Czechia and Europe.</li>
-    <li><b>University of Economics and Management, Prague</b>Economics and management (Bc. 2025).</li>
     <li><b>Training</b>EUSPA, the EU Agency for the Space Programme: space technologies and building a space business. NATO counterintelligence (ADL 135). Open-source intelligence.</li>
   </ul></div>
   <div class="dm-row"><h2>Work with me</h2><div>
