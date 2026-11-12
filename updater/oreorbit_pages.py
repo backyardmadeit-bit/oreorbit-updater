@@ -126,7 +126,7 @@ def page(path, title, desc, body, ld_extra, today, crumbs=None, lang="en", alt=N
               "dateModified": today, "isPartOf": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}},
              **({"breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [
                  {"@type": "ListItem", "position": i + 1, "name": n, "item": BASE + u} for i, (n, u) in enumerate(crumbs)]}} if crumbs else {})),
-        PERSON, ORG, ATLAS] + ld_extra}
+        ] + [n for n in (PERSON, ORG, ATLAS) if n["@id"] not in {x.get("@id") for x in ld_extra}] + ld_extra}
     crumb_html = ""
     if crumbs:
         crumb_html = '<nav class="crumbs" aria-label="Breadcrumb">' + " / ".join(
@@ -429,6 +429,7 @@ def about_page(ref, cfg, today):
 <li>Monthly EU import data and export-control deadlines, a quick check of what any product depends on, and a weekly brief of what is moving.</li>
 <li>For companies: monitoring of the minerals you depend on, and a readiness review of one product line for your board. See <a href="services.html">services</a>.</li>
 <li>A <a href="index.html">library</a> of readable pages on every material and site, made to be quoted and cited.</li>
+<li>Plain <a href="faq.html">questions and answers</a> on Europe's critical-mineral dependencies, the chokepoints, the EU Critical Raw Materials Act and China's export controls, with current figures.</li>
 </ul></section>
 <section><h2>How it works</h2>
 <p>Everything comes from public sources, named and dated on the page where it is used. An automatic updater collects and processes the data every three hours and rebuilds these pages every day. Stories found automatically are labelled as not checked. OreOrbit shows measurements and the public record; it does not forecast and is not investment or legal advice.</p>
@@ -438,7 +439,8 @@ def about_page(ref, cfg, today):
 <p><a class="cta" href="services.html">See services and prices</a> &nbsp; <a href="../oreorbit-sample-assessment.pdf">Read a sample review (PDF)</a></p></section>
 <section><h2>How to cite OreOrbit</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: critical minerals from orbit. Bohemia Defense. https://bohemiadefense.com/atlas/</p>
 <p class="small">Each page in the library has its own citation. Figures and charts may be quoted and reused with credit to “OreOrbit (Bohemia Defense)” and a link.</p></section>""" % dict({"bbc": BBC, "mail": e(mail), "year": today[:4]}, **_about_counts(ref, False))
-    ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
+    ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]},
+           "mainEntity": {"@id": PERSON["@id"]}}, person_full(), org_full()]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("About", path)], alt="p/about-cs.html")
 
 
@@ -699,6 +701,7 @@ def about_page_cs(ref, cfg, today):
 <li>Měsíční data o dovozu do EU a termíny vývozních kontrol, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a týdenní přehled toho, co se mění.</li>
 <li>Pro firmy: monitoring surovin, na kterých závisíte, a posouzení připravenosti jedné výrobní řady pro vaše vedení. Viz <a href="services-cs.html">služby</a>.</li>
 <li><a href="index.html">Knihovna</a> stránek o každé surovině a lokalitě k citaci (anglicky) a měsíční <a href="dependency-index-cs.html">Index závislosti</a>.</li>
+<li><a href="faq-cs.html">Otázky a odpovědi</a> o kritických závislostech Evropy, úzkých místech dopravy, nařízení EU o kritických surovinách a čínských vývozních kontrolách, s aktuálními čísly.</li>
 </ul></section>
 <section><h2>Jak to funguje</h2>
 <p>Všechno pochází z veřejných zdrojů, uvedených a datovaných tam, kde jsou použity. Automatická aktualizace sbírá a zpracovává data každé tři hodiny a stránky obnovuje každý den. Automaticky nalezené zprávy jsou označené jako neověřené. OreOrbit ukazuje měření a veřejné záznamy; nepředpovídá a není investiční ani právní radou.</p>
@@ -707,7 +710,8 @@ def about_page_cs(ref, cfg, today):
 <p>OreOrbit je zdarma. Výrobcům obranné a kosmické techniky, kteří potřebují obhajitelnou odpověď, nabízí Bohemia Defense posouzení rizik jedné výrobní řady s pevným rozsahem jako podklad pro článek 24 nařízení EU o kritických surovinách a průběžné sledování surovin, lokalit a termínů z vašeho registru.</p>
 <p><a class="cta" href="services-cs.html">Služby a ceny</a> &nbsp; <a href="mailto:%(mail)s?subject=OreOrbit">Napsat na %(mail)s</a></p></section>
 <section><h2>Jak OreOrbit citovat</h2><p class="cite-text">Madali, D. (%(year)s). OreOrbit: kritické suroviny z oběžné dráhy. Bohemia Defense. https://bohemiadefense.com/atlas/</p></section>""" % dict({"bbc": BBC, "mail": e(mail), "year": today[:4]}, **_about_counts(ref, True))
-    ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "inLanguage": "cs", "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]}}]
+    ld = [{"@type": "AboutPage", "@id": BASE + path + "#about", "name": title, "description": desc, "inLanguage": "cs", "dateModified": today, "about": {"@id": ATLAS["@id"]}, "author": {"@id": PERSON["@id"]},
+           "mainEntity": {"@id": PERSON["@id"]}}, person_full(cs=True), org_full(cs=True)]
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("O projektu", path)], lang="cs", alt="p/about.html")
 
 
@@ -1066,6 +1070,231 @@ def china_controls_page(today):
                       [("Atlas", ""), ("Library", "p/index.html"), ("China's export controls", path)])
 
 
+# What David Madali is an expert on, as linked entities (Wikidata, Wikipedia) so search engines and AI assistants
+# can tie the person to the topics. Shared by the About and FAQ pages; the same list is in docs/wordpress/jsonld-sitewide.html,
+# atlas/index.html and madali.cz.
+KNOWS = [("Critical raw materials", "Q131286239", "Critical_raw_materials"), ("EU Critical Raw Materials Act", "Q133592766", "Critical_Raw_Materials_Act"),
+         ("Defence industry", "Q392933", "Arms_industry"), ("Defence industrial base", "Q5251438", "Defense_industrial_base"),
+         ("Supply-chain risk management", "Q1114469", "Supply_chain_risk_management"), ("Supply-chain resilience", "Q106087845", "Supply_chain_resilience"),
+         ("Export controls", "Q96377540", "Export_control"), ("Economic security", "Q2497445", "Economic_security"),
+         ("European strategic autonomy", "Q104535312", "Strategic_autonomy"), ("European Defence Industrial Strategy", "Q125101636", "European_Defence_Industrial_Strategy"),
+         ("Geopolitics", "Q159385", "Geopolitics"), ("Rare earths", "Q190444", "Rare-earth_element"), ("Rare-earth magnets", "Q908880", "Neodymium_magnet"),
+         ("Gallium", "Q861", "Gallium"), ("Germanium", "Q867", "Germanium"), ("Antimony", "Q1099", "Antimony"), ("Tungsten", "Q743", "Tungsten"),
+         ("Titanium", "Q716", "Titanium"), ("Magnesium", "Q660", "Magnesium"), ("Manganese", "Q731", "Manganese"), ("Lithium", "Q568", "Lithium"),
+         ("Cobalt", "Q740", "Cobalt"), ("Nickel", "Q744", "Nickel"), ("Graphite", "Q5309", "Graphite"), ("Space economy", "Q2729047", "Space_industry"),
+         ("Satellite remote sensing", "Q199687", "Remote_sensing"), ("Open-source intelligence", "Q1059178", "Open-source_intelligence")]
+KNOWS_TEXT = ["Critical minerals", "Critical-mineral supply chains", "European security", "Economic diplomacy"]   # no Wikidata item
+
+
+def knows_ld():
+    return [{"@type": "Thing", "name": n, "sameAs": ["https://www.wikidata.org/wiki/" + q, "https://en.wikipedia.org/wiki/" + w]} for n, q, w in KNOWS] + KNOWS_TEXT
+
+
+def person_full(cs=False):
+    """The full Person node (the short PERSON reference is on every page; this one on About and FAQ)."""
+    return dict(PERSON, **{
+        "givenName": "David", "familyName": "Madali",
+        "jobTitle": "Analytik obranného průmyslu, kritických surovin a kosmické ekonomiky; zakladatel Bohemia Defense" if cs else
+                    "Analyst of the defence industry, critical raw materials and the space economy; founder of Bohemia Defense",
+        "description": "David Madali je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky, zakladatel Bohemia Defense a autor OreOrbit, otevřeného atlasu surovin, na kterých stojí evropská obrana." if cs else
+                       "David Madali is a Prague-based analyst of the defence industry, critical raw materials and the space economy, founder of Bohemia Defense and creator of OreOrbit, an open atlas of the minerals behind Europe's defence.",
+        "image": "https://bohemiadefense.com/atlas/img/david-madali-founder.jpg",
+        "sameAs": ["https://www.linkedin.com/in/davidmadali/", "https://bohemiadefense.com/david-madali/", "https://bohemiadefense.com/david-madali-cz/"],
+        "worksFor": {"@id": ORG["@id"]}, "homeLocation": {"@type": "Place", "name": "Prague, Czech Republic"}, "knowsLanguage": ["cs", "en"],
+        "knowsAbout": knows_ld(),
+        "subjectOf": {"@type": "NewsArticle", "url": BBC, "inLanguage": "zh-Hant", "datePublished": "2025-07",
+                      "publisher": {"@type": "Organization", "name": "BBC News Chinese", "url": "https://www.bbc.com/zhongwen"}}})
+
+
+def org_full(cs=False):
+    return dict(ORG, **{
+        "description": "Nezávislý analytický projekt o evropském obranném průmyslu, bezpečnosti a kritických surovinách, na kterých stojí; domov atlasu OreOrbit. Provozuje ho David Madali v Praze." if cs else
+                       "An independent analysis project on Europe's defence industry, security and the critical raw materials they depend on, and home of the OreOrbit atlas. Run by David Madali in Prague.",
+        "foundingDate": "2024-11", "foundingLocation": {"@type": "Place", "name": "Prague, Czech Republic"}, "founder": {"@id": PERSON["@id"]},
+        "areaServed": "Europe", "knowsAbout": [n for n, _, _ in KNOWS[:12]]})
+
+
+WHO_CS = {"China": "Čína", "Indonesia": "Indonésie", "DR Congo": "DR Kongo", "South Africa": "Jihoafrická republika", "Australia": "Austrálie", "Chile": "Chile"}
+WHAT_CS = {"Sintered magnets": "výroby spékaných magnetů", "Titanium sponge": "výroby titanové houby", "Primary magnesium metal": "výroby primárního hořčíku",
+           "Electrolytic manganese metal": "kapacit elektrolytického manganu", "Primary gallium": "výroby primárního galia", "Lithium chemicals": "výroby lithných chemikálií",
+           "Refined cobalt": "rafinace kobaltu", "Battery-grade graphite": "výroby bateriového grafitu", "Separation and refining": "separace a rafinace"}
+STAGE_CS_GEN = {"mine": "těžby", "refine": "rafinace", "part": "výroby součástek"}
+
+
+def _tight(R, m, cs):
+    """'China 79% of mining' / 'Čína 79 % těžby': the largest one-country share at the mineral's tightest stage."""
+    w = R.get("worst") or {}
+    x = w.get("x") or {}
+    if not isinstance(x.get("pct"), (int, float)):
+        return "Čína vede v rafinaci" if cs else "China leads refining"
+    pct = x.get("txt") or pct_txt(x)
+    if cs:
+        what = WHAT_CS.get(x.get("what")) or STAGE_CS_GEN.get(w.get("k"), "jedné fáze")
+        return "%s %s %s" % (WHO_CS.get(x.get("who"), x.get("who")), pct.replace("%", " %"), what)
+    what = x.get("what") or STAGE_NAME.get(w.get("k"), "one stage")
+    return "%s %s of %s" % (x.get("who"), pct, what[0].lower() + what[1:])
+
+
+def _upcoming(ref, today, cs, n=5):
+    seen, out = set(), []
+    for m in ref["order"]:
+        for d in (ref["materials"].get(m) or {}).get("deadlines") or []:
+            if not isinstance(d, dict) or d.get("id") in seen or str(d.get("date", "")) < today:
+                continue
+            seen.add(d.get("id"))
+            out.append((str(d["date"])[:10], str(d.get("id") or ""), (d.get("title_cs") if cs else None) or d.get("title") or ""))
+    out.sort()                                                               # by date, then id: the same items in English and Czech
+    return [(day_cs(a) if cs else day(a), t) for a, _, t in out[:n] if t]
+
+
+def faq_qas(ref, live, cfg, today, cs=False):
+    """Questions and answers on Europe's critical-mineral dependencies, OreOrbit, Bohemia Defense and David Madali.
+    Every figure is computed from reference.json and the live trade data, so the answers stay true as the data move.
+    Returns [(anchor, question, answer, [(link text, href)])]; the answer text is the same on the page and in FAQPage."""
+    c = counts(ref)
+    mats = ref["materials"]
+    nm = (lambda m: MAT_CS.get(m, m).lower()) if cs else (lambda m: ((mats[m].get("info") or {}).get("name") or m).lower())
+    conc = [m for m in ref["order"] if isinstance(((mats[m].get("worst") or {}).get("x") or {}).get("pct"), (int, float)) and mats[m]["worst"]["x"]["pct"] > 65]
+    none = [m for m in ref["order"] if not (mats[m].get("worst") or {}).get("x")]
+    T = lambda m: _tight(mats[m], m, cs)
+    allm = ", ".join(nm(m) for m in ref["order"][:-1]) + (" a " if cs else " and ") + nm(ref["order"][-1])
+    tight = "; ".join("%s (%s)" % (nm(m), T(m)) for m in conc)
+    ser = dependency_series(live.get("trade")) if live else []
+    last = ser[-1] if ser else None
+    up = _upcoming(ref, today, cs)
+    cz = [s for s in ref["sites"] if s.get("country") == "Czechia"]
+    price = str(cfg.get("monitoringPrice") or "49").strip()
+    nsite, nroute = c["sites"], c["routes"]
+    q = []
+    if cs:
+        n_min, n_conc, n_cn = w_cs(c["minerals"], gen=True), w_cs(len(conc), gen=True), w_cs(c["china65"], gen=True)
+        q.append(("zavislosti", "Jaké jsou kritické závislosti evropského obranného průmyslu?",
+                  "Evropský obranný průmysl stojí na %s kritických surovinách, které OreOrbit sleduje: %s. U %s z %s drží jedna země víc než 65 %% alespoň jedné fáze světové produkce. To je stejná hranice, kterou nařízení EU o kritických surovinách stanoví pro rok 2030 jako strop závislosti na jedné zemi. Samotná Čína drží víc než 65 %% alespoň jedné fáze u %s z %s. Nejužší místa: %s.%s Podíly podle USGS Mineral Commodity Summaries 2026 a IEA Global Critical Minerals Outlook 2026, zpracoval OreOrbit." % (
+                      n_min, allm, n_conc, n_min, n_cn, n_min, tight,
+                      "".join(" U suroviny %s chybí veřejný světový údaj o rafinaci; vede Čína." % nm(m) for m in none)),
+                  [("Index závislosti OreOrbit", "dependency-index-cs.html")]))
+        q.append(("munice", "Na jakých surovinách závisí evropská výroba munice, raket a vojenské elektroniky?",
+                  "Munice a pancéřování: wolfram pro průbojná jádra (%s), antimon pro zápalky a svítící střely (%s), mangan pro pancéřovou a dělostřeleckou ocel (%s) a hořčík pro infračervené klamné cíle a výrobu titanu (%s). Rakety a letadla: magnety ze vzácných zemin pro kormidla a akční členy navádění (%s), titan pro draky a motory (%s) a superslitiny kobaltu a niklu pro proudové motory (%s; %s). Senzory a elektronika: čipy z nitridu galia pro radary a elektronický boj (%s) a germaniová infračervená optika pro termovize a hlavice raket (%s). Baterie pro drony, vozidla a vojáky: lithium (%s) a grafitové anody (%s). V závorce je největší podíl jedné země v nejužší fázi dodávek." % (
+                      T("w"), T("sb"), T("mn"), T("mg"), T("ree"), T("ti"), T("co"), T("ni"), T("ga"), T("ge"), T("li"), T("gr")), []))
+        q.append(("monitoring", "Jak OreOrbit monitoruje úzká hrdla dodavatelských řetězců?",
+                  "OreOrbit sleduje %d dolů, rafinerií a továren na magnety a %s, po kterých se %s surovin dostává do Evropy. Každou lokalitu fotografují satelity každý týden: snímky Copernicus Sentinel-2, radar Sentinel-1, který vidí i přes mraky, a tepelné mapy Landsat. Každé tři hodiny automatická aktualizace kontroluje teplo v závodech, lodě v úžinách, zemětřesení a výstrahy před katastrofami u lokalit a ozbrojené konflikty u dodavatelského řetězce. Jednou měsíčně čte statistiky dovozu do EU (Eurostat Comext) pro každou surovinu a vede datovaný kalendář vývozních kontrol a regulačních termínů. Změna, například závod, který přestane hřát, nový termín nebo skok podílu Číny na dovozu, se objeví v atlasu a v pondělním přehledu; klienti monitoringu ji dostanou týž den." % (
+                      nsite, "%s obchodních tras" % w_cs(nroute), w_cs(c["minerals"]),), [("Otevřít atlas", "../?lang=cs"), ("O projektu", "about-cs.html")]))
+        q.append(("uzka-mista", "Kde jsou úzká místa dopravy kritických surovin do Evropy?",
+                  "Velká část těchto surovin se rafinuje v Číně a do Evropy pluje Malackým průlivem a pak Suezským průplavem a Bab al-Mandabem, což je nejkratší cesta, nebo kolem mysu Dobré naděje, když není Rudé moře bezpečné. Po začátku útoků na lodě klesl provoz v Suezském průplavu za dva měsíce o 42 %% (UNCTAD, leden 2024). Suroviny pro rafinace putují nejdřív opačně: konžský kobalt, jihoafrická a gabonská manganová ruda a indonéský nikl míří do čínských rafinerií, většina z nich Malackým průlivem. Hlavní alternativou podporovanou Západem je Lobitský koridor, 1 300 km dlouhá železnice z měděného pásu Konga a Zambie do angolského přístavu Lobito. OreOrbit sleduje %s a lodě v každé úžině." % (
+                      "%s obchodních tras" % w_cs(nroute),), [("Otevřít atlas", "../?lang=cs")]))
+        q.append(("crma", "Co požaduje nařízení EU o kritických surovinách (CRMA) a jaké má cíle pro rok 2030?",
+                  "Nařízení (EU) 2024/1252 platí od 23. května 2024 a uvádí 34 kritických surovin, z toho 17 strategických. Do roku 2030 má EU těžit alespoň 10 %, zpracovávat alespoň 40 % a recyklovat alespoň 25 % své roční spotřeby strategických surovin a žádnou strategickou surovinu nemá v žádné fázi zpracování odebírat z víc než 65 % od jedné třetí země. Všechny suroviny OreOrbit kromě antimonu jsou na seznamu strategických surovin (v jakostech, které nařízení uvádí, například lithium pro baterie nebo vzácné zeminy pro magnety); antimon je kritický. Článek 24 ukládá velkým výrobcům strategických technologií alespoň jednou za tři roky posoudit rizika svého dodavatelského řetězce surovin. EU vybrala prvních 47 strategických projektů 25. března 2025, 13 projektů mimo EU 4. června 2025 a dalších 46 strategických projektů ve druhé výzvě 9. října 2026.", [("Článek 24 (anglicky)", "crma-article-24.html")]))
+        cn = "Čína od roku 2023 vyžaduje vývozní licence na galium a germanium (srpen 2023), antimon (září 2024), wolfram a čtyři další kovy (únor 2025) a sedm těžkých vzácných zemin včetně dysprosia a terbia (duben 2025, nikdy nepozastaveno). Širší balík z října 2025 (další vzácné zeminy, zařízení a technologie pro jejich zpracování, lithiové baterie, grafitové anody a pravidlo 0,1 % pro výrobky vyrobené mimo Čínu) Čína v listopadu 2025 pozastavila a 9. listopadu 2026 pauzu prodloužila do 10. ledna 2027. O licencích se rozhoduje případ od případu, i pro evropské odběratele."
+        if up:
+            cn += " Nejbližší termíny v kalendáři OreOrbit: " + "; ".join("%s: %s" % (a, t) for a, t in up) + "."
+        q.append(("cina", "Které čínské vývozní kontroly dopadají na Evropu a co je pozastaveno?", cn, [("Časová osa (anglicky)", "china-export-controls.html")]))
+        if last:
+            mi = int(last["month"][5:7]) - 1
+            q.append(("index", "Co je Index závislosti OreOrbit?",
+                      "Index závislosti OreOrbit je měsíční podíl Číny na hodnotě dovozu deseti surovin indexu do EU ze zemí mimo EU (vzácné zeminy, titan, wolfram, antimon, galium, germanium, lithium, kobalt, nikl a grafit), každá surovina má stejnou váhu. Počítá se z dat Eurostat Comext. V %s %s byl %d %%. Hořčík a mangan OreOrbit sleduje zvlášť." % (
+                          MONTH_CS_LOC[mi], last["month"][:4], round(last["value"] * 100)), [("Index závislosti", "dependency-index-cs.html")]))
+        if cz:
+            czs = {"cinovec": "Cínovec v Krušných horách (lithium; Geomet, skupina ČEZ 51 %, European Metals 49 %) je popisován jako největší evropské ložisko lithia, v březnu 2025 se stal strategickým projektem EU a má ročně vyrábět asi 37 500 t ekvivalentu uhličitanu lithného pro baterie se zpracováním v Prunéřově",
+                   "chvaletice-mn": "Chvaletice (mangan; Euro Manganese) chtějí vyrábět bateriový mangan ze starých odkališť, jsou strategickým projektem EU a studie proveditelnosti má být hotová v první polovině roku 2027"}
+            parts = [czs.get(s["id"]) or "%s (%s)" % (s.get("name"), nm(s.get("m"))) for s in cz]
+            q.append(("cesko", "Jakou roli má Česko v evropských kritických surovinách?",
+                      "Z %d lokalit, které OreOrbit sleduje, jsou v Česku tyto: %s. Surovinovou politiku státu má na starosti Ministerstvo průmyslu a obchodu (MPO). Čeští výrobci munice, obrněných vozidel, radarů a optiky závisí na stejných surovinách jako zbytek evropského obranného průmyslu, hlavně na wolframu, antimonu, manganové oceli, galiu a germaniu." % (
+                          nsite, "; ".join(parts)), [(s.get("name"), s["id"] + ".html") for s in cz]))
+        q.append(("posouzeni", "Jak může výrobce posoudit svou expozici, například kvůli článku 24?",
+                  "Prvním krokem je bezplatná rychlá kontrola v atlasu: zvolíte typ výrobku a za minutu uvidíte, na kterých surovinách závisí a kde jsou rizika. Monitoring za %s € měsíčně hlídá vámi zvolené suroviny, jejich lokality a termíny, posílá upozornění týž den, osobní pondělní vydání s datovým souborem a jednou měsíčně odpoví na vaši otázku člověk do dvou pracovních dnů. Posouzení připravenosti jedné výrobní řady pro vedení firmy (registr dílů s kritickými surovinami, zátěžové testy proti skutečným vývozním kontrolám a podklad pro článek 24) je na míru: rozsah, termín a cenu domluvíme e-mailem." % price,
+                  [("Služby", "services-cs.html"), ("Rychlá kontrola", "../?lang=cs#check")]))
+        q.append(("david-madali", "Kdo je David Madali?",
+                  "David Madali je pražský analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. V roce 2024 založil Bohemia Defense a v roce 2026 vytvořil OreOrbit. Jako analytika ho v červenci 2025 citovala čínská služba BBC News. Má zkušenosti z ekonomie, ekonomické diplomacie na Ministerstvu zahraničních věcí ČR a exportního poradenství v CzechTrade, kde založil klastr 12 firem z bezpečnostního průmyslu. Osobní stránka je madali.cz.",
+                  [("madali.cz", "https://madali.cz/cs/"), ("LinkedIn", "https://www.linkedin.com/in/davidmadali/")]))
+        q.append(("bohemia-defense", "Co je Bohemia Defense?",
+                  "Bohemia Defense je nezávislý analytický projekt o evropském obranném průmyslu, bezpečnosti a zahraniční politice, který v listopadu 2024 v Praze založil David Madali. Publikuje případové studie o NATO, Ukrajině, Africe, evropském obranném průmyslu a kritických surovinách, provozuje atlas OreOrbit a nabízí výrobcům obranné a kosmické techniky posouzení rizik dodavatelského řetězce. Bohemia Defense je značka, ne společnost; provozovatelem je David Madali, fyzická osoba podnikající, IČO 22229957.",
+                  [("bohemiadefense.com", "https://bohemiadefense.com/cs/")]))
+        q.append(("data", "Jak často se data obnovují a jak je citovat?",
+                  "Automatická aktualizace sbírá data každé tři hodiny, satelitní snímky každý týden, dovozní statistiky každý měsíc a stránky knihovny se přestavují každý den. Každý údaj má u sebe zdroj a datum. Údaje a grafy lze citovat s uvedením „OreOrbit (Bohemia Defense)“ a odkazem; každá stránka knihovny má vlastní citaci.", [("Právní informace a zdroje (anglicky)", "legal.html")]))
+        return q
+    n_min, n_conc, n_cn = w_en(c["minerals"]), w_en(len(conc)), w_en(c["china65"])
+    q.append(("dependencies", "What are the critical dependencies of Europe's defence industry?",
+              "Europe's defence industry depends on %s critical raw materials that OreOrbit tracks: %s. For %s of the %s, one country holds more than 65%% of at least one stage of world supply. That is the same threshold the EU Critical Raw Materials Act sets as its 2030 ceiling for reliance on a single country. China alone holds more than 65%% of at least one stage for %s of the %s. The tightest stages are: %s.%s Shares from the USGS Mineral Commodity Summaries 2026 and the IEA Global Critical Minerals Outlook 2026, compiled by OreOrbit." % (
+                  n_min, allm, n_conc, n_min, n_cn, n_min, tight,
+                  "".join(" %s has no published world total for refining; China leads." % nm(m).capitalize() for m in none)),
+              [("OreOrbit Dependency Index", "dependency-index.html"), ("The library", "index.html")]))
+    q.append(("ammunition", "Which minerals do European ammunition, missiles and military electronics depend on?",
+              "Ammunition and armour: tungsten for armour-piercing penetrators (%s), antimony for primers and tracers (%s), manganese for armour and shell steel (%s), and magnesium for infrared decoy flares and for making titanium (%s). Missiles and aircraft: rare-earth magnets for fins and guidance actuators (%s), titanium for airframes and engines (%s), and cobalt and nickel superalloys for jet engines (%s; %s). Sensors and electronics: gallium nitride chips for radar and electronic warfare (%s) and germanium infrared optics for thermal sights and missile seekers (%s). Batteries for drones, vehicles and soldiers: lithium (%s) and graphite anodes (%s). Figures in brackets are the largest single-country share at the tightest stage of supply." % (
+                  T("w"), T("sb"), T("mn"), T("mg"), T("ree"), T("ti"), T("co"), T("ni"), T("ga"), T("ge"), T("li"), T("gr")),
+              [("Tungsten", "tungsten.html"), ("Antimony", "antimony.html"), ("Gallium", "gallium.html")]))
+    q.append(("monitoring", "How does OreOrbit monitor supply-chain bottlenecks?",
+              "OreOrbit watches %d mines, refineries and magnet plants and the %s that carry the %s minerals towards Europe. Every site is photographed by satellite every week: Copernicus Sentinel-2 pictures, Sentinel-1 radar that sees through cloud, and Landsat heat maps. Every three hours an automatic updater checks heat at the plants, ships at the chokepoints, earthquakes and disaster alerts near the sites, and armed conflict near the supply chain. Every month it reads EU import statistics (Eurostat Comext) for each mineral, and it keeps a dated calendar of export-control and policy deadlines. A change, such as a plant going quiet, a new deadline or a jump in China's share of imports, shows on the atlas and in the Monday brief; monitoring clients hear about it the same day." % (
+                  nsite, "%s trade routes" % w_en(nroute), w_en(c["minerals"])), [("Open the atlas", "../"), ("About OreOrbit", "about.html")]))
+    q.append(("chokepoints", "Where are the chokepoints in Europe's critical-mineral supply?",
+              "Much of the supply is refined in China and shipped to Europe through the Strait of Malacca and then the Suez Canal and Bab-el-Mandeb, the shortest route, or around the Cape of Good Hope when the Red Sea is unsafe. Suez Canal transits fell 42%% in two months after attacks on shipping began (UNCTAD, January 2024). Raw materials travel the other way first: Congolese cobalt, South African and Gabonese manganese ore and Indonesian nickel go to Chinese refineries, most of them through the Strait of Malacca. The Lobito Corridor, a 1,300 km railway from the Congolese and Zambian copperbelt to Angola's Atlantic port of Lobito, is the main Western-backed alternative. OreOrbit tracks %s and the ships at each chokepoint." % (
+                  "%s trade routes" % w_en(nroute)), [("Open the atlas", "../")]))
+    q.append(("crma", "What does the EU Critical Raw Materials Act require, and what are its 2030 benchmarks?",
+              "Regulation (EU) 2024/1252 has been in force since 23 May 2024. It lists 34 critical raw materials, 17 of them strategic. By 2030 the EU should extract at least 10%, process at least 40% and recycle at least 25% of its annual consumption of strategic raw materials, and rely on a single third country for no more than 65% of any strategic raw material at any stage of processing. All of OreOrbit's minerals except antimony are on the strategic list (in the grades it names, such as battery-grade lithium and rare earths for magnets); antimony is critical. Article 24 asks large manufacturers of strategic technologies to assess the risks in their raw-material supply chains at least every three years. The EU selected its first 47 strategic projects on 25 March 2025, 13 projects outside the EU on 4 June 2025 and 46 more strategic projects in a second call on 9 October 2026.",
+              [("Article 24 explained", "crma-article-24.html")]))
+    cn = "Since 2023 China has required export licences for gallium and germanium (August 2023), antimony (September 2024), tungsten and four other metals (February 2025) and seven heavy rare earths including dysprosium and terbium (April 2025, never paused). Its wider October 2025 package (more rare earths, rare-earth equipment and technology, lithium batteries, graphite anodes and the 0.1% rule for products made outside China) was paused in November 2025; on 9 November 2026 China extended the pause to 10 January 2027. Licences are decided case by case, including for European buyers."
+    if up:
+        cn += " Next dates on OreOrbit's calendar: " + "; ".join("%s: %s" % (a, t) for a, t in up) + "."
+    q.append(("china", "Which Chinese export controls affect Europe, and what is paused?", cn, [("China's export controls: timeline", "china-export-controls.html")]))
+    if last:
+        q.append(("index", "What is the OreOrbit Dependency Index?",
+                  "The OreOrbit Dependency Index is China's monthly share of the value of the EU's imports from outside the EU of the ten index minerals (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel and graphite), each mineral weighted equally, from Eurostat Comext data. In %s it was %d%%. Magnesium and manganese are tracked separately." % (
+                      month_txt(last["month"]), round(last["value"] * 100)), [("Dependency Index", "dependency-index.html")]))
+    if cz:
+        low1 = lambda t: t[0].lower() + t[1:] if len(t) > 1 and t[1].islower() else t
+        parts = ["%s (%s, operated by %s): %s" % (s.get("name"), nm(s.get("m")), (s.get("operator") or "not published").replace(" (", ", ").replace(")", ""),
+                                                  "; ".join(low1(f) for f in s.get("facts") or [])) for s in cz]
+        q.append(("czechia", "What is the Czech Republic's role in Europe's critical raw materials?",
+                  "Of the %d sites OreOrbit watches, these are in Czechia: %s. The Czech Ministry of Industry and Trade (MPO) is responsible for the country's raw-materials policy. Czech makers of ammunition, armoured vehicles, radar and optics depend on the same minerals as the rest of Europe's defence industry, above all tungsten, antimony, manganese steel, gallium and germanium." % (
+                      nsite, ". ".join(parts)), [(s.get("name"), s["id"] + ".html") for s in cz]))
+    q.append(("exposure", "How can a manufacturer check its exposure, for example for Article 24?",
+              "Start with the free quick check on the atlas: choose a product type and see in a minute which minerals it depends on and where the risks are. Monitoring (€%s a month) watches the minerals you choose, their sites and deadlines, and sends same-day alerts, a personal Monday edition with a data file, and one question a month answered by a person within two working days. A readiness review of one product line for your board (a register of every part with a critical raw material, stress tests against real export controls, and documentation for Article 24) is tailored: scope, timing and price are agreed by email." % price,
+              [("Services", "services.html"), ("Quick check", "../#check")]))
+    q.append(("david-madali", "Who is David Madali?",
+              "David Madali is a Prague-based analyst of the defence industry, critical raw materials and the space economy. He founded Bohemia Defense in 2024 and built OreOrbit in 2026. BBC News Chinese quoted him as an analyst in July 2025. His background is in economics, economic diplomacy at the Czech Ministry of Foreign Affairs and export consulting at CzechTrade, where he set up a cluster of 12 security-industry companies. His personal site is madali.cz.",
+              [("madali.cz", "https://madali.cz/"), ("LinkedIn", "https://www.linkedin.com/in/davidmadali/")]))
+    q.append(("bohemia-defense", "What is Bohemia Defense?",
+              "Bohemia Defense is an independent analysis project on Europe's defence industry, security and foreign policy, founded in Prague in November 2024 by David Madali. It publishes case studies on NATO, Ukraine, Africa, the European defence industry and critical raw materials, runs the OreOrbit atlas, and offers supply-chain risk reviews to defence and space manufacturers. Bohemia Defense is a brand, not a company; it is operated by David Madali as a sole trader, IČO 22229957.",
+              [("bohemiadefense.com", "https://bohemiadefense.com/")]))
+    q.append(("data", "How often is the data updated, and how should it be cited?",
+              "An automatic updater collects data every three hours, satellite pictures every week and import statistics every month, and the library pages are rebuilt every day. Every figure carries its source and date. Figures and charts may be quoted with credit to “OreOrbit (Bohemia Defense)” and a link; every library page has its own citation.", [("Legal page and sources", "legal.html")]))
+    return q
+
+
+def _faq_body(qs, cs, title, lede, kicker):
+    toc = "".join('<li><a href="#%s">%s</a></li>' % (a, e(qq)) for a, qq, _, _ in qs)
+    secs = "".join('<section class="faq" id="%s" style="scroll-margin-top:76px"><h2>%s</h2><p>%s</p>%s</section>' % (
+        a, e(qq), e(aa), ('<p class="small">%s</p>' % " · ".join('<a href="%s">%s</a>' % (e(h), e(t)) for t, h in links)) if links else "")
+        for a, qq, aa, links in qs)
+    return ('<article style="--c:#3ddc97"><p class="kicker"><i></i>%s</p><h1>%s</h1><p class="lede">%s</p>'
+            '<nav aria-label="%s"><ul class="plain">%s</ul></nav>%s') % (e(kicker), e(title), e(lede), "Otázky" if cs else "Questions", toc, secs)
+
+
+def faq_page(ref, live, cfg, today):
+    path = "p/faq.html"
+    title = "Critical raw materials and Europe's defence: questions and answers"
+    desc = "Europe's critical-mineral dependencies, the chokepoints, the EU Critical Raw Materials Act, China's export controls, and how OreOrbit monitors the supply chain, answered with current data."
+    qs = faq_qas(ref, live, cfg, today)
+    body = _faq_body(qs, False, title, "Plain answers on the minerals behind Europe's defence, written for buyers, analysts and journalists. The figures are computed from OreOrbit's data and update every day.",
+                     "Questions and answers · as of %s" % day(today)) + cite_box(title, path, today) + '<p class="open"><a class="cta" href="../">Open the live atlas</a></p></article>'
+    qa = [(qq, aa) for _, qq, aa, _ in qs]
+    ld = [article_ld(path, title, desc, today, about="Critical raw materials for Europe's defence industry"), faq_ld(path, qa), person_full(), org_full()]
+    return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Questions and answers", path)], alt="p/faq-cs.html")
+
+
+def faq_page_cs(ref, live, cfg, today):
+    path = "p/faq-cs.html"
+    title = "Kritické suroviny a evropská obrana: otázky a odpovědi"
+    desc = "Na čem závisí evropský obranný průmysl, kde jsou úzká místa, co požaduje nařízení EU o kritických surovinách, čínské vývozní kontroly a jak OreOrbit hlídá dodavatelský řetězec, s aktuálními daty."
+    qs = faq_qas(ref, live, cfg, today, cs=True)
+    body = _faq_body(qs, True, title, "Věcné odpovědi o surovinách, na kterých stojí evropská obrana, pro nákupčí, analytiky a novináře. Čísla se počítají z dat OreOrbit a obnovují se každý den.",
+                     "Otázky a odpovědi · data k %s" % day_cs(today)) + cite_box_cs(title, path, today) + '<p class="open"><a class="cta" href="../?lang=cs">Otevřít živý atlas</a></p></article>'
+    qa = [(qq, aa) for _, qq, aa, _ in qs]
+    art = dict(article_ld(path, title, desc, today, about="Kritické suroviny pro evropský obranný průmysl"), inLanguage="cs")
+    fq = dict(faq_ld(path, qa), inLanguage="cs")
+    return path, page(path, title, desc, body, [art, fq, person_full(cs=True), org_full(cs=True)], today,
+                      [("Atlas", ""), ("Knihovna", "p/index.html"), ("Otázky a odpovědi", path)], lang="cs", alt="p/faq.html")
+
+
 def sitemap(paths, today):
     urls = [BASE] + [BASE + p for p in paths]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -1105,7 +1334,7 @@ def build(ref, live, cfg, today):
     if ser and "p/dependency-index.html" in out:
         months = " · ".join('<a href="dependency-index-%s.html">%s: %d%%</a>' % (x["month"], e(month_txt(x["month"])), round(x["value"] * 100)) for x in reversed(ser))
         out["p/dependency-index.html"] = out["p/dependency-index.html"].replace('<aside class="cite"', '<section><h2>Every month</h2><p class="monthnav">%s</p></section><aside class="cite"' % months, 1)
-    for fn in (lambda: space_page(ref, live, today), lambda: crma_page(today), lambda: china_controls_page(today)):
+    for fn in (lambda: space_page(ref, live, today), lambda: crma_page(today), lambda: china_controls_page(today), lambda: faq_page(ref, live, cfg, today), lambda: faq_page_cs(ref, live, cfg, today)):
         try:
             pth, html = fn()
             out[pth] = html
@@ -1113,6 +1342,7 @@ def build(ref, live, cfg, today):
             print("page failed:", ex)
     if "p/index.html" in out:
         guides = ('<section class="guides"><h2>Guides and archives</h2><ul class="lib">'
+                  '<li><a href="faq.html">Questions and answers</a><span>Europe\'s dependencies, chokepoints, the CRMA and China\'s controls, with current data (<a href="faq-cs.html" hreflang="cs" lang="cs">česky</a>)</span></li>'
                   '<li><a href="space.html">Critical minerals for the space industry</a><span>Satellites, launchers and the minerals they need</span></li>'
                   '<li><a href="crma-article-24.html">Article 24 of the Critical Raw Materials Act</a><span>What large manufacturers must do, and the 2026 changes</span></li>'
                   '<li><a href="china-export-controls.html">China\'s export controls on critical minerals</a><span>Timeline, the 0.1% rule and what is paused until January 2027</span></li>'

@@ -1,0 +1,62 @@
+# Bohemia Defense
+
+> Independent analysis of Europe's defence industry, critical raw materials and geopolitical security, founded in Prague in 2024 by David Madali, an analyst of the defence industry, critical minerals and the space economy. Home of OreOrbit, a free, live atlas of the twelve critical minerals behind Europe's defence and space industries: 43 mines, refineries and magnet plants watched by satellite every week, eleven trade routes, export-control deadlines and a monthly index of the EU's import dependence on China. Bohemia Defense also offers supply-chain monitoring and readiness reviews (EU Critical Raw Materials Act, Article 24) for defence, security and space manufacturers.
+
+Bohemia Defense is a project and brand run by David Madali, sole trader, Prague, IČO 22229957. It is not a company. Texts are in British English; services, the founder page and the Dependency Index are also in Czech.
+
+## Questions and answers
+- [Questions and answers on critical minerals and Europe's defence](https://bohemiadefense.com/atlas/p/faq.html): twelve answers with current data, sources and dates, rebuilt daily (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html)
+- [What are the critical dependencies of Europe's defence industry?](https://bohemiadefense.com/atlas/p/faq.html#dependencies): the twelve minerals, the tightest stage of each and who holds it (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#zavislosti)
+- [Which minerals do ammunition, missiles and military electronics depend on?](https://bohemiadefense.com/atlas/p/faq.html#ammunition) (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#munice)
+- [How does OreOrbit monitor supply-chain bottlenecks?](https://bohemiadefense.com/atlas/p/faq.html#monitoring): satellites, ships, heat at the plants, conflict, EU import statistics and deadlines (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#monitoring)
+- [Where are the chokepoints in Europe's critical-mineral supply?](https://bohemiadefense.com/atlas/p/faq.html#chokepoints): Malacca, Suez and Bab-el-Mandeb, the Cape route and the Lobito Corridor (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#uzka-mista)
+- [What does the EU Critical Raw Materials Act require?](https://bohemiadefense.com/atlas/p/faq.html#crma): Regulation (EU) 2024/1252, the 2030 benchmarks and the strategic projects (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#crma)
+- [Which Chinese export controls affect Europe, and what is paused?](https://bohemiadefense.com/atlas/p/faq.html#china) (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#cina)
+- [What is the Czech Republic's role in Europe's critical raw materials?](https://bohemiadefense.com/atlas/p/faq.html#czechia): Cínovec, Chvaletice and the Czech sites OreOrbit watches (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#cesko)
+- [How can a manufacturer check its exposure, for example for Article 24?](https://bohemiadefense.com/atlas/p/faq.html#exposure) (Czech: https://bohemiadefense.com/atlas/p/faq-cs.html#posouzeni)
+- [Who is David Madali?](https://bohemiadefense.com/atlas/p/faq.html#david-madali) and [What is Bohemia Defense?](https://bohemiadefense.com/atlas/p/faq.html#bohemia-defense)
+
+## Key facts (November 2026)
+- Europe's defence and space industries depend on twelve critical raw materials: rare earths, titanium, tungsten, antimony, magnesium, manganese, gallium, germanium, lithium, cobalt, nickel and graphite. For most of them one country, usually China, holds more than 65% of at least one stage of world supply (shares by stage on the FAQ and the material pages, from USGS Mineral Commodity Summaries 2026 and the IEA Global Critical Minerals Outlook 2026).
+- The EU Critical Raw Materials Act (Regulation (EU) 2024/1252, in force since 23 May 2024) sets 2030 benchmarks: at least 10% of the EU's annual consumption of strategic raw materials extracted in the EU, 40% processed and 25% recycled, and no more than 65% of any strategic raw material from a single third country at any stage.
+- China's October 2025 export-control package is paused; on 9 November 2026 China extended the pause to 10 January 2027. Its licences for gallium, germanium, antimony, tungsten and seven heavy rare earths still apply.
+- The OreOrbit Dependency Index is China's monthly share of the value of EU imports of ten index minerals, from Eurostat Comext data, free to quote with credit.
+
+## OreOrbit
+- [OreOrbit atlas](https://bohemiadefense.com/atlas/): a live 3D atlas of the mines, refineries, sea routes and chokepoints behind twelve critical raw materials, with satellite imagery of 43 sites updated weekly, ships at the chokepoints, heat at the plants, disaster alerts, export-control deadlines and a quick check by product type (Czech: https://bohemiadefense.com/atlas/?lang=cs)
+- [OreOrbit library](https://bohemiadefense.com/atlas/p/index.html): a citable page for every material and site, rebuilt daily
+- [OreOrbit Dependency Index](https://bohemiadefense.com/atlas/p/dependency-index.html): a monthly figure for China's share of EU imports of the ten index minerals (magnesium and manganese are tracked separately), free to quote (Czech: https://bohemiadefense.com/atlas/p/dependency-index-cs.html)
+- [Rare earths](https://bohemiadefense.com/atlas/p/rare-earths.html), [tungsten](https://bohemiadefense.com/atlas/p/tungsten.html), [gallium](https://bohemiadefense.com/atlas/p/gallium.html), [germanium](https://bohemiadefense.com/atlas/p/germanium.html), [antimony](https://bohemiadefense.com/atlas/p/antimony.html), [titanium](https://bohemiadefense.com/atlas/p/titanium.html): who mines and refines each mineral, what it goes into, the EU's import dependence and the deadlines
+- [Magnesium](https://bohemiadefense.com/atlas/p/magnesium.html): China 86% of primary metal in 2025 (USGS), why titanium and infrared decoy flares depend on it, and the EU's 97% reliance on China
+- [Manganese](https://bohemiadefense.com/atlas/p/manganese.html): manganese ore (South Africa 38% in 2025, USGS) and refining (China over 95% of manganese metal), armour steel and batteries, and the Chvaletice project in Czechia
+
+## Guides and archives
+- [Critical minerals for the space industry](https://bohemiadefense.com/atlas/p/space.html): which minerals satellites and launchers depend on, who controls them, and Europe's import dependence
+- [Article 24 of the EU Critical Raw Materials Act](https://bohemiadefense.com/atlas/p/crma-article-24.html): what large manufacturers of strategic technologies must do, and the 2026 amendments
+- [China's export controls on critical minerals](https://bohemiadefense.com/atlas/p/china-export-controls.html): timeline since 2023, the 0.1% rule and what is paused until 10 January 2027
+- [Weekly briefs](https://bohemiadefense.com/atlas/p/briefs.html): every Monday, a dated summary of the week in critical minerals and Europe's defence supply chain
+- [Dependency Index, month by month](https://bohemiadefense.com/atlas/p/dependency-index.html): every monthly figure on its own permanent page
+
+## Services
+- [Services and prices](https://bohemiadefense.com/atlas/p/services.html): three levels for defence, security and space manufacturers in Central Europe: the free OreOrbit atlas (with the Monday brief by email), monitoring of the minerals a company depends on (EUR 49 per month, paid by card, cancel anytime), and a tailored readiness review of one product line for the board, scoped and priced by email (Czech: https://bohemiadefense.com/atlas/p/services-cs.html)
+- [Sample review (PDF)](https://bohemiadefense.com/atlas/oreorbit-sample-assessment.pdf)
+
+## About
+- [David Madali, personal site](https://madali.cz/): the official page about the founder, with a speaker and media kit (Czech: https://madali.cz/cs/)
+- [David Madali, founder page](https://bohemiadefense.com/david-madali/): background, projects and media (Czech: https://bohemiadefense.com/david-madali-cz/)
+- [About OreOrbit](https://bohemiadefense.com/atlas/p/about.html): who runs it, how the data is collected and how to cite it (Czech: https://bohemiadefense.com/atlas/p/about-cs.html)
+- [David Madali on LinkedIn](https://www.linkedin.com/in/davidmadali/)
+- [BBC News Chinese quoting David Madali as an analyst](https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad): security aspects of the Taiwanese vice-president's visit to Prague, July 2025
+- [Legal information](https://bohemiadefense.com/legal/): operator David Madali, sole trader, IČO 22229957
+
+## Analysis
+- [Bohemia Defense](https://bohemiadefense.com/): case studies on NATO, Ukraine, Africa, the European defence industry and critical raw materials (Czech homepage: https://bohemiadefense.com/cs/)
+
+## Topics
+Critical raw materials, critical minerals, defence industry supply chains, European security, geopolitical security, EU Critical Raw Materials Act, Article 24 supply-chain risk assessments, export controls, China's export controls, rare earths and permanent magnets, tungsten and ammunition, gallium and germanium, battery minerals, space economy, Central European defence markets, Czech defence industry
+
+## Citing
+OreOrbit pages and the Dependency Index may be quoted with credit. Each library page carries its date, its sources and a ready citation in the form: Madali, D. (2026). Page title. OreOrbit, Bohemia Defense. Page URL (data as of date).
+
+## Contact
+- Email David Madali: david@madali.cz
