@@ -1498,7 +1498,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (row && !row.querySelector(".wx-free-card")) {
       const mon = row.querySelector(".wx-mon"), rev = row.querySelector(".wx-rev");
       const free = document.createElement("article"); free.className = "wx-card wx-free-card";
-      free.innerHTML = `<p class="wx-name">${esc(T("Free", "Zdarma"))}</p><p class="wx-price">€0</p><p class="wx-sub">${esc(T("Open to everyone · no login", "Pro každého · bez přihlášení"))}</p>` +
+      free.innerHTML = `<p class="wx-name">${esc(T("Free", "Zdarma"))}</p><p class="wx-price">${CS ? "0 €" : "€0"}</p><p class="wx-sub">${esc(T("Open to everyone · no login", "Pro každého · bez přihlášení"))}</p>` +
         `<div class="wx-text"><p>${esc(T("Explore the atlas and see what your product depends on.", "Prozkoumejte atlas a zjistěte, na čem váš výrobek závisí."))}</p><ul><li>${esc(T("The interactive atlas and the quick check", "Interaktivní atlas a rychlá kontrola"))}</li><li>${esc(T("This week's headlines", "Titulky tohoto týdne"))}</li><li>${esc(T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data"))}</li></ul></div>` +
         `<a class="wx-ask" href="#monday">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))} <span aria-hidden="true">→</span></a>`;
       row.insertBefore(free, row.firstChild);
@@ -1551,7 +1551,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const formHTML = (row.querySelector('.oo-sub[data-plan="monitoring"]') || {}).outerHTML || "";
     row.className = "pl-row";
     row.innerHTML =
-      `<article class="pl-card"><p class="pl-k">01 · ${esc(T("Free", "Zdarma"))}</p><p class="pl-price">€0</p><p class="pl-sub">${esc(T("Open to everyone, no login", "Pro každého, bez přihlášení"))}</p>` +
+      `<article class="pl-card"><p class="pl-k">01 · ${esc(T("Free", "Zdarma"))}</p><p class="pl-price">${CS ? "0 €" : "€0"}</p><p class="pl-sub">${esc(T("Open to everyone, no login", "Pro každého, bez přihlášení"))}</p>` +
         list([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Titulky tohoto týdne"), T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data")]) +
         `<button type="button" class="btn ghost pl-cta" data-go="brief">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</button></article>` +
       `<article class="pl-card pl-feat"><span class="pl-badge"><i></i>${esc(T("For your minerals", "Pro vaše suroviny"))}</span><p class="pl-k">02 · ${esc(T("Monitoring", "Monitoring"))}</p><p class="pl-price">${esc(T("€" + MP, MP + " €"))}<small>${esc(T(" / month", " / měsíc"))}</small></p><p class="pl-sub">${esc(T("Cancel anytime", "Zrušíte kdykoli"))}</p>` +
@@ -1593,7 +1593,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const li = (xs) => `<ul class="pl3-list">${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
       row.className = "pl3";
       row.innerHTML =
-        `<div class="pl3-col pl3-a"><p class="pl3-k"><span class="pl3-n">01 · </span>${esc(T("Free", "Zdarma"))}</p><p class="pl3-price">€0</p><p class="pl3-sub">${esc(T("Open to everyone, no login.", "Pro každého, bez přihlášení."))}</p>` +
+        `<div class="pl3-col pl3-a"><p class="pl3-k"><span class="pl3-n">01 · </span>${esc(T("Free", "Zdarma"))}</p><p class="pl3-price">${CS ? "0 €" : "€0"}</p><p class="pl3-sub">${esc(T("Open to everyone, no login.", "Pro každého, bez přihlášení."))}</p>` +
           li([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Titulky tohoto týdne"), T("The Monday brief by email", "Pondělní přehled e-mailem")]) + `</div>` +
         `<div class="pl3-col pl3-b"><p class="pl3-k"><span class="pl3-n">02 · </span>${esc(T("Monitoring", "Monitoring"))}</p><p class="pl3-price">${esc(CS ? PRICE + " €" : "€" + PRICE)}<small>${esc(T(" / month", " / měsíc"))}${CS && C.monitoringPriceCzk ? esc(" · asi " + C.monitoringPriceCzk + " Kč") : ""}</small></p><p class="pl3-sub">${esc(T("Pay by card. Cancel anytime.", "Platba kartou. Zrušíte kdykoli.")) }</p>` +
           li([T("We watch your minerals, their sites and deadlines around the clock.", "Sledujeme vaše suroviny, jejich lokality a termíny nepřetržitě."), T("You hear from us when something changes, and every Monday.", "Ozveme se, když se něco změní, a každé pondělí."), T("Ask us one question a month. A person answers within two working days.", "Jednou měsíčně se nás můžete na cokoli zeptat. Odpoví člověk do dvou pracovních dnů.")]) + `<p class="pl3-fine">${esc(T("Includes a weekly data file for your minerals.", "Součástí je týdenní datový soubor pro vaše suroviny."))}</p></div>` +
@@ -1778,7 +1778,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 60"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 61"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1829,7 +1829,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 60 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 61 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2032,8 +2032,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const n = ids.length;
       const forTxt = (col.querySelector(".mon-for span") || {}).textContent || "";
       const plus = forTxt.includes(" + ") ? forTxt.split(" + ").slice(1).join(" + ") : "";   // extra minerals the visitor typed in the plan card
-      const head = CS ? (n === 1 ? "Upozornění na tuto surovinu." : n >= 2 && n <= 4 ? `Upozornění na tyto ${n} suroviny.` : `Upozornění na těchto ${n} surovin.`)
-                      : (n === 1 ? "Alerts for this mineral." : `Alerts for these ${n} minerals.`);
+      const head = CS ? (n === 1 ? "Upozornění na tuto surovinu." : n >= 2 && n <= 4 ? `Upozornění na tyto ${n}\u00a0suroviny.` : `Upozornění na těchto ${n}\u00a0surovin.`)
+                      : (n === 1 ? "Alerts for this mineral." : `Alerts for these ${n}\u00a0minerals.`);
       const list = col.querySelector(".pl3-list"), guar = document.querySelector("#teams .pl3-guar p");
       sh.querySelector(".oo-sheet-body").innerHTML =
         `<p class="pl3-k oo-sh-k">Monitoring</p><h3 class="oo-sh-h" id="oo-sh-h">${esc(head)}</h3>` +
