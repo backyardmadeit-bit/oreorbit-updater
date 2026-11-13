@@ -11,7 +11,7 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
   - Globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base.
   - `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
 - **`atlas-v2.js`**: layered additions `v20 … v48` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel).
-  - The footer shows `build NN` (currently **60**).
+  - The footer shows `build NN` (currently **61**).
   - `?debug=1` shows a diagnostics panel. Errors are counted via `count.php`.
 - **`atlas-v2.css`**: styles, appended per version.
 - **`config.js`**: public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
@@ -161,3 +161,4 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
   - This week: the share pills are hidden, the chip row folds behind `.oo-pickt` ("Upravit suroviny", class `oo-pick-open` on `html`, re-inserted by a 1.2 s check because the section can be rebuilt), and the feed shows 3 items.
   - Live data: `.sig-tiles` is a sideways scroll-snap row that runs to the screen edges.
   - Plans: Monitoring first (`grid-template-areas: "b" "y" "a" "x" "c" "z"`), the 01/02/03 numbers (`.pl3-n`) are hidden because they follow the desktop order, the free and readiness lists are hidden, and the section intro is hidden. In the founder card the large line, its paragraph and the booking button are hidden (the readiness plan has its own); the two ghost links stay as text links.
+- **Build 61 (Czech typography, 13 Nov 2026):** the free tier reads "0 €" in Czech (`CS ? "0 €" : "€0"` in v25, v26 and v27, matching the Monitoring price), and the sheet heading keeps the count with its noun (`\u00a0`). `fmtEur` in `atlas-main.js` still writes the euro sign first in both languages, so the "€0" import totals there are left as they are.
