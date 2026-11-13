@@ -1027,6 +1027,12 @@ const globe = (function initGlobe() {
       try { localStorage.setItem("oo-legend", folded ? "0" : "1"); } catch (e) {}
     });
     plate.appendChild(el);
+    /* build 62: on phones the legend sits just above the element strip (atlas-v2.css). The strip's height changes with
+       the tab, the safe area and the screen, so it is kept on the plate as --dock-h; only the strip's size writes it. */
+    const dock = document.getElementById("dock");
+    const dockH = () => { if (dock) plate.style.setProperty("--dock-h", dock.offsetHeight + "px"); };
+    dockH();
+    if (dock && window.ResizeObserver) new ResizeObserver(dockH).observe(dock);
     return el;
   })();
   let legendOn = false;
@@ -1580,7 +1586,7 @@ const globe = (function initGlobe() {
 
   /* live hazards: USGS earthquakes and UN/EU GDACS alerts, refreshed by a scheduled task */
   const hzGroup = new THREE.Group(); scene.add(hzGroup);
-  let hzItems = [];
+  let hzItems = [], hzByN = [];
   const hzRingG = new THREE.RingGeometry(0.62, 1, 48), hzDotG = new THREE.CircleGeometry(0.26, 24), cfRingG = new THREE.RingGeometry(0.9, 1, 64), cfDotG = new THREE.CircleGeometry(0.14, 20);
   function setHazards(list) {
     hzItems.forEach((h) => { hzGroup.remove(h.g); h.label.remove(); h.g.children.forEach((c) => c.material.dispose()); });
@@ -1604,6 +1610,7 @@ const globe = (function initGlobe() {
       hzGroup.add(g);
       return { h, g, unit, wave, wave2, label, shown: false, ph: (i * 0.29) % 1 };
     });
+    hzByN = hzItems.slice().sort((a, b) => (b.h.n || 0) - (a.h.n || 0));   // build 62: labels are placed biggest first
     hzGroup.visible = layers.hazards;
     dirty = true;
   }
@@ -1960,11 +1967,36 @@ const globe = (function initGlobe() {
       else if (x.shown) placeLabel(x.label, 0, 0, false);
       x.shown = show;
     });
-    hzItems.forEach((h) => {
-      const isHover = hovered && hovered.kind === "hz" && hovered.id === h.h.id;
-      const show = hzGroup.visible && (selHz === h.h.id || isHover || (ex && cam.dist < 2.3 && h.h.kind !== "CF") || (ex && h.h.kind === "CF" && h.h.big)) && facingUnit(h.unit);
-      if (show) { const sp = project(h.g.position); placeLabel(h.label, sp.x + 12, sp.y - 8, true); occupy(h.label, sp.x + 12, sp.y - 8); }
-      else if (h.shown) placeLabel(h.label, 0, 0, false);
+    /* build 62: chokepoint labels go before hazard and site labels, which then keep clear of them. A label whose dot is
+       off the screen is hidden, and one that would run off the right edge goes on the left of its dot. */
+    chokeObjs.forEach((c) => {
+      let show = c.g.visible && (ex || hiRoute) && facingUnit(c.unit);
+      if (show) {
+        const sp = project(c.g.position), el = c.label;
+        if (sp.x < 0 || sp.x > W || sp.y < 0 || sp.y > H) show = false;
+        else {
+          if (el._t !== el.textContent || !el._w) { el._t = el.textContent; el._w = el.offsetWidth; el._h = el.offsetHeight; }
+          const w = el._w || 120, x = sp.x + 14 + w > W - 8 ? sp.x - 14 - w : sp.x + 14, y = sp.y - 8;
+          placeLabel(el, x, y, true); occ.push([x, y, x + w, y + (el._h || 20)]);
+        }
+      }
+      if (!show && c.shown) placeLabel(c.label, 0, 0, false);
+      c.shown = show;
+    });
+    /* build 62: hazard labels are placed biggest cluster first, and one that would land on a label already placed, or whose
+       dot is off the screen, waits (the selected or hovered one always shows), so nearby conflict clusters no longer print on
+       top of each other; near the right edge the label goes on the left of its dot */
+    hzByN.forEach((h) => {
+      const isHover = !!(hovered && hovered.kind === "hz" && hovered.id === h.h.id), isSel = selHz === h.h.id;
+      let show = hzGroup.visible && (isSel || isHover || (ex && cam.dist < 2.3 && h.h.kind !== "CF") || (ex && h.h.kind === "CF" && h.h.big)) && facingUnit(h.unit);
+      if (show) {
+        const sp = project(h.g.position), el = h.label;
+        if (!el._w) { el._w = el.offsetWidth || 80; el._h = el.offsetHeight || 18; }
+        const x = sp.x + 12 + el._w > W - 8 ? sp.x - 12 - el._w : sp.x + 12, y = sp.y - 8;
+        if (!isSel && !isHover && (sp.x < 0 || sp.x > W || sp.y < 0 || sp.y > H || occ.some((t) => x < t[2] + 4 && x + el._w + 4 > t[0] && y < t[3] + 2 && y + el._h + 2 > t[1]))) show = false;
+        else { placeLabel(el, x, y, true); occupy(el, x, y); }
+      }
+      if (!show && h.shown) placeLabel(h.label, 0, 0, false);
       h.shown = show;
     });
     /* v45: site labels from further out; they are placed in order of priority (selected, hovered, the filtered mineral,
@@ -1990,12 +2022,6 @@ const globe = (function initGlobe() {
         placeLabel(p.label, r[0], r[1], true); p.label.classList.toggle("sel", p.s.id === selected); p.label.style.zIndex = p.s.id === selected ? 3 : 2;
         p.shown = true;
       } else { if (p.shown) placeLabel(p.label, 0, 0, false); p.shown = false; }
-    });
-    chokeObjs.forEach((c) => {
-      let show = c.g.visible && (ex || hiRoute) && facingUnit(c.unit);
-      if (show) { const sp = project(c.g.position); placeLabel(c.label, sp.x + 14, sp.y - 8, true); }
-      else if (c.shown) placeLabel(c.label, 0, 0, false);
-      c.shown = show;
     });
     routeObjs.forEach((o) => {
       const isHover = hovered && hovered.kind === "route" && hovered.id === o.r.id;
