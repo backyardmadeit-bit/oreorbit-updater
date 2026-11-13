@@ -11,7 +11,7 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
   - Globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base.
   - `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
 - **`atlas-v2.js`**: layered additions `v20 … v48` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel).
-  - The footer shows `build NN` (currently **61**).
+  - The footer shows `build NN` (currently **62**).
   - `?debug=1` shows a diagnostics panel. Errors are counted via `count.php`.
 - **`atlas-v2.css`**: styles, appended per version.
 - **`config.js`**: public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
@@ -162,3 +162,4 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
   - Live data: `.sig-tiles` is a sideways scroll-snap row that runs to the screen edges.
   - Plans: Monitoring first (`grid-template-areas: "b" "y" "a" "x" "c" "z"`), the 01/02/03 numbers (`.pl3-n`) are hidden because they follow the desktop order, the free and readiness lists are hidden, and the section intro is hidden. In the founder card the large line, its paragraph and the booking button are hidden (the readiness plan has its own); the two ghost links stay as text links.
 - **Build 61 (Czech typography, 13 Nov 2026):** the free tier reads "0 €" in Czech (`CS ? "0 €" : "€0"` in v25, v26 and v27, matching the Monitoring price), and the sheet heading keeps the count with its noun (`\u00a0`). `fmtEur` in `atlas-main.js` still writes the euro sign first in both languages, so the "€0" import totals there are left as they are.
+- **Build 62 (founder card on phones, 13 Nov 2026):** at 640 px and below the founder card (`.wx-band`) is one column with one left edge: the label on its own line, a 56 px photo beside the name, then the text, the mineral dots, the brand line on its own line (no `margin-left`) and the two links. The inner text `div` of `.wx-who` is `display: contents`, so `.wx-who` lays its children out as a grid without a markup change; `.wx-who` keeps `gap: 0 14px` there, because the desktop `gap: 22px` would also add row gaps. CSS only; tablet and desktop are unchanged.
