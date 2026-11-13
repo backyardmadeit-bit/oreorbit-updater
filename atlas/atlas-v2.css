@@ -910,7 +910,15 @@ table.health th { text-transform: none !important; letter-spacing: 0 !important;
 .gl-ship { width: 10px; height: 10px; border-radius: 50%; background: #eceee9; box-shadow: 0 0 0 2.5px #050607, 0 0 0 3.5px rgba(236,238,233,.35); justify-self: center; }
 .gl-pin { width: 12px; height: 12px; border-radius: 3px; background: conic-gradient(#a78bfa 0 25%, #facc15 0 50%, #22d3ee 0 75%, #f472b6 0); justify-self: center; }
 body.touring .glegend, body.presenting .glegend { display: none; }
-@media (max-width: 520px) { .glegend { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); width: auto; right: var(--gutter-r, 16px); } }
+/* build 62: on phones the legend sits just above the element strip and never covers it (it used to sit 150 px off the
+   bottom, over the Elements / Systems tabs). Folded it is a small button on the right; open, it grows upwards from there
+   and stops under the top controls. atlas-main.js keeps the strip's height on #plate as --dock-h. */
+@media (max-width: 640px) {
+  .glegend { top: auto; left: auto; right: var(--gutter-r, 16px); bottom: calc(var(--dock-h, 166px) + 8px); width: auto; display: flex; flex-direction: column-reverse; max-height: calc(100% - var(--dock-h, 166px) - env(safe-area-inset-top, 0px) - 164px); overflow-y: auto; overscroll-behavior: contain; }
+  .glegend.gl-fold { padding: 8px 14px; border-radius: 999px; }
+  .glegend:not(.gl-fold) { left: var(--gutter, 16px); }
+  .glegend .gl-l { margin: 0 0 10px; }
+}
 
 /* v47: what High / Medium / Low risk mean */
 .qc-key { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--faint, #8a9196); max-width: 78ch; }
@@ -948,7 +956,7 @@ p.oo-cons { margin: 0; cursor: default; }
   /* opening: the quick check is the one button; the globe link reads as a text link; the steps band is gone */
   .steps-band { display: none !important; }
   .hero-cta { align-items: center; gap: 6px 18px; }
-  #cta-explore { height: 40px; padding: 0 2px; border-color: transparent; background: none; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 15px; color: var(--dim, #a3aaae); }
+  #cta-explore { height: 40px; padding: 0; border: 0; background: none; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 15px; color: var(--dim, #a3aaae); }
   #cta-explore:hover { color: var(--text, #eceee9); border-color: transparent; }
   /* quick check result: dot, name and risk on one line, the share and its stage under it; detail in the drawer on tap */
   .qc-row { gap: 4px 12px; padding: 12px 10px; }
@@ -998,6 +1006,20 @@ p.oo-cons { margin: 0; cursor: default; }
   .wx-who > div > p:not(.wx-k) { grid-column: 1 / -1; }
   .wx-who > div > p:not(.wx-k):not(.wx-dots) { margin-top: 16px; }
   .wx-dots span { flex-basis: 100%; margin: 4px 0 0; }
+  /* build 62: one left edge. The logo sits on the 16 px gutter (v24 align() kept 8 px of header padding on top of
+     .inner's own), the globe link's text starts under the button above it (padding 0, no border), and the This week
+     cards use the same 20 px inner edge as the plans, the founder card and the live tiles */
+  #nav { padding-left: 0 !important; }
+  .wk2-dl, .wk2-feed { padding: 22px 20px; }
+  /* build 62: less to read. The Monitoring line under the quick check result repeats the sheet its button opens; the
+     This week caption shows only with the chips it explains; the live tiles keep their coloured edge, not the icon box;
+     the founder card's colour dots go (they stood without a symbol or name); on the globe a satellite is named only
+     when it is tapped */
+  .qc-cta-note { display: none; }
+  html:not(.oo-pick-open) #monday .wk2-cap { display: none !important; }
+  .sig-tile .st-ic { display: none !important; }
+  .wx-dots i { display: none; }
+  .pin-label.sat:not(.sel) { display: none; }
 }
 /* build 60: the Monitoring bottom sheet (opened only on phones, from the quick check result) */
 .oo-sheet { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
