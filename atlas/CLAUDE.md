@@ -151,3 +151,6 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
   - JSON-LD in `index.html` carries the same `knowsAbout` as the library pages (see `updater/CLAUDE.md`).
   - The school was dropped from the team credit in `atlas-v2.js`.
   - The readiness review is scoped and priced in the free 30-minute intro call.
+- **Build 59 (phone header, 13 Nov 2026):**
+  - At 640 px and below the sections button (`.secmenu`) has a fixed share (`flex: 0 1 156px; min-width: 0`) and `#sec-cur` ends in an ellipsis, so Quick check no longer drifts right or runs off the screen with long labels ("Data & method", "Live evidence"). Rules are at the end of `atlas-v2.css`.
+  - v24 `align()` pads `#nav` by the content gutter on top of `.inner`'s own 16 px. On phones `#nav { padding-right: 0 !important }` keeps the last button on the 16 px content edge, before and after the script runs.
