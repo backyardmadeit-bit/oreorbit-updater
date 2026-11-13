@@ -926,3 +926,17 @@ p.oo-cons { margin: 0; cursor: default; }
 .site-foot .legal, .site-foot .legal span, .oo-build { color: #8b9296; }
 /* build 54: monitoring as three promises, the data file as small print */
 .pl3-fine { margin: 0 0 8px; font-size: 13px; color: var(--dim, #a3aaae); }
+/* build 59: the phone header keeps its place. The sections button takes a fixed share of the line and shortens
+   its label with an ellipsis, so Quick check stays on the right edge whatever the label says (it used to drift
+   right and run off the screen with "Data & method" or "Live evidence") */
+@media (max-width: 640px) {
+  #nav { padding-right: 0 !important; }   /* v24 align() also pads the header by the 16 px gutter, which doubled it on the right; .inner alone keeps the last button on the content edge, before and after the script runs */
+  #nav .inner { gap: 8px; }
+  #nav .brand, #nav .nav-right { flex: none; }
+  #nav .secmenu { flex: 0 1 156px; min-width: 0; margin: 0 auto 0 0; }
+  #nav #sec-btn { width: 100%; min-width: 0; justify-content: space-between; gap: 6px; padding: 0 12px 0 14px; }
+  #nav #sec-cur { display: block; flex: 0 1 auto; min-width: 0; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #nav #sec-btn svg { flex: none; }
+  #nav .sec-pop { width: min(300px, calc(100vw - 82px)); }   /* opens under the button and stays 16 px off the right edge */
+}
+@media (max-width: 400px) { #nav #nav-check { padding-left: 14px; padding-right: 14px; } }
