@@ -610,6 +610,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const nav = document.querySelector(".nav-links");
     if (nav && !nav.querySelector('a[href="#check"]')) { const x = document.createElement("a"); x.href = "#check"; x.textContent = T("Quick check", "Rychlá kontrola"); nav.insertBefore(x, nav.firstChild); }
     const out = sec.querySelector(".qc-out");
+    out.addEventListener("click", (ev) => { const kb = ev.target.closest(".qc-keyb"); if (kb) { const on = out.classList.toggle("key-on"); kb.setAttribute("aria-expanded", String(on)); } });   // build 60: on phones the risk key folds behind a link
     const PENT = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24, 27];   // v47: one note per mineral in ORDER (12); with ten, nickel and graphite were silent
     const imTxt = (tp) => `${tp.pct}${O.LANG === "cs" ? "\u00a0%" : "%"} ${O.fromCc(tp.cc)}`;   // build 56: "24 % z USA", "32 % z Norska" (was the nominative after "z")
     const stg = (w) => (w.x.what ? O.trStr(w.x.what) : O.stageTxt(w.k) || "").toLowerCase();   // build 56: the tightest stage in the page language; x.what is English in STAGES, its Czech is in CS
@@ -677,7 +678,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
       const BK43 = O.safeUrl ? (O.safeUrl(C43.bookingUrl) || "mailto:david@madali.cz") : (C43.bookingUrl || "mailto:david@madali.cz");
       const n43 = ms.length, csW = n43 >= 2 && n43 <= 4 ? "tyto " + n43 + " suroviny" : "těchto " + n43 + " surovin";
-      const lvKey = `<p class="qc-key">${esc(T("High risk: one country controls more than 65% of a stage and something is moving this week (a deadline within 45 days, news, or a hazard or conflict near a site). Medium risk: only one of the two. Low risk: neither.", "Vysoké riziko: jedna země ovládá přes 65 % některé fáze a zároveň se tento týden něco děje (termín do 45 dní, zprávy, hrozba nebo konflikt u lokality). Střední riziko: platí jen jedno z toho. Nízké riziko: ani jedno."))}</p>`;
+      const lvKey = `<button type="button" class="qc-keyb" aria-expanded="${out.classList.contains("key-on")}">${esc(T("What do the risk levels mean?", "Co znamenají úrovně rizika?"))}</button><p class="qc-key">${esc(T("High risk: one country controls more than 65% of a stage and something is moving this week (a deadline within 45 days, news, or a hazard or conflict near a site). Medium risk: only one of the two. Low risk: neither.", "Vysoké riziko: jedna země ovládá přes 65 % některé fáze a zároveň se tento týden něco děje (termín do 45 dní, zprávy, hrozba nebo konflikt u lokality). Střední riziko: platí jen jedno z toho. Nízké riziko: ani jedno."))}</p>`;
       out.innerHTML = `<p class="qc-sum">${sum}</p>${dl}<div class="qc-rows">${rows}</div>${lvKey}
         <div class="qc-ctas"><a class="btn qc-mon" href="#teams">${esc(T("Get alerts for these " + n43 + " minerals", "Hlídat " + csW))}</a><a class="btn ghost" href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Full review of your product line", "Plné posouzení vaší výrobní řady")}</a><button type="button" class="btn ghost qc-pdf">${T("Download my result (PDF)", "Stáhnout výsledek (PDF)")}</button></div>
         <p class="qc-cta-note">${esc(T("Monitoring: an email the same day something changes for these minerals, €" + PR43 + " a month, cancel anytime.", "Monitoring: e-mail ještě týž den, kdy se u těchto surovin něco změní, " + PR43 + " € měsíčně, zrušíte kdykoli."))} ${esc(T("Not sure yet?", "Ještě si nejste jistí?"))} <a href="${esc(BK43)}" target="_blank" rel="noopener">${esc(T("Book a 30-minute call", "Domluvte si 30minutový hovor"))}</a></p>`;
@@ -687,6 +688,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         ooHit("act:qc-mon");
         try { const s = snd(); if (s) s.tick(); } catch (e) {}
         if (window.ooMonSet) window.ooMonSet(ms);   // the plan's "Watch:" line takes exactly this product's minerals
+        if (window.ooMonSheet && window.ooMonSheet(ms, ev.currentTarget)) return;   // build 60: phones pay from a bottom sheet instead of scrolling to the plans
         const col = document.querySelector("#teams .pl3-b"), card = col || document.querySelector("#teams .pl3") || document.getElementById("teams");
         if (card) {
           card.scrollIntoView({ behavior: "smooth", block: "start" });   // the monitoring card's top, below the fixed header (scroll-margin in CSS)
@@ -1591,11 +1593,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const li = (xs) => `<ul class="pl3-list">${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
       row.className = "pl3";
       row.innerHTML =
-        `<div class="pl3-col pl3-a"><p class="pl3-k">01 · ${esc(T("Free", "Zdarma"))}</p><p class="pl3-price">€0</p><p class="pl3-sub">${esc(T("Open to everyone, no login.", "Pro každého, bez přihlášení."))}</p>` +
+        `<div class="pl3-col pl3-a"><p class="pl3-k"><span class="pl3-n">01 · </span>${esc(T("Free", "Zdarma"))}</p><p class="pl3-price">€0</p><p class="pl3-sub">${esc(T("Open to everyone, no login.", "Pro každého, bez přihlášení."))}</p>` +
           li([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Titulky tohoto týdne"), T("The Monday brief by email", "Pondělní přehled e-mailem")]) + `</div>` +
-        `<div class="pl3-col pl3-b"><p class="pl3-k">02 · ${esc(T("Monitoring", "Monitoring"))}</p><p class="pl3-price">${esc(CS ? PRICE + " €" : "€" + PRICE)}<small>${esc(T(" / month", " / měsíc"))}${CS && C.monitoringPriceCzk ? esc(" · asi " + C.monitoringPriceCzk + " Kč") : ""}</small></p><p class="pl3-sub">${esc(T("Pay by card. Cancel anytime.", "Platba kartou. Zrušíte kdykoli.")) }</p>` +
+        `<div class="pl3-col pl3-b"><p class="pl3-k"><span class="pl3-n">02 · </span>${esc(T("Monitoring", "Monitoring"))}</p><p class="pl3-price">${esc(CS ? PRICE + " €" : "€" + PRICE)}<small>${esc(T(" / month", " / měsíc"))}${CS && C.monitoringPriceCzk ? esc(" · asi " + C.monitoringPriceCzk + " Kč") : ""}</small></p><p class="pl3-sub">${esc(T("Pay by card. Cancel anytime.", "Platba kartou. Zrušíte kdykoli.")) }</p>` +
           li([T("We watch your minerals, their sites and deadlines around the clock.", "Sledujeme vaše suroviny, jejich lokality a termíny nepřetržitě."), T("You hear from us when something changes, and every Monday.", "Ozveme se, když se něco změní, a každé pondělí."), T("Ask us one question a month. A person answers within two working days.", "Jednou měsíčně se nás můžete na cokoli zeptat. Odpoví člověk do dvou pracovních dnů.")]) + `<p class="pl3-fine">${esc(T("Includes a weekly data file for your minerals.", "Součástí je týdenní datový soubor pro vaše suroviny."))}</p></div>` +
-        `<div class="pl3-col pl3-c"><p class="pl3-k">03 · ${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="pl3-price">${esc(T("Tailored", "Na míru"))}</p><p class="pl3-sub">${esc(T("Scope and price after a free 30-minute call.", "Rozsah a cena po bezplatném 30minutovém hovoru."))}</p>` +
+        `<div class="pl3-col pl3-c"><p class="pl3-k"><span class="pl3-n">03 · </span>${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="pl3-price">${esc(T("Tailored", "Na míru"))}</p><p class="pl3-sub">${esc(T("Scope and price after a free 30-minute call.", "Rozsah a cena po bezplatném 30minutovém hovoru."))}</p>` +
           li([T("One product line in two to three weeks", "Jedna výrobní řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení, článek 24 CRMA")]) + `</div>` +
         `<div class="pl3-act pl3-x"><button type="button" class="btn ghost" data-go="brief">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</button></div>` +
         `<div class="pl3-act pl3-y">${form("monitoring", T("Start monitoring", "Spustit monitoring"), T("We'll use this address for your alerts and the payment.", "Tuto adresu použijeme pro vaše upozornění a platbu."))}</div>` +
@@ -1776,7 +1778,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 59"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 60"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1827,7 +1829,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 59 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 60 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1963,17 +1965,118 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const note = document.createElement("p"); note.className = "pl3-paynote";
     note.innerHTML = `${esc(T("Secure payment by Stripe. Cancel anytime.", "Zabezpečená platba přes Stripe. Zrušíte kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a>`;
     cell.append(b, note);
-    b.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      if (window.ooMonOtherCheck && !window.ooMonOtherCheck()) { ooHit("act:mon-other-bad"); return; }
+    const goPay = () => {   // build 60: shared with the phone sheet; false when an unknown extra mineral blocks payment
+      if (window.ooMonOtherCheck && !window.ooMonOtherCheck()) { ooHit("act:mon-other-bad"); return false; }
       const mins = (window.ooMonMins ? window.ooMonMins() : []).join(",");
       const other = window.ooMonOther ? window.ooMonOther() : "";
       ooHit("act:to-pay");
       try { if (O.SND && O.SND.on && O.SND.tick) O.SND.tick(); } catch (e) {}
       location.href = "go-pay.php?m=" + encodeURIComponent(mins) + "&o=" + encodeURIComponent(other) + "&l=" + (CS ? "cs" : "en");
-    });
+      return true;
+    };
+    window.ooGoPay = goPay;
+    b.addEventListener("click", (ev) => { ev.preventDefault(); goPay(); });
   }
   try { v41(); } catch (e) { window.ooErrs && window.ooErrs.push("v41: " + e.message); }
+
+
+  /* ---------- build 60: a short path on phones (640 px and below; desktop unchanged) ----------
+     The quick check result opens Monitoring in a bottom sheet: the minerals, the price and the three promises are copied
+     from the Monitoring plan card (one source; the price comes from config.js there), and "Continue to payment" runs the
+     same go-pay step as "Start monitoring". The This week mineral chips fold behind one button. The rest is CSS at the end
+     of atlas-v2.css. */
+  function v60() {
+    const PH = () => !!(window.matchMedia && matchMedia("(max-width: 640px)").matches);
+    const X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
+    let back = null;
+    const SH = () => document.getElementById("oo-sheet");   // looked up afresh, never kept
+    const close = () => {
+      const sh = SH(); if (!sh || sh.hidden) return;
+      sh.hidden = true; document.documentElement.classList.remove("oo-sheet-open");
+      if (back && back.isConnected) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+      back = null;
+    };
+    const toPlans = () => {
+      close();
+      const col = document.querySelector("#teams .pl3-b") || document.getElementById("teams");
+      if (col) col.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const make = () => {
+      const sh = document.createElement("div");
+      sh.id = "oo-sheet"; sh.className = "oo-sheet"; sh.hidden = true; sh.setAttribute("data-notr", "");   // built in the page language; the translation pass keeps out
+      sh.innerHTML = `<div class="oo-sheet-bg"></div><div class="oo-sheet-card" role="dialog" aria-modal="true" aria-labelledby="oo-sh-h" tabindex="-1"><button type="button" class="oo-sheet-x" aria-label="${esc(T("Close", "Zavřít"))}">${X}</button><div class="oo-sheet-body"></div></div>`;
+      document.body.appendChild(sh);
+      sh.addEventListener("click", (ev) => {
+        if (ev.target.closest(".oo-sheet-x") || ev.target.classList.contains("oo-sheet-bg")) { close(); return; }
+        if (ev.target.closest(".oo-sh-pay")) { ev.preventDefault(); ooHit("act:sheet-pay"); if (!(window.ooGoPay && window.ooGoPay())) toPlans(); return; }   // blocked by an unknown extra mineral: the plan card shows why
+        if (ev.target.closest(".oo-sh-more")) { ooHit("act:sheet-plans"); toPlans(); }
+      });
+      sh.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") { ev.stopPropagation(); close(); return; }
+        if (ev.key !== "Tab") return;
+        const f = [...sh.querySelectorAll("a[href], button")].filter((x) => x.offsetParent !== null);
+        if (!f.length) return;
+        const a = f[0], z = f[f.length - 1];
+        if (ev.shiftKey && (document.activeElement === a || !sh.contains(document.activeElement) || document.activeElement.classList.contains("oo-sheet-card"))) { ev.preventDefault(); z.focus(); }
+        else if (!ev.shiftKey && document.activeElement === z) { ev.preventDefault(); a.focus(); }
+      });
+      return sh;
+    };
+    window.ooMonSheet = (ms, from) => {
+      if (!PH()) return false;
+      const col = document.querySelector("#teams .pl3-b");
+      if (!col || !document.querySelector("#teams .pl3-pay") || !window.ooGoPay) return false;   // an older plan layout: keep the scroll to the plans
+      const sh = SH() || make();
+      const html = (s, root) => { const e = (root || col).querySelector(s); return e ? e.innerHTML : ""; };
+      const ids = (window.ooMonMins ? window.ooMonMins() : null) || ms || [];
+      const n = ids.length;
+      const forTxt = (col.querySelector(".mon-for span") || {}).textContent || "";
+      const plus = forTxt.includes(" + ") ? forTxt.split(" + ").slice(1).join(" + ") : "";   // extra minerals the visitor typed in the plan card
+      const head = CS ? (n === 1 ? "Upozornění na tuto surovinu." : n >= 2 && n <= 4 ? `Upozornění na tyto ${n} suroviny.` : `Upozornění na těchto ${n} surovin.`)
+                      : (n === 1 ? "Alerts for this mineral." : `Alerts for these ${n} minerals.`);
+      const list = col.querySelector(".pl3-list"), guar = document.querySelector("#teams .pl3-guar p");
+      sh.querySelector(".oo-sheet-body").innerHTML =
+        `<p class="pl3-k oo-sh-k">Monitoring</p><h3 class="oo-sh-h" id="oo-sh-h">${esc(head)}</h3>` +
+        `<ul class="oo-sh-mins">${ids.map((m) => `<li style="--c:${O.cssVar(m)}"><i></i>${esc(O.mName(m))}</li>`).join("")}${plus ? `<li class="oo-sh-plus">+ ${esc(plus)}</li>` : ""}</ul>` +
+        `<p class="pl3-price">${html(".pl3-price")}</p>` +   // the plan's sub-line ("Pay by card. Cancel anytime.") is left out: the Stripe note under the button says it
+        (list ? list.outerHTML : "") +
+        `<a class="btn oo-sh-pay" href="go-pay.php">${esc(T("Continue to payment", "Pokračovat k platbě"))}</a>` +
+        `<p class="pl3-paynote">${html(".pl3-paynote", document.querySelector("#teams .pl3-y") || col)}</p>` +
+        (guar ? `<p class="oo-sh-guar">${guar.innerHTML}</p>` : "") +
+        `<button type="button" class="oo-sh-more">${esc(T("Compare all plans", "Porovnat všechny úrovně"))}</button>`;
+      back = from || null;
+      sh.hidden = false; document.documentElement.classList.add("oo-sheet-open");
+      const card = sh.querySelector(".oo-sheet-card"); card.scrollTop = 0;
+      try { card.focus({ preventScroll: true }); } catch (e) {}
+      ooHit("act:qc-sheet");
+      return true;
+    };
+    window.addEventListener("resize", () => { if (!PH()) close(); });   // turned to landscape or a wider window: the plans are on the page
+
+    /* This week: the mineral chips fold behind one button on phones (the section can be rebuilt, so the button is
+       checked for, never kept; it writes only when it is missing) */
+    const label = () => document.documentElement.classList.contains("oo-pick-open") ? T("Done", "Hotovo") : T("Change your minerals", "Upravit suroviny");
+    const pickT = () => {
+      const row = document.querySelector("#monday .wk2-pickrow");
+      if (!row) return;
+      const prev = row.previousElementSibling;
+      if (prev && prev.classList.contains("oo-pickt")) return;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "oo-pickt"; b.setAttribute("data-notr", "");
+      b.setAttribute("aria-expanded", String(document.documentElement.classList.contains("oo-pick-open")));
+      b.textContent = label();
+      row.before(b);
+    };
+    document.addEventListener("click", (ev) => {
+      const b = ev.target.closest(".oo-pickt"); if (!b) return;
+      const on = document.documentElement.classList.toggle("oo-pick-open");
+      document.querySelectorAll(".oo-pickt").forEach((x) => { x.setAttribute("aria-expanded", String(on)); x.textContent = label(); });
+      ooHit(on ? "act:pick-open" : "act:pick-done");
+    });
+    pickT();
+    setInterval(() => { if (PH()) pickT(); }, 1200);
+  }
+  try { v60(); } catch (e) { window.ooErrs && window.ooErrs.push("v60: " + e.message); }
 
   try { motion(); } catch (e) { /* the atlas works without it */ }
 
