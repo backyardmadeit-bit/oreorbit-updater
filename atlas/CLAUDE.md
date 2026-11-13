@@ -11,7 +11,7 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
   - Globe, specimens (`BUILD[m]` 3D minerals), drawer, quick check, This week base.
   - `T(en, cs)` and `trStr()` add Czech non-breaking spaces.
 - **`atlas-v2.js`**: layered additions `v20 … v48` (UI redesigns, This week, plans, monitoring picker, Monday brief strip, focus label, pins, debug panel).
-  - The footer shows `build NN` (currently **58**).
+  - The footer shows `build NN` (currently **60**).
   - `?debug=1` shows a diagnostics panel. Errors are counted via `count.php`.
 - **`atlas-v2.css`**: styles, appended per version.
 - **`config.js`**: public settings: `bookingUrl` (Calendly `https://calendly.com/david-madali/30min`), `monitoringPrice` "49", `monitoringPriceCzk` "1 200", `contactEmail`.
@@ -154,3 +154,10 @@ This file is tracked in git but never uploaded: the deploy's `PROTECTED` regex s
 - **Build 59 (phone header, 13 Nov 2026):**
   - At 640 px and below the sections button (`.secmenu`) has a fixed share (`flex: 0 1 156px; min-width: 0`) and `#sec-cur` ends in an ellipsis, so Quick check no longer drifts right or runs off the screen with long labels ("Data & method", "Live evidence"). Rules are at the end of `atlas-v2.css`.
   - v24 `align()` pads `#nav` by the content gutter on top of `.inner`'s own 16 px. On phones `#nav { padding-right: 0 !important }` keeps the last button on the 16 px content edge, before and after the script runs.
+- **Build 60 (phone short path, 13 Nov 2026):** at 640 px and below only; wider screens are unchanged. CSS at the end of `atlas-v2.css`, JS in `atlas-v2.js` `v60()`.
+  - Opening: one primary button (quick check). `#cta-explore` reads as a text link; `.steps-band` is hidden.
+  - Quick check result: compact rows (dot, name, risk, then share and stage); the use line, the import line and the bar are hidden. The risk key folds behind `.qc-keyb` (class `key-on` on `.qc-out`, which survives the re-renders). The two ghost buttons become text links.
+  - "Get alerts for these N minerals" calls `window.ooMonSheet(ms, el)`, a bottom sheet (`#oo-sheet`, `data-notr`). It copies the price, the three promises, the Stripe note and the guarantee from the Monitoring plan card, so the price still comes from `config.js` only. "Continue to payment" runs `window.ooGoPay()`, the same step as "Start monitoring" (v41). If an unknown extra mineral blocks payment, the sheet closes and scrolls to the plan card. On wider screens, or when the plan card is missing, the old scroll to the plans runs.
+  - This week: the share pills are hidden, the chip row folds behind `.oo-pickt` ("Upravit suroviny", class `oo-pick-open` on `html`, re-inserted by a 1.2 s check because the section can be rebuilt), and the feed shows 3 items.
+  - Live data: `.sig-tiles` is a sideways scroll-snap row that runs to the screen edges.
+  - Plans: Monitoring first (`grid-template-areas: "b" "y" "a" "x" "c" "z"`), the 01/02/03 numbers (`.pl3-n`) are hidden because they follow the desktop order, the free and readiness lists are hidden, and the section intro is hidden. In the founder card the large line, its paragraph and the booking button are hidden (the readiness plan has its own); the two ghost links stay as text links.

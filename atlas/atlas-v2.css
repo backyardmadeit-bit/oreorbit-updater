@@ -940,3 +940,78 @@ p.oo-cons { margin: 0; cursor: default; }
   #nav .sec-pop { width: min(300px, calc(100vw - 82px)); }   /* opens under the button and stays 16 px off the right edge */
 }
 @media (max-width: 400px) { #nav #nav-check { padding-left: 14px; padding-right: 14px; } }
+/* build 60: a short path on phones (640 px and below; nothing changes on wider screens). One primary button in the
+   opening; the quick check result as compact rows; This week shows three items and folds the mineral chips; the live
+   data tiles scroll sideways; the plans open with Monitoring; the Monitoring sheet (atlas-v2.js v60) pays in two taps. */
+.qc-keyb, .oo-pickt { display: none; }
+@media (max-width: 640px) {
+  /* opening: the quick check is the one button; the globe link reads as a text link; the steps band is gone */
+  .steps-band { display: none !important; }
+  .hero-cta { align-items: center; gap: 6px 18px; }
+  #cta-explore { height: 40px; padding: 0 2px; border-color: transparent; background: none; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 15px; color: var(--dim, #a3aaae); }
+  #cta-explore:hover { color: var(--text, #eceee9); border-color: transparent; }
+  /* quick check result: dot, name and risk on one line, the share and its stage under it; detail in the drawer on tap */
+  .qc-row { gap: 4px 12px; padding: 12px 10px; }
+  .qc-name { font-size: 15.5px; }
+  .qc-name small, .qc-imp, .qc-bar { display: none !important; }
+  .qc-share { font-size: 13.5px; padding-left: 20px; }
+  .qc-keyb { display: inline-flex; margin: 12px 0 0; padding: 4px 0; border: 0; background: none; color: var(--dim, #a3aaae); font: 400 13px var(--font, inherit); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .qc-out:not(.key-on) .qc-key { display: none; }
+  .qc-out.key-on .qc-key { margin-top: 6px; }
+  .qc-ctas { gap: 2px 18px; margin-top: 18px; }
+  .qc-ctas .qc-mon { flex: 1 1 100%; height: 50px; }
+  .section .qc-ctas .btn.ghost { width: auto; height: auto; min-height: 0; padding: 8px 0; border: 0; background: none; justify-content: flex-start; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 14px; white-space: normal; text-align: left; color: var(--dim, #a3aaae); text-decoration: underline; text-underline-offset: 3px; }
+  /* This week: no share pills, the chips behind one button, three news items; deadlines and the Monday sign-up stay */
+  .wk2-status { display: none !important; }
+  html:not(.oo-pick-open) #monday .wk2-pickrow { display: none !important; }
+  .oo-pickt { display: inline-flex; align-items: center; gap: 8px; margin: 2px 0 4px; padding: 8px 15px; border: 1px solid var(--line-2, rgba(236,238,233,.24)); border-radius: 999px; background: none; color: var(--text, #eceee9); font: 500 13.5px var(--font, inherit); cursor: pointer; }
+  .oo-pickt::after { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); transition: transform .2s; }
+  .oo-pickt[aria-expanded="true"]::after { transform: translateY(1px) rotate(-135deg); }
+  .wk2-feed ul > li:nth-child(n+4) { display: none; }
+  /* live data: the seven tiles as one sideways row that snaps, running to the screen edges */
+  .sig-tiles { display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 var(--gutter, 16px); margin: 6px calc(-1 * var(--gutter-r, 16px)) 18px calc(-1 * var(--gutter, 16px)); padding: 2px var(--gutter-r, 16px) 8px var(--gutter, 16px); scrollbar-width: none; }
+  .sig-tiles::-webkit-scrollbar { display: none; }
+  .sig-tile { flex: 0 0 78%; scroll-snap-align: start; }
+  .sig-tile:hover { transform: none; }
+  /* plans: Monitoring first, the free tier and the readiness review short, no intro paragraph */
+  #teams .sec-head p { display: none; }
+  .pl3 { grid-template-areas: "b" "y" "a" "x" "c" "z"; }
+  .pl3-b { border-top: 0 !important; }
+  .pl3-n { display: none; }   /* the 01 / 02 / 03 numbers follow the desktop table order; on phones Monitoring comes first */
+  .pl3-a { border-top: 1px solid rgba(236,238,233,.14); }
+  .pl3-col { padding: 24px 20px 6px; }
+  .pl3-act { padding: 6px 20px 22px; }
+  .pl3-a .pl3-list, .pl3-c .pl3-list { display: none; }
+  .pl3-a .pl3-price, .pl3-c .pl3-price { margin-top: 12px; font-size: 28px; }
+  /* founder card: the person and the two links; the booking button is in the readiness review above */
+  .wx-act .wx-big, .wx-act > p:not(.wx-big), .wx-btns .btn:not(.ghost) { display: none !important; }
+  .wx-btns { gap: 4px 20px; margin-top: 0; }
+  .wx-btns .btn.ghost { height: auto; min-height: 0; padding: 6px 0; border: 0; background: none; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 14px; white-space: normal; color: var(--text, #eceee9); text-decoration: underline; text-underline-offset: 3px; }
+}
+/* build 60: the Monitoring bottom sheet (opened only on phones, from the quick check result) */
+.oo-sheet { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.oo-sheet[hidden] { display: none; }
+.oo-sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.62); animation: oo-sh-fade .2s ease both; }
+.oo-sheet-card { position: relative; width: 100%; max-width: 560px; max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; padding: 26px var(--gutter-r, 16px) calc(env(safe-area-inset-bottom, 0px) + 20px) var(--gutter, 16px); border-radius: 20px 20px 0 0; border: 1px solid rgba(236,238,233,.14); border-bottom: 0; background: #0b0d0e; color: var(--text, #eceee9); box-shadow: 0 -18px 60px rgba(0,0,0,.5); animation: oo-sh-up .26s cubic-bezier(.2,.7,.2,1) both; outline: none; }
+.oo-sheet-card::before { content: ""; position: absolute; left: 50%; top: 9px; width: 36px; height: 4px; margin-left: -18px; border-radius: 4px; background: rgba(236,238,233,.22); }
+.oo-sheet-x { position: absolute; top: 12px; right: 10px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--dim, #a3aaae); cursor: pointer; }
+.oo-sheet-x svg { width: 16px; height: 16px; }
+.oo-sheet-x:hover { color: var(--text, #eceee9); }
+.oo-sh-k { color: #3ddc97 !important; }
+.oo-sh-h { margin: 8px 44px 0 0; font-size: 24px; font-weight: 300; line-height: 1.2; letter-spacing: -.01em; }
+.oo-sh-mins { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+.oo-sh-mins li { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid rgba(236,238,233,.14); border-radius: 999px; font-size: 13px; color: var(--text, #eceee9); }
+.oo-sh-mins li i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.oo-sh-mins li.oo-sh-plus { color: var(--dim, #a3aaae); }
+.oo-sheet .pl3-price { margin-top: 20px; font-size: 40px; }
+.oo-sheet .pl3-list { margin: 16px 0 6px; }
+.oo-sheet .pl3-list li { padding: 9px 0; font-size: 14.5px; }
+.oo-sh-pay { display: flex; width: 100%; height: 50px; margin: 12px 0 10px; }
+.oo-sheet .pl3-paynote { text-align: center; }
+.oo-sh-guar { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--dim, #a3aaae); text-align: center; }
+.oo-sh-guar b { color: var(--text, #eceee9); font-weight: 600; }
+.oo-sh-more { display: block; margin: 12px auto 0; padding: 8px 4px; border: 0; background: none; color: var(--text, #eceee9); font: 500 14px var(--font, inherit); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html.oo-sheet-open, html.oo-sheet-open body { overflow: hidden; }
+@keyframes oo-sh-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes oo-sh-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .oo-sheet-card, .oo-sheet-bg { animation: none; } }
