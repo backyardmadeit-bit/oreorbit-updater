@@ -3199,7 +3199,7 @@ function loadOrbits() {
 
 /* ground tracks for the next six days, one sample a minute, computed in small slices */
 const TRACK_STEP = 60000, TRACK_N = 6 * 1440;
-let trackCache = {}, trackT0 = 0, tracksReady = false, trackGen = 0, passMemo = {};
+let trackCache = {}, trackT0 = 0, tracksReady = false, trackGen = 0, passMemo = {}, trackT1 = 0;
 function buildTracks() {
   const gen = ++trackGen;
   trackT0 = Math.floor(Date.now() / TRACK_STEP) * TRACK_STEP;
@@ -3221,7 +3221,8 @@ function buildTracks() {
     if (ji < jobs.length) setTimeout(work, 0);
     else { tracksReady = true; passMemo = {}; refreshLiveViews(); }
   };
-  setTimeout(work, 60);
+  setTimeout(work, SMALL && !trackT1 ? 6000 : 60);   // build 67: on phones the first build waits until the page has settled
+  trackT1 = 1;
 }
 setInterval(() => { if (ORBITS.length && Date.now() - trackT0 > 6 * 3600000) buildTracks(); }, 600000);
 
@@ -3369,21 +3370,39 @@ function hazardList() {
 function sitesNear(lat, lng, km) {
   return SITES.map((s) => ({ s, d: gcKm(lat, lng, s.lat, s.lng) })).filter((x) => x.d <= km).sort((a, b) => a.d - b.d);
 }
+/* build 67: the sample points of each route (and their cosines) are computed once, and the haversine term is compared
+   before the arcsine, which only runs once per route. A sample whose latitude term alone is already larger than the
+   best so far is skipped. Same arithmetic as gcKm, so the distances are identical to before. */
+const ROUTE_SAMPLES = new Map();
+function routeSamples(r) {
+  let s = ROUTE_SAMPLES.get(r);
+  if (s) return s;
+  const la = [], lo = [];
+  r.legs.forEach((l) => {
+    for (let i = 0; i < l.pts.length; i++) {
+      const p = l.pts[i], q = l.pts[i + 1] || p;
+      let dlo = q[1] - p[1]; if (dlo > 180) dlo -= 360; if (dlo < -180) dlo += 360;
+      for (let k = 0; k <= 10; k++) { la.push(p[0] + (q[0] - p[0]) * k / 10); lo.push(p[1] + dlo * k / 10); }
+    }
+  });
+  const rad = Math.PI / 180;
+  s = { la: Float64Array.from(la), lo: Float64Array.from(lo), cos: Float64Array.from(la, (x) => Math.cos(x * rad)) };
+  ROUTE_SAMPLES.set(r, s);
+  return s;
+}
 function routesNear(lat, lng, km) {
-  const out = [];
+  const out = [], rad = Math.PI / 180, cosLat = Math.cos(lat * rad);
   ROUTES.forEach((r) => {
-    let best = Infinity;
-    r.legs.forEach((l) => {
-      for (let i = 0; i < l.pts.length; i++) {
-        const p = l.pts[i], q = l.pts[i + 1] || p;
-        for (let k = 0; k <= 10; k++) {
-          const la = p[0] + (q[0] - p[0]) * k / 10;
-          let dlo = q[1] - p[1]; if (dlo > 180) dlo -= 360; if (dlo < -180) dlo += 360;
-          const d = gcKm(lat, lng, la, p[1] + dlo * k / 10);
-          if (d < best) best = d;
-        }
-      }
-    });
+    const s = routeSamples(r);
+    let bestA = Infinity;
+    for (let i = 0; i < s.la.length; i++) {
+      const sl = Math.sin((s.la[i] - lat) * rad / 2) ** 2;
+      if (sl >= bestA) continue;
+      const a = sl + cosLat * s.cos[i] * Math.sin((s.lo[i] - lng) * rad / 2) ** 2;
+      if (a < bestA) bestA = a;
+    }
+    if (bestA === Infinity) return;
+    const best = 2 * R_E * Math.asin(Math.min(1, Math.sqrt(bestA)));
     if (best <= km) out.push({ r, d: best });
   });
   return out.sort((a, b) => a.d - b.d);
@@ -3420,8 +3439,14 @@ function onLive(k) {
   updateLiveCount();
   refreshLiveViews();
 }
+/* build 67: computed once per hazard list (HZ is replaced on every hazards update); callers only read the result */
+let nscMemo = { hz: null, n: -1, v: [] };
 function nearSupplyChain() {
-  return HZ.map((h) => ({ h, sites: sitesNear(h.lat, h.lng, 500), routes: routesNear(h.lat, h.lng, 300) })).filter((x) => x.sites.length || x.routes.length);
+  const n = SITES.length * 1000 + ROUTES.length;
+  if (nscMemo.hz === HZ && nscMemo.n === n) return nscMemo.v;
+  const v = HZ.map((h) => ({ h, sites: sitesNear(h.lat, h.lng, 500), routes: routesNear(h.lat, h.lng, 300) })).filter((x) => x.sites.length || x.routes.length);
+  nscMemo = { hz: HZ, n, v };
+  return v;
 }
 function updateLiveCount() {
   const el = $("#live-count");
@@ -4219,7 +4244,15 @@ async function connectWire() {
     connectTeam(db);
     v14Connect(db);
     const sub = (k) => db.doc("live/" + k).onSnapshot((d) => { LIVE[k] = d.exists ? d.data() : null; onLive(k); }, () => {});
-    ["orbits", "hazards", "conditions", "scenes", "prices", "ships", "traffic", "conflict", "tenders", "trade", "clouds", "hotspots", "so2", "cnexports", "history", "runstatus"].forEach(sub);
+    ["orbits", "hazards", "conditions", "scenes", "prices", "ships", "traffic", "conflict", "tenders", "trade", "hotspots", "so2", "cnexports", "history", "runstatus"].forEach(sub);
+    /* build 67: the base cloud map (about 160 KB) waits on phones for idle time after load, or the interactive atlas */
+    let cloudsDone = false;
+    const loadClouds = () => { if (cloudsDone) return; cloudsDone = true; sub("clouds"); };
+    if (!SMALL || isExploring()) loadClouds();
+    else {
+      setTimeout(() => (window.requestIdleCallback || ((f) => f()))(loadClouds, { timeout: 4000 }), 5000);
+      document.addEventListener("pointerdown", loadClouds, { once: true, passive: true });
+    }
     /* v48: the four detailed cloud tiles (about 0.5 MB) wait: a few idle seconds on a computer, and on a phone until the
        visitor opens the interactive atlas. Until then the globe shows the base cloud map (clouds.json). */
     if (!LITE) {
