@@ -1782,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 67"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 68"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1833,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 67 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 68 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2111,8 +2111,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (!badge) { badge = document.createElement("a"); badge.className = "idx-badge"; badge.href = "p/dependency-index.html"; badge.hidden = true; copy.insertBefore(badge, copy.firstChild); }
     const calc = () => {
       const mats = (O.LIVE.trade && O.LIVE.trade.materials) || null; if (!mats) return false;
-      const per = {};
-      Object.keys(mats).forEach((m) => (mats[m] || []).forEach((r) => {
+      /* the index keeps its original ten (INDEX_TEN in updater/oreorbit_pages.py); magnesium and manganese sit outside it */
+      const TEN = ["ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr"], per = {};
+      Object.keys(mats).filter((m) => TEN.includes(m)).forEach((m) => (mats[m] || []).forEach((r) => {
         const mo = r.monthly || {}, f = mo.from, cn = mo.cn || [], ext = mo.ext || []; if (!f) return;
         const y0 = +f.slice(0, 4), m0 = +f.slice(5, 7);
         for (let i = 0; i < Math.min(cn.length, ext.length); i++) {
