@@ -1929,6 +1929,7 @@ const globe = (function initGlobe() {
     setTowers(layers.production && isExploring() && MATERIALS[tm] && PROD[tm] ? tm : null);
     dirty = true;
   }
+  let satBand = { t: 0, top: 0, bot: 1e9 };   // build 66: free screen band for satellite names, re-measured every 0.5 s
   function placeLabel(el, x, y, on) {
     if (on) el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     else el.style.transform = "translate(-9999px, 0)";
@@ -1948,7 +1949,20 @@ const globe = (function initGlobe() {
     satItems.forEach((it) => {
       const isHover = hovered && hovered.kind === "sat" && hovered.id === it.o.cfg.id;
       const isSel = selSat === it.o.cfg.id;
-      const show = satGroup.visible && it.g.visible && (isSel || isHover || (ex && cam.dist > 2.2)) && !occluded(it.pos);
+      let show = satGroup.visible && it.g.visible && (isSel || isHover || (ex && cam.dist > 2.2)) && !occluded(it.pos);
+      /* build 66: a satellite name that would sit under the top toolbar or on the element strip, or off the screen, waits
+         (the selected or hovered one always shows), so "Landsat 9" no longer prints under the Live pill */
+      if (show && !isSel && !isHover) {
+        const now = performance.now();
+        if (now - satBand.t > 500) {
+          const hr = document.getElementById("hud") ? document.getElementById("hud").getBoundingClientRect() : null;
+          const dr = document.getElementById("dock") ? document.getElementById("dock").getBoundingClientRect() : null;
+          satBand = { t: now, top: hr && hr.height ? hr.bottom + 4 : 0, bot: dr && dr.height ? dr.top - 4 : innerHeight };
+        }
+        const sp = project(it.pos), el = it.label;
+        if (!el._w) { el._w = el.offsetWidth || 80; el._h = el.offsetHeight || 18; }
+        if (sp.x < 0 || sp.x + 14 + el._w > innerWidth || sp.y - 6 < satBand.top || sp.y - 6 + el._h > satBand.bot) show = false;
+      }
       if (show) { const sp = project(it.pos); placeLabel(it.label, sp.x + 14, sp.y - 6, true); it.label.classList.toggle("sel", isSel); }
       else if (it.shown) placeLabel(it.label, 0, 0, false);
       it.shown = show;
@@ -6467,7 +6481,7 @@ function renderHealth() {
     const failed = r.fails >= 2 && String(r.status || "").startsWith("failed");
     return healthRow(T(en, cs), src, at, cad, { failed, note: failed ? T(`last ${r.fails} runs failed`, `posledních ${r.fails} běhů selhalo`) : String(r.status || "").startsWith("skipped: no ") ? T("no key set", "chybí klíč") : "" });
   });
-  rows.push(healthRow(T("News wire", "Zpravodajství"), T("GDELT, every 6 hours", "GDELT, každých 6 hodin"), META && META.lastRun ? isoMs(META.lastRun) : (NEWS[0] ? parseDay(NEWS[0].date) : null), 30, {}));
+  rows.push(healthRow(T("News wire", "Zpravodajství"), T("Open news sources, every 6 hours", "Otevřené zpravodajské zdroje, každých 6 hodin"), META && META.lastRun ? isoMs(META.lastRun) : (NEWS[0] ? parseDay(NEWS[0].date) : null), 30, {}));
   const fileAt = (k) => FILES14[k] && FILES14[k].generated ? parseDay(FILES14[k].generated) : null;
   rows.push(healthRow(T("Mine pictures (Sentinel-2)", "Snímky dolů (Sentinel-2)"), "Planetary Computer", fileAt("imagery"), 168 + 24, {}));
   rows.push(healthRow(T("Radar and heat pictures", "Radarové a tepelné snímky"), "Planetary Computer", fileAt("orbit-extras"), 168 + 24, {}));
