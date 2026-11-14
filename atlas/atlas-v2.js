@@ -26,7 +26,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     set("#teams .sec-head .label", "Pro týmy");
     set("#tm-h", "Předložte to vedení.");
     set("#teams .sec-head p", "OreOrbit je zdarma. Výrobcům v obraně a kosmonautice, kteří potřebují odpověď, za kterou se dá ručit, nabízíme i přímou spolupráci s jejich týmem.");
-    set("#cta-assess", "Posoudit váš řetězec");
+    set("#cta-assess", "Posoudit dodavatelský řetězec");
     set("#oo-priv", "Registr posouzení zůstává jen v tomto prohlížeči a nikam se neposílá.");
     const hp = $("#hero-copy p");
     if (hp) hp.textContent = "U devíti z nich vyrábí Čína v některé fázi víc než 65 % světové produkce a u primárního galia je to 99 %. Sledujte je od dolu přes rafinerii až do továrny, podívejte se, co se tento týden změnilo, a vyzkoušejte proti nim vlastní seznam dílů přímo v prohlížeči.";
@@ -275,7 +275,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       <ul class="as-why">${r.why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>
       ${r.mats.length > 1 ? `<p class="srcs">${T("Rated on its most exposed material", "Hodnoceno podle nejexponovanější suroviny")}: ${esc(O.mName(r.top.m))}. ${T("Others", "Další")}: ${r.mats.slice(1).map((x) => `${esc(O.mName(x.m))} ${x.pts}/9`).join(", ")}</p>` : ""}
     </li>`).join("")}</ol>
-    <p class="srcs">${T("Score out of 9, from the part's most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or not knowing the origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or not recorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more, medium 3 to 5. A rule of thumb to rank your list, not a forecast.", "Skóre z 9 podle nejexponovanější suroviny dílu: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo živá hrozba u lokality (1). Vysoké je 6 a víc, střední 3 až 5. Pravidlo pro seřazení seznamu, ne předpověď.")}</p>`;
+    <p class="srcs">${T("Score out of 9, from the part's most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or not knowing the origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or not recorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more, medium 3 to 5. A rule of thumb to rank your list, not a forecast.", "Skóre z 9 podle nejexponovanější suroviny dílu: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo aktivní výstraha u lokality (1). Vysoké je 6 a víc, střední 3 až 5. Pravidlo pro seřazení seznamu, ne předpověď.")}</p>`;
   }
 
   function stressHtml() {
@@ -422,7 +422,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       <h2>${e(T("4. Options to consider", "4. Možnosti k posouzení"))}</h2>
       <ul>${ms.map((m) => { const sp = O.EU_SP[m], rr = O.EOL_RIR[m], dl = O.deadlinesFor(m)[0]; const bits = []; if (sp) bits.push(sp.n ? T(`${sp.n} EU strategic projects`, `${sp.n} strategických projektů EU`) + (sp.named ? `: ${sp.named.join(", ")}` : "") : T("EU strategic projects", "Strategické projekty EU") + (sp.named ? `: ${sp.named.join(", ")}` : "")); if (rr) bits.push(T(`recycling meets ${rr.txt || rr.v + "%"} of EU demand`, `recyklace pokrývá ${rr.txt || rr.v + " %"} poptávky EU`)); if (dl) bits.push(T(`next deadline ${O.fmtDay(dl.date)}: ${dl.title}`, `nejbližší termín ${O.fmtDay(dl.date)}: ${dl.title_cs || dl.title}`)); return `<li><b>${e(O.mName(m))}</b>: ${e(bits.join("; ") || "–")}</li>`; }).join("")}</ul>
       <h2>${e(T("Method and limits", "Metoda a omezení"))}</h2>
-      <p class="small">${e(T("Each part is scored out of 9 on its most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or an unknown origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or unrecorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more. The register was entered by the organisation named above and was not checked by OreOrbit. Public data only; not legal advice. Article 24 of Regulation (EU) 2024/1252 and its pending amendments set the formal requirements for the companies they cover.", "Každý díl má skóre z 9 podle nejexponovanější suroviny: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo živá hrozba u lokality (1). Vysoké je 6 a víc. Registr zadala výše uvedená organizace a OreOrbit ho neověřoval. Jen veřejná data; nejde o právní radu. Formální požadavky pro dotčené firmy stanoví článek 24 nařízení (EU) 2024/1252 a jeho připravované změny."))}</p>
+      <p class="small">${e(T("Each part is scored out of 9 on its most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or an unknown origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or unrecorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more. The register was entered by the organisation named above and was not checked by OreOrbit. Public data only; not legal advice. Article 24 of Regulation (EU) 2024/1252 and its pending amendments set the formal requirements for the companies they cover.", "Každý díl má skóre z 9 podle nejexponovanější suroviny: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo aktivní výstraha u lokality (1). Vysoké je 6 a víc. Registr zadala výše uvedená organizace a OreOrbit ho neověřoval. Jen veřejná data; nejde o právní radu. Formální požadavky pro dotčené firmy stanoví článek 24 nařízení (EU) 2024/1252 a jeho připravované změny."))}</p>
       <p class="small">${e(T("Generated", "Vytvořeno"))} ${e(now.toISOString().slice(0, 16).replace("T", " "))} UTC · bohemiadefense.com/atlas</p>
     </body></html>`;
   }
@@ -508,10 +508,10 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           <dd><a href="p/index.html">${T("Browse the library: every material and site as a page you can read and cite", "Projděte knihovnu: každá surovina a lokalita jako stránka k citaci")}</a></dd>
           ${sign ? `<dd><a class="btn ghost small" href="${esc(sign)}" target="_blank" rel="noopener">${T("Get the Monday brief by email", "Pondělní přehled e-mailem")}</a></dd>` : ""}</div>
         <div class="tm-o"><dt><span class="tm-n">${T("Tailored", "Na míru")}</span>${T("Article 24 readiness review", "Připravenost na článek 24")}</dt>
-          <dd>${T("One product line, worked through with your engineers and buyers: the parts and suppliers behind it, where their materials are mined and refined, the stock you hold and what each export control would do to it. You get an assessment your board can sign, and a named analyst checks every figure in it.", "Jedna výrobní řada, prošlá s vašimi konstruktéry a nákupčími: díly a dodavatelé, kde se jejich suroviny těží a zpracovávají, jaké máte zásoby a co by s nimi udělala každá vývozní kontrola. Dostanete posouzení, které může vedení podepsat, a každý údaj v něm zkontroluje jmenovaný analytik.")}</dd>
+          <dd>${T("One product line, worked through with your engineers and buyers: the parts and suppliers behind it, where their materials are mined and refined, the stock you hold and what each export control would do to it. You get an assessment your board can sign, and a named analyst checks every figure in it.", "Jednu produktovou řadu projdeme s vašimi konstruktéry a nákupčími: díly a dodavatelé, kde se jejich suroviny těží a zpracovávají, jaké máte zásoby a co by s nimi udělala každá vývozní kontrola. Dostanete posouzení, které může vedení podepsat, a každý údaj v něm zkontroluje jmenovaný analytik.")}</dd>
           <dd><a href="oreorbit-sample-assessment.pdf">${T("Read a sample review (PDF, 7 pages)", "Ukázkové posouzení (PDF, 7 stran, anglicky)")}</a> · <a href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Services and prices", "Služby a ceny")}</a></dd></div>
         <div class="tm-o"><dt><span class="tm-n">${T("€" + MP + " a month", MP + " € měsíčně")}</span>${T("Monitoring for your register", "Sledování pro váš registr")}</dt>
-          <dd>${T("We watch your minerals, their sites and deadlines around the clock. You hear from us when something changes, and every Monday. Ask us one question a month: a person answers within two working days.", "Sledujeme vaše suroviny, jejich lokality a termíny nepřetržitě. Ozveme se, když se něco změní, a každé pondělí. Jednou měsíčně se nás můžete na cokoli zeptat: odpoví člověk do dvou pracovních dnů.")}</dd></div>
+          <dd>${T("We watch your minerals, their sites and deadlines around the clock. You hear from us when something changes, and every Monday. Ask us one question a month: a person answers within two working days.", "Nepřetržitě hlídáme vaše suroviny, jejich lokality a termíny. Ozveme se, jakmile se něco změní, a pak každé pondělí. Jednou měsíčně se nás můžete na cokoli zeptat: odpoví člověk do dvou pracovních dnů.")}</dd></div>
       </dl>
       <div class="tm-side">
         <div class="label">${T("How a review runs", "Jak probíhá posouzení")}</div>
@@ -601,10 +601,10 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     sec.innerHTML = `<div class="inner">
       <div class="sec-head"><div class="label">${T("Quick check", "Rychlá kontrola")}</div><div>
         <h2 id="check-h">${T("What does your product depend on?", "Na čem závisí váš výrobek?")}</h2>
-        <p>${T("Pick what you make. In one click: which of the twelve minerals it typically needs, who controls them, how much of Europe's imports come from China, and the next deadline that could hit it.", "Vyberte, co vyrábíte. Jedním kliknutím uvidíte, kterou z dvanácti surovin takový výrobek obvykle potřebuje, kdo ji ovládá, kolik evropského dovozu pochází z Číny a nejbližší termín, který ho může zasáhnout.")}</p></div></div>
+        <p>${T("Pick what you make. In one click: which of the twelve minerals it typically needs, who controls them, how much of Europe's imports come from China, and the next deadline that could hit it.", "Vyberte, co vyrábíte. Jedním kliknutím uvidíte, které z dvanácti surovin takový výrobek obvykle potřebuje, kdo je ovládá, kolik evropského dovozu pochází z Číny a nejbližší termín, který ho může zasáhnout.")}</p></div></div>
       <div class="qc-prods" role="group" aria-label="${esc(T("What you make", "Co vyrábíte"))}">${P.map((p) => `<button type="button" class="qc-p" data-p="${p[0]}" aria-pressed="false">${esc(p[1])}</button>`).join("")}</div>
       <div class="qc-out" aria-live="polite"></div>
-      <p class="qc-note">${T("Typical uses in such products; your own parts may differ. A readiness review maps your actual parts and suppliers.", "Typické použití v takových výrobcích; vaše díly se mohou lišit. Posouzení připravenosti zmapuje vaše skutečné díly a dodavatele.")}</p>
+      <p class="qc-note">${T("Typical uses in such products; your own parts may differ. A readiness review maps your actual parts and suppliers.", "Jde o typické složení takových výrobků; to vaše se může lišit. Posouzení připravenosti zmapuje vaše skutečné díly a dodavatele.")}</p>
     </div>`;
     before.parentNode.insertBefore(sec, before);
     const nav = document.querySelector(".nav-links");
@@ -634,9 +634,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         <h1>${esc(last.name)}</h1><p class="sum">${esc(strip(last.sum))}</p>
         ${last.dl ? `<p class="dl">${T("Next deadline", "Nejbližší termín")}: <b>${esc(last.dl[0])}</b> · ${esc(last.dl[1])}</p>` : ""}
         <table><tr><th>${T("Mineral and use", "Surovina a použití")}</th><th>${T("Leading country, tightest stage", "Vedoucí země, nejužší fáze")}</th><th>${T("EU imports", "Dovoz do EU")}</th><th>${T("Level", "Úroveň")}</th></tr>${rows}</table>
-        <div class="next"><b>${T("Want this for your actual parts list?", "Chcete to pro váš skutečný seznam dílů?")}</b> ${T("A readiness review maps one product line in two to three weeks; scope and price are agreed in a free 30-minute call.", "Posouzení připravenosti zmapuje jednu výrobní řadu za dva až tři týdny; rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma.")}<br>
+        <div class="next"><b>${T("Want this for your actual parts list?", "Chcete to pro váš skutečný seznam dílů?")}</b> ${T("A readiness review maps one product line in two to three weeks; scope and price are agreed in a free 30-minute call.", "Posouzení připravenosti zmapuje jednu produktovou řadu za dva až tři týdny; rozsah a cenu domluvíme na úvodním 30minutovém hovoru zdarma.")}<br>
         David Madali · Bohemia Defense · <a href="mailto:david@madali.cz">david@madali.cz</a> · bohemiadefense.com/atlas</div>
-        <p class="note">${T("Typical uses in such products; your own parts may differ. Shares: USGS and IEA; EU imports: Eurostat Comext; via OreOrbit. Not investment or legal advice.", "Typické použití v takových výrobcích; vaše díly se mohou lišit. Podíly: USGS a IEA; dovoz do EU: Eurostat Comext; přes OreOrbit. Nejde o investiční ani právní radu.")}</p>
+        <p class="note">${T("Typical uses in such products; your own parts may differ. Shares: USGS and IEA; EU imports: Eurostat Comext; via OreOrbit. Not investment or legal advice.", "Jde o typické složení takových výrobků; to vaše se může lišit. Podíly: USGS a IEA; dovoz do EU: Eurostat Comext; přes OreOrbit. Nejde o investiční ani právní radu.")}</p>
         <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`;
       const w = window.open(URL.createObjectURL(new Blob([html], { type: "text/html" })), "_blank");
       if (!w) alert(T("Please allow pop-ups to download the PDF.", "Pro stažení PDF povolte vyskakovací okna."));
@@ -654,7 +654,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, lv = LV[rag.level] || null, imp = O.importShare(m);
         if (x && x.pct > 65) { conc++; if (x.who === "China") cn++; }
         (O.deadlinesFor(m) || []).forEach((d) => { if (O.daysUntil(d.date) >= 0 && (!next || d.date < next.date)) next = d; });
-        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Čína vede")}</b> <span>${T("refining; no public world total", "rafinace; světový podíl není veřejný")}</span>`;
+        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Čína vede")}</b> <span>${T("refining; no public world total", "v rafinaci; světový podíl není zveřejněn")}</span>`;
         const im = imp && imp.tp ? `${esc(imTxt(imp.tp))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
         return `<button type="button" class="qc-row" data-m="${m}" style="--c:${O.cssVar(m)}" title="${esc(T("Show on the globe", "Ukázat na glóbu"))}">
           <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
@@ -663,7 +663,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           <span class="qc-lv">${lv ? `<em class="${lv[1]}" title="${esc((rag.why || []).join(" · ") || T("Nothing unusual this week", "Tento týden nic neobvyklého"))}">${lv[0]}</em>` : ""}</span></button>`;
       }).join("");
       const sum = T(`${p[1]} typically depend on <b>${ms.length} of the twelve</b> critical minerals. For <b>${conc}</b> of them one country controls more than 65% of a stage${cn ? `, China in ${cn}` : ""}.`,
-                    `${p[1]} obvykle závisí na <b>${ms.length} z dvanácti</b> kritických surovin. U <b>${conc}</b> z nich ovládá jedna země přes 65 % některé fáze${cn ? `, Čína u ${cn}` : ""}.`);
+                    `${p[1]} obvykle závisí na <b>${ms.length} z dvanácti</b> kritických surovin. U <b>${conc}</b> z nich drží jedna země přes 65 % některé fáze dodavatelského řetězce${cn ? `, u ${cn} je to Čína` : ""}.`);
       const dl = next ? `<p class="qc-dl"><span>${T("Next deadline", "Nejbližší termín")}</span> <b>${esc(O.fmtDay(next.date))}</b> · ${esc(O.LANG === "cs" && next.title_cs ? next.title_cs : next.title)}</p>` : "";
       last = { id, name: p[1], sum, dl: next ? [O.trStr(O.fmtDay(next.date)), O.LANG === "cs" && next.title_cs ? next.title_cs : next.title] : null,
         rows: ms.map((m) => { const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, imp = O.importShare(m);
@@ -678,9 +678,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const C43 = window.ATLAS_CONFIG || {}, PR43 = String(C43.monitoringPrice || "49").trim();
       const BK43 = O.safeUrl ? (O.safeUrl(C43.bookingUrl) || "mailto:david@madali.cz") : (C43.bookingUrl || "mailto:david@madali.cz");
       const n43 = ms.length, csW = n43 >= 2 && n43 <= 4 ? "tyto " + n43 + " suroviny" : "těchto " + n43 + " surovin";
-      const lvKey = `<button type="button" class="qc-keyb" aria-expanded="${out.classList.contains("key-on")}">${esc(T("What do the risk levels mean?", "Co znamenají úrovně rizika?"))}</button><p class="qc-key">${esc(T("High risk: one country controls more than 65% of a stage and something is moving this week (a deadline within 45 days, news, or a hazard or conflict near a site). Medium risk: only one of the two. Low risk: neither.", "Vysoké riziko: jedna země ovládá přes 65 % některé fáze a zároveň se tento týden něco děje (termín do 45 dní, zprávy, hrozba nebo konflikt u lokality). Střední riziko: platí jen jedno z toho. Nízké riziko: ani jedno."))}</p>`;
+      const lvKey = `<button type="button" class="qc-keyb" aria-expanded="${out.classList.contains("key-on")}">${esc(T("What do the risk levels mean?", "Co znamenají úrovně rizika?"))}</button><p class="qc-key">${esc(T("High risk: one country controls more than 65% of a stage and something is moving this week (a deadline within 45 days, news, or a hazard or conflict near a site). Medium risk: only one of the two. Low risk: neither.", "Vysoké riziko: jedna země drží přes 65 % některé fáze dodavatelského řetězce a zároveň se tento týden něco děje (termín do 45 dní, zprávy, hrozba nebo konflikt u lokality). Střední riziko: platí jen jedno z toho. Nízké riziko: ani jedno."))}</p>`;
       out.innerHTML = `<p class="qc-sum">${sum}</p>${dl}<div class="qc-rows">${rows}</div>${lvKey}
-        <div class="qc-ctas"><a class="btn qc-mon" href="#teams">${esc(T("Get alerts for these " + n43 + " minerals", "Hlídat " + csW))}</a><a class="btn ghost" href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Full review of your product line", "Plné posouzení vaší výrobní řady")}</a><button type="button" class="btn ghost qc-pdf">${T("Download my result (PDF)", "Stáhnout výsledek (PDF)")}</button></div>
+        <div class="qc-ctas"><a class="btn qc-mon" href="#teams">${esc(T("Get alerts for these " + n43 + " minerals", "Hlídat " + csW))}</a><a class="btn ghost" href="${O.LANG === "cs" ? "p/services-cs.html" : "p/services.html"}">${T("Full review of your product line", "Podrobné posouzení vaší produktové řady")}</a><button type="button" class="btn ghost qc-pdf">${T("Download my result (PDF)", "Stáhnout výsledek (PDF)")}</button></div>
         <p class="qc-cta-note">${esc(T("Monitoring: an email the same day something changes for these minerals, €" + PR43 + " a month, cancel anytime.", "Monitoring: e-mail ještě týž den, kdy se u těchto surovin něco změní, " + PR43 + " € měsíčně, zrušíte kdykoli."))} ${esc(T("Not sure yet?", "Ještě si nejste jistí?"))} <a href="${esc(BK43)}" target="_blank" rel="noopener">${esc(T("Book a 30-minute call", "Domluvte si 30minutový hovor"))}</a></p>`;
       out.querySelector(".qc-pdf").addEventListener("click", printResult);
       out.querySelector(".qc-mon").addEventListener("click", (ev) => {
@@ -790,13 +790,13 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (list && window.MutationObserver) { let busy = false; new MutationObserver(() => { if (busy) return; busy = true; sortList(); setTimeout(() => { busy = false; }, 50); }).observe(list, { childList: true }); }
     // a plain-language line under each signal
     const MEAN = [
-      [/^EU imports|^Dovoz do EU/i, T("If one country supplies most of a product, a single licensing decision there can stop European factories. Shares above 50% deserve a second source.", "Když většinu výrobku dodává jedna země, jediné rozhodnutí o licencích tam může zastavit evropské továrny. Podíly nad 50 % si zaslouží druhý zdroj.")],
+      [/^EU imports|^Dovoz do EU/i, T("If one country supplies most of a product, a single licensing decision there can stop European factories. Shares above 50% deserve a second source.", "Když většinu výrobku dodává jedna země, jediné rozhodnutí o licencích tam může zastavit evropské továrny. Při podílu nad 50 % se vyplatí mít druhý zdroj.")],
       [/^Ships|^Lodě/i, T("Fewer ships through Bab-el-Mandeb or Malacca mean longer routes around Africa: two to three extra weeks and higher freight costs for anything coming from Asia.", "Méně lodí přes Bab al-Mandab nebo Malacký průliv znamená delší trasy kolem Afriky: o dva až tři týdny déle a vyšší přepravné u všeho z Asie.")],
       [/^Armed conflict|^Ozbrojen/i, T("Fighting near a mine or a route raises the risk of stoppages and the cost of insurance. It does not by itself mean output has stopped.", "Boje poblíž dolu nebo trasy zvyšují riziko výpadků a cenu pojištění. Samy o sobě neznamenají, že se výroba zastavila.")],
       [/^Europe's defence demand|^Poptávka/i, T("More tenders for weapons and ammunition mean more demand for the same scarce minerals, and longer delivery times from suppliers.", "Více zakázek na zbraně a munici znamená vyšší poptávku po stejných vzácných surovinách a delší dodací lhůty.")],
       [/^Research|^Výzkum/i, T("More research on substitutes shows Europe looking for a way around a dependency. It takes years before it changes supply.", "Přibývající výzkum náhrad ukazuje, že Evropa hledá, jak závislost obejít. Na dodávkách se to projeví až za roky.")],
       [/^Heat|^Teplo/i, T("Furnace-hot pixels at a smelter or refinery usually mean it is running. Weeks without heat can mean a stoppage, or simply clouds.", "Tepelná anomálie u huti nebo rafinerie obvykle znamená, že běží. Týdny bez tepla mohou znamenat odstávku, nebo jen mraky.")],
-      [/^Sulphur|^Oxid siřičitý/i, T("Sulphur dioxide over a smelter tracks how hard it is working: a sudden drop can be a slowdown, a rise a ramp-up.", "Oxid siřičitý nad hutí ukazuje, jak naplno pracuje: náhlý pokles může být útlum, nárůst rozjezd výroby.")],
+      [/^Sulphur|^Oxid siřičitý/i, T("Sulphur dioxide over a smelter tracks how hard it is working: a sudden drop can be a slowdown, a rise a ramp-up.", "Oxid siřičitý nad hutí prozradí, jak naplno jede: náhlý pokles může znamenat útlum, nárůst rozjezd výroby.")],
     ];
     const sig = document.getElementById("signals");
     const mark = () => {
@@ -867,7 +867,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     };
     name("monday", T("This week", "Tento týden"), T("What's moving this week.", "Co se tento týden mění."));
     name("exposure", T("The twelve minerals", "Dvanáct surovin"));
-    name("signals", T("Live evidence", "Živé důkazy"));
+    name("signals", T("Live evidence", "Živá data"));
     name("rules", T("Deadlines and EU funding", "Termíny a peníze EU"));
     name("teams", T("Work with us", "Spolupráce"));
     name("assess", T("Your parts list", "Vlastní díly"));
@@ -1110,8 +1110,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `<p class="wx-free"><i></i><b>${esc(T("Free", "Zdarma"))}</b> · ${esc(T("the atlas · the quick check · the weekly brief · your parts list · no login", "atlas · rychlá kontrola · týdenní přehled · váš seznam dílů · bez přihlášení"))}</p>` +
         `<div class="wx-row">` +
         card(true, T("Readiness review", "Posouzení připravenosti"), esc(T("Tailored", "Na míru")), T("Scope and price after a free 30-minute call", "Rozsah a cenu domluvíme na hovoru zdarma"),
-             T("One product line: its parts, suppliers, origins and stock, tested against every export control that could hit it.", "Jedna výrobní řada: díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole, která ji může zasáhnout."),
-             [T("Two to three weeks", "Dva až tři týdny"), T("Two working sessions of your time", "Dvě pracovní schůzky"), T("Ready for your board and CRMA Article 24", "Pro vedení i článek 24 CRMA")],
+             T("One product line: its parts, suppliers, origins and stock, tested against every export control that could hit it.", "Jedna produktová řada: díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole, která ji může zasáhnout."),
+             [T("Two to three weeks", "Dva až tři týdny"), T("Two working sessions of your time", "Dvě pracovní schůzky"), T("Ready for your board and CRMA Article 24", "Pro vedení i pro čl. 24 CRMA")],
              ask(T("OreOrbit readiness review", "OreOrbit: posouzení připravenosti")), T("Ask about a review", "Zeptat se na posouzení")) +
         card(false, T("Monitoring", "Monitoring"), esc(T("€" + MP, MP + " €")) + `<small>${esc(T(" / month", " / měsíc"))}</small>`, "",
              T("Alerts on your materials, sites and deadlines, and one question a month answered within two working days.", "Upozornění na vaše suroviny, lokality a termíny a jednou měsíčně odpověď na vaši otázku do dvou pracovních dnů."), null,
@@ -1122,10 +1122,10 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `</div>` +
         `<div class="wx-steps"><p class="wx-k">${esc(T("How a review runs", "Jak posouzení probíhá"))}</p><ol>${steps.map(([a, b], k) => `<li style="--k:${k}"><span>${String(k + 1).padStart(2, "0")}</span><b>${esc(a)}</b><p>${esc(b)}</p></li>`).join("")}</ol></div>` +
         `<div class="wx-band"><div class="wx-who"><span class="wx-pin"><img src="img/david-madali-pr.jpg" alt="David Madali" loading="lazy" decoding="async" width="104" height="104"></span><div>` +
-          `<p class="wx-k">${esc(T("Who you work with · Prague", "S kým spolupracujete · Praha"))}</p><b class="wx-nm">David Madali</b>` +
-          `<p>${esc(T("Analyst of the defence industry, critical raw materials and the space economy. Creator of OreOrbit, quoted by BBC News.", "Analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. Autor OreOrbit, citovaný BBC News."))}</p>` +
+          `<p class="wx-k">${esc(T("Who you work with · Prague", "Kdo za tím stojí · Praha"))}</p><b class="wx-nm">David Madali</b>` +
+          `<p>${esc(T("Analyst of the defence industry, critical raw materials and the space economy. Creator of OreOrbit, quoted by BBC News.", "Analytik obranného průmyslu, kritických surovin a kosmické ekonomiky. Autor atlasu OreOrbit, citovala ho BBC News."))}</p>` +
           `<p class="wx-dots">${DOTS.map((c) => `<i style="--c:${c}"></i>`).join("")}<span><a href="https://bohemiadefense.com"><b>Bohemia Defense</b></a> · <a href="./">OreOrbit</a> · <a href="https://madali.cz" rel="author">madali.cz</a></span></p></div></div>` +
-          `<div class="wx-act"><p class="wx-big">${esc(T("Start with a", "Začněte"))} <b>${esc(T("free 30-minute call.", "bezplatným 30minutovým hovorem."))}</b></p><p>${esc(T("We pick one product line and the people for two working sessions.", "Vybereme jednu výrobní řadu a lidi na dvě pracovní schůzky."))}</p>` +
+          `<div class="wx-act"><p class="wx-big">${esc(T("Start with a", "Začněte"))} <b>${esc(T("free 30-minute call.", "bezplatným 30minutovým hovorem."))}</b></p><p>${esc(T("We pick one product line and the people for two working sessions.", "Společně vybereme jednu produktovou řadu a lidi na dvě pracovní schůzky."))}</p>` +
           `<div class="wx-btns"><a class="btn" href="${ask(T("OreOrbit readiness review: intro call", "OreOrbit: úvodní hovor"))}">${esc(T("Book an intro call", "Domluvit hovor"))}</a><a class="btn ghost" href="oreorbit-sample-assessment.pdf">${esc(T("Sample review", "Ukázkové posouzení"))}</a><a class="btn ghost" href="p/services.html">${esc(T("All services", "Všechny služby"))}</a></div></div></div>` +
         `<p class="wx-vat">${esc(T("Prices exclude VAT where it applies.", "Ceny jsou bez DPH, pokud se uplatňuje."))}</p>`;
       tm.appendChild(box);
@@ -1214,8 +1214,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const $i = (x) => document.getElementById(x);
     const snd = () => { try { if (O.SND && O.SND.on && O.SND.tick) O.SND.tick(); } catch (e) {} };
     // short introductions: one or two sentences
-    const P = { check: T("Pick what you make. See which minerals it needs, who controls them and what could hit it next.", "Vyberte, co vyrábíte. Uvidíte, které suroviny potřebuje, kdo je ovládá a co ho může zasáhnout."),
-                signals: T("Seven live signals from open data and satellites. Open any of them for the full data.", "Sedm živých signálů z otevřených dat a satelitů. Každý otevřete pro plná data."),
+    const P = { check: T("Pick what you make. See which minerals it needs, who controls them and what could hit it next.", "Vyberte, co vyrábíte. Uvidíte, které suroviny potřebujete, kdo je ovládá a co vás může zasáhnout."),
+                signals: T("Seven live signals from open data and satellites. Open any of them for the full data.", "Sedm průběžně aktualizovaných ukazatelů z otevřených dat a družic. Kliknutím zobrazíte plná data."),
                 assess: T("Add the parts you make and where they come from. Each part gets a risk rating you can take to your board. Nothing leaves your browser.", "Přidejte díly, které vyrábíte, a odkud pocházejí. Každý díl dostane hodnocení rizika pro vaše vedení. Nic neopustí váš prohlížeč."),
                 rules: T("Who may supply you is changing. These are the rules and the dates that decide it.", "Kdo vám smí dodávat, se mění. Tady jsou pravidla a termíny, které o tom rozhodují.") };
     Object.keys(P).forEach((id) => { const p = document.querySelector("#" + id + " .sec-head p"); if (p) p.textContent = P[id]; });
@@ -1335,7 +1335,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tidyQC = () => {
       document.querySelectorAll('#check a[href="#assess"], #check button[data-go="assess"]').forEach((x) => { x.hidden = true; x.style.display = "none"; });
       document.querySelectorAll("#check p").forEach((p) => {
-        if (/assessment further down|posouzení níže|níže prověří/i.test(p.textContent)) p.textContent = T("Typical uses in such products; your own parts may differ. A readiness review checks your actual parts.", "Typické použití v takových výrobcích; vaše díly se mohou lišit. Posouzení připravenosti prověří vaše skutečné díly.");
+        if (/assessment further down|posouzení níže|níže prověří/i.test(p.textContent)) p.textContent = T("Typical uses in such products; your own parts may differ. A readiness review checks your actual parts.", "Jde o typické složení takových výrobků; to vaše se může lišit. Posouzení připravenosti prověří vaše skutečné díly.");
       });
     };
     tidyQC(); const qcRoot = $i("check"); if (qcRoot) new MutationObserver(tidyQC).observe(qcRoot, { childList: true, subtree: true });
@@ -1412,24 +1412,24 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const MP = String((window.ATLAS_CONFIG || {}).monitoringPrice || "49").trim();   /* build 55: the price comes from config.js, never typed */
     if (row && !row.querySelector(".wx-mon")) {
       const fr = document.querySelector(".wx-free");
-      if (fr) fr.innerHTML = `<i></i><b>${esc(T("Free", "Zdarma"))}</b> · ${esc(T("the atlas · the quick check · this week's headlines · the live evidence · no login", "atlas · rychlá kontrola · titulky týdne · živé důkazy · bez přihlášení"))}`;
+      if (fr) fr.innerHTML = `<i></i><b>${esc(T("Free", "Zdarma"))}</b> · ${esc(T("the atlas · the quick check · this week's headlines · the live evidence · no login", "atlas · rychlá kontrola · zprávy týdne · živá data · bez přihlášení"))}`;
       row.classList.add("wx-two");
       row.innerHTML =
         `<article class="wx-card feat wx-mon"><span class="wx-badge"><i></i>${esc(T("For your minerals", "Pro vaše suroviny"))}</span><p class="wx-name">${esc(T("Monitoring", "Monitoring"))}</p><p class="wx-price">${esc(T("€" + MP, MP + " €"))}<small>${esc(T(" / month", " / měsíc"))}</small></p>` +
         `<p class="wx-sub">${esc(T("Your minerals: ", "Vaše suroviny: "))}<span class="wx-mins"></span> · <a href="#monday">${esc(T("change", "změnit"))}</a></p>` +
-        `<div class="wx-text"><p>${esc(T("We watch your minerals, their sites and deadlines around the clock. You hear from us when something changes, and every Monday. Ask us one question a month: a person answers within two working days.", "Sledujeme vaše suroviny, jejich lokality a termíny nepřetržitě. Ozveme se, když se něco změní, a každé pondělí. Jednou měsíčně se nás můžete na cokoli zeptat: odpoví člověk do dvou pracovních dnů."))}</p></div>` +
+        `<div class="wx-text"><p>${esc(T("We watch your minerals, their sites and deadlines around the clock. You hear from us when something changes, and every Monday. Ask us one question a month: a person answers within two working days.", "Nepřetržitě hlídáme vaše suroviny, jejich lokality a termíny. Ozveme se, jakmile se něco změní, a pak každé pondělí. Jednou měsíčně se nás můžete na cokoli zeptat: odpoví člověk do dvou pracovních dnů."))}</p></div>` +
         form("monitoring", T("Start monitoring", "Spustit monitoring"), T("We'll use this address to contact you about monitoring.", "Tuto adresu použijeme, abychom vás kontaktovali kvůli monitoringu.")) + `</article>` +
         `<article class="wx-card wx-rev"><p class="wx-name">${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="wx-price wx-price-t">${esc(T("For your board", "Pro vaše vedení"))}</p><p class="wx-sub">${esc(T("CRMA Article 24 · two to three weeks", "Článek 24 CRMA · dva až tři týdny"))}</p>` +
-        `<div class="wx-text"><p>${esc(T("One product line, its parts, suppliers, origins and stock, tested against every export control and chokepoint. Signed by an analyst.", "Jedna výrobní řada, její díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole a úžině. Podepsané analytikem."))}</p>` +
+        `<div class="wx-text"><p>${esc(T("One product line, its parts, suppliers, origins and stock, tested against every export control and chokepoint. Signed by an analyst.", "Jedna produktová řada, její díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole a úžině. Podepsané analytikem."))}</p>` +
         `<ul><li>${esc(T("Your parts-list register", "Registr vašich dílů"))}</li><li>${esc(T("Stress tests against real export controls", "Zátěžové testy proti skutečným vývozním kontrolám"))}</li><li>${esc(T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"))}</li><li>${esc(T("Slides for your board", "Podklady pro vedení"))}</li></ul></div>` +
         `<a class="btn wx-call" href="#wx-band">${esc(T("Book a 30-minute intro call", "Domluvit 30minutový hovor"))} →</a></article>`;
       const bandEl = document.querySelector(".wx-band"); if (bandEl) bandEl.id = "wx-band";
       row.querySelector(".wx-call").addEventListener("click", () => { snd(); ooHit("act:review-call"); });
     }
-    const minsOut = () => { const t = minNames(); document.querySelectorAll(".wx-mins, .wk2-sub-m").forEach((e) => { e.textContent = e.classList.contains("wk2-sub-m") ? " " + T("For: ", "Pro: ") + t : t; }); };
+    const minsOut = () => { const t = minNames(); document.querySelectorAll(".wx-mins, .wk2-sub-m").forEach((e) => { e.textContent = e.classList.contains("wk2-sub-m") ? " " + T("For: ", "Suroviny: ") + t : t; }); };
     minsOut(); watchPick(minsOut);
     const th = document.querySelector("#teams .sec-head h2"); if (th) th.innerHTML = esc(T("From a free atlas", "Od bezplatného atlasu")) + "<br><b>" + esc(T("to alerts for your minerals.", "k upozorněním na vaše suroviny.")) + "</b>";
-    const tp = document.querySelector("#teams .sec-head p"); if (tp) tp.textContent = T("The atlas stays free. Monitoring alerts you the same day something changes for your minerals. A review takes one product line to your board.", "Atlas zůstává zdarma. Monitoring vám řekne, kdy se u vašich surovin něco změní. Posouzení připraví jednu výrobní řadu pro vaše vedení.");
+    const tp = document.querySelector("#teams .sec-head p"); if (tp) tp.textContent = T("The atlas stays free. Monitoring alerts you the same day something changes for your minerals. A review takes one product line to your board.", "Atlas zůstává zdarma. Monitoring vám řekne, kdy se u vašich surovin něco změní. Posouzení zpracuje jednu produktovou řadu pro vaše vedení.");
     const tl = document.querySelector("#teams .sec-head .label"); if (tl) tl.textContent = T("Monitoring and review", "Monitoring a posouzení");
     try { if (O.renderSecList) O.renderSecList(); } catch (e) {}
   }
@@ -1503,7 +1503,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const mon = row.querySelector(".wx-mon"), rev = row.querySelector(".wx-rev");
       const free = document.createElement("article"); free.className = "wx-card wx-free-card";
       free.innerHTML = `<p class="wx-name">${esc(T("Free", "Zdarma"))}</p><p class="wx-price">${CS ? "0 €" : "€0"}</p><p class="wx-sub">${esc(T("Open to everyone · no login", "Pro každého · bez přihlášení"))}</p>` +
-        `<div class="wx-text"><p>${esc(T("Explore the atlas and see what your product depends on.", "Prozkoumejte atlas a zjistěte, na čem váš výrobek závisí."))}</p><ul><li>${esc(T("The interactive atlas and the quick check", "Interaktivní atlas a rychlá kontrola"))}</li><li>${esc(T("This week's headlines", "Titulky tohoto týdne"))}</li><li>${esc(T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data"))}</li></ul></div>` +
+        `<div class="wx-text"><p>${esc(T("Explore the atlas and see what your product depends on.", "Prozkoumejte atlas a zjistěte, na čem váš výrobek závisí."))}</p><ul><li>${esc(T("The interactive atlas and the quick check", "Interaktivní atlas a rychlá kontrola"))}</li><li>${esc(T("This week's headlines", "Zprávy tohoto týdne"))}</li><li>${esc(T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data"))}</li></ul></div>` +
         `<a class="wx-ask" href="#monday">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))} <span aria-hidden="true">→</span></a>`;
       row.insertBefore(free, row.firstChild);
       row.classList.remove("wx-two"); row.classList.add("wx-three");
@@ -1556,16 +1556,16 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     row.className = "pl-row";
     row.innerHTML =
       `<article class="pl-card"><p class="pl-k">01 · ${esc(T("Free", "Zdarma"))}</p><p class="pl-price">${CS ? "0 €" : "€0"}</p><p class="pl-sub">${esc(T("Open to everyone, no login", "Pro každého, bez přihlášení"))}</p>` +
-        list([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Titulky tohoto týdne"), T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data")]) +
+        list([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Zprávy tohoto týdne"), T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data")]) +
         `<button type="button" class="btn ghost pl-cta" data-go="brief">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</button></article>` +
       `<article class="pl-card pl-feat"><span class="pl-badge"><i></i>${esc(T("For your minerals", "Pro vaše suroviny"))}</span><p class="pl-k">02 · ${esc(T("Monitoring", "Monitoring"))}</p><p class="pl-price">${esc(T("€" + MP, MP + " €"))}<small>${esc(T(" / month", " / měsíc"))}</small></p><p class="pl-sub">${esc(T("Cancel anytime", "Zrušíte kdykoli"))}</p>` +
         list([T("A same-day alert when something changes for your minerals", "Upozornění ještě v den, kdy se u vašich surovin něco změní"), T("Export controls, plant outages, prices and news", "Vývozní kontroly, výpadky závodů, ceny a zprávy"), T("Deadline reminders 30, 14 and 7 days ahead", "Připomínky termínů 30, 14 a 7 dní předem"), T("One question a month, answered by a person within two working days", "Jednou měsíčně odpověď na vaši otázku, od člověka do dvou pracovních dnů")]) +
         `<button type="button" class="btn pl-cta" data-go="mon">${esc(T("Start monitoring", "Spustit monitoring"))}</button></article>` +
       `<article class="pl-card"><p class="pl-k">03 · ${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="pl-price pl-price-t">${esc(T("Tailored", "Na míru"))}</p><p class="pl-sub">${esc(T("Scope and price after a free 30-minute call", "Rozsah a cena po bezplatném 30minutovém hovoru"))}</p>` +
-        list([T("One product line in two to three weeks", "Jedna výrobní řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení, článek 24 CRMA")]) +
+        list([T("One product line in two to three weeks", "Jedna produktová řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení a pro čl. 24 CRMA")]) +
         `<a class="btn ghost pl-cta" href="${esc(BOOK)}"${/^https?:/.test(BOOK) ? ' target="_blank" rel="noopener"' : ""}>${esc(T("Book a 30-minute intro call", "Domluvit 30minutový hovor"))}</a></article>`;
     const panel = document.createElement("div"); panel.className = "pl-form"; panel.hidden = true;
-    panel.innerHTML = `<div><b>${esc(T("Start monitoring", "Spustit monitoring"))}</b><span>${esc(T("For: ", "Pro: "))}<span class="wx-mins"></span> · <a href="#monday">${esc(T("change minerals", "změnit suroviny"))}</a></span><span class="pl-note">${esc(T("David replies within one working day with a sample alert for your minerals and the terms.", "David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny a podmínkami."))}</span></div>${formHTML}`;
+    panel.innerHTML = `<div><b>${esc(T("Start monitoring", "Spustit monitoring"))}</b><span>${esc(T("For: ", "Suroviny: "))}<span class="wx-mins"></span> · <a href="#monday">${esc(T("change minerals", "změnit suroviny"))}</a></span><span class="pl-note">${esc(T("David replies within one working day with a sample alert for your minerals and the terms.", "David se do jednoho pracovního dne ozve s ukázkovým upozorněním pro vaše suroviny a podmínkami."))}</span></div>${formHTML}`;
     row.after(panel);
     const mins = () => { const p = $i("mon-pick"); const n = p ? [...p.querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.textContent.trim()) : []; panel.querySelector(".wx-mins").textContent = n.length ? n.join(", ") : T("all twelve minerals", "všech dvanáct surovin"); };
     mins(); const pk = $i("mon-pick"); if (pk) watchPick(mins);
@@ -1598,11 +1598,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       row.className = "pl3";
       row.innerHTML =
         `<div class="pl3-col pl3-a"><p class="pl3-k"><span class="pl3-n">01 · </span>${esc(T("Free", "Zdarma"))}</p><p class="pl3-price">${CS ? "0 €" : "€0"}</p><p class="pl3-sub">${esc(T("Open to everyone, no login.", "Pro každého, bez přihlášení."))}</p>` +
-          li([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Titulky tohoto týdne"), T("The Monday brief by email", "Pondělní přehled e-mailem")]) + `</div>` +
+          li([T("The interactive atlas", "Interaktivní atlas"), T("The quick check for your product", "Rychlá kontrola vašeho výrobku"), T("This week's headlines", "Zprávy tohoto týdne"), T("The Monday brief by email", "Pondělní přehled e-mailem")]) + `</div>` +
         `<div class="pl3-col pl3-b"><p class="pl3-k"><span class="pl3-n">02 · </span>${esc(T("Monitoring", "Monitoring"))}</p><p class="pl3-price">${esc(CS ? PRICE + " €" : "€" + PRICE)}<small>${esc(T(" / month", " / měsíc"))}${CS && C.monitoringPriceCzk ? esc(" · asi " + C.monitoringPriceCzk + " Kč") : ""}</small></p><p class="pl3-sub">${esc(T("Pay by card. Cancel anytime.", "Platba kartou. Zrušíte kdykoli.")) }</p>` +
-          li([T("We watch your minerals, their sites and deadlines around the clock.", "Sledujeme vaše suroviny, jejich lokality a termíny nepřetržitě."), T("You hear from us when something changes, and every Monday.", "Ozveme se, když se něco změní, a každé pondělí."), T("Ask us one question a month. A person answers within two working days.", "Jednou měsíčně se nás můžete na cokoli zeptat. Odpoví člověk do dvou pracovních dnů.")]) + `<p class="pl3-fine">${esc(T("Includes a weekly data file for your minerals.", "Součástí je týdenní datový soubor pro vaše suroviny."))}</p></div>` +
+          li([T("We watch your minerals, their sites and deadlines around the clock.", "Nepřetržitě hlídáme vaše suroviny, jejich lokality a termíny."), T("You hear from us when something changes, and every Monday.", "Ozveme se, jakmile se něco změní, a pak každé pondělí."), T("Ask us one question a month. A person answers within two working days.", "Jednou měsíčně se nás můžete na cokoli zeptat. Odpoví člověk do dvou pracovních dnů.")]) + `<p class="pl3-fine">${esc(T("Includes a weekly data file for your minerals.", "Součástí je týdenní datový soubor pro vaše suroviny."))}</p></div>` +
         `<div class="pl3-col pl3-c"><p class="pl3-k"><span class="pl3-n">03 · </span>${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="pl3-price">${esc(T("Tailored", "Na míru"))}</p><p class="pl3-sub">${esc(T("Scope and price after a free 30-minute call.", "Rozsah a cena po bezplatném 30minutovém hovoru."))}</p>` +
-          li([T("One product line in two to three weeks", "Jedna výrobní řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení, článek 24 CRMA")]) + `</div>` +
+          li([T("One product line in two to three weeks", "Jedna produktová řada za dva až tři týdny"), T("Your parts register and stress tests", "Registr dílů a zátěžové testy"), T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"), T("Slides for your board, CRMA Article 24", "Podklady pro vedení a pro čl. 24 CRMA")]) + `</div>` +
         `<div class="pl3-act pl3-x"><button type="button" class="btn ghost" data-go="brief">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</button></div>` +
         `<div class="pl3-act pl3-y">${form("monitoring", T("Start monitoring", "Spustit monitoring"), T("We'll use this address for your alerts and the payment.", "Tuto adresu použijeme pro vaše upozornění a platbu."))}</div>` +
         `<div class="pl3-act pl3-z"><a class="btn ghost" href="${esc(BOOK)}"${ext}>${esc(T("Book a 30-minute intro call", "Domluvit 30minutový hovor"))}</a></div>`;
@@ -1635,7 +1635,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const old = document.querySelector(".wk2-sub");
     if (old && !document.querySelector(".wk3")) {
       const w = document.createElement("div"); w.className = "wk3";
-      w.innerHTML = `<div class="wk3-l"><p class="wk3-k"><i></i>${esc(T("The Monday brief", "Pondělní přehled"))}</p><p class="wk3-h">${esc(T("Get this every Monday,", "Dostávejte to každé pondělí,"))} <b>${esc(T("free.", "zdarma."))}</b></p><p class="wk3-m">${esc(T("For: ", "Pro: "))}<span class="wk2-sub-m"></span></p></div>` +
+      w.innerHTML = `<div class="wk3-l"><p class="wk3-k"><i></i>${esc(T("The Monday brief", "Pondělní přehled"))}</p><p class="wk3-h">${esc(T("Get this every Monday,", "Dostávejte to každé pondělí,"))} <b>${esc(T("free.", "zdarma."))}</b></p><p class="wk3-m">${esc(T("For: ", "Suroviny: "))}<span class="wk2-sub-m"></span></p></div>` +
         `<div class="wk3-r">${form("brief", T("Subscribe", "Odebírat"), T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))}<p class="wk3-d">${esc(T("Monitoring goes further: a same-day alert when something changes for your minerals.", "Monitoring jde dál: upozornění ještě v den, kdy se u vašich surovin něco změní."))} <a href="#teams">${esc(T("See plans", "Úrovně"))} →</a></p></div>`;
       old.replaceWith(w);
       const upd = () => { const pk = $i("mon-pick"); const n = pk ? [...pk.querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.textContent.trim()) : []; const sp = w.querySelector(".wk2-sub-m"); if (sp) sp.textContent = n.length ? n.join(", ") : T("all twelve minerals", "všech dvanáct surovin"); };
@@ -1649,7 +1649,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     }
     if (CS) {
       const fl = document.querySelector(".foot-links");
-      if (fl) { const L = ["Atlas", "Rychlá kontrola", "Tento týden", "Živé důkazy", "Monitoring", "Knihovna", "Služby", "Zdroje dat a podmínky"]; fl.querySelectorAll("a").forEach((x, k) => { if (L[k]) x.textContent = L[k]; }); const sv = fl.querySelector('a[href="p/services.html"]'); if (sv) sv.href = "p/services-cs.html"; }
+      if (fl) { const L = ["Atlas", "Rychlá kontrola", "Tento týden", "Živá data", "Monitoring", "Knihovna", "Služby", "Zdroje dat a podmínky"]; fl.querySelectorAll("a").forEach((x, k) => { if (L[k]) x.textContent = L[k]; }); const sv = fl.querySelector('a[href="p/services.html"]'); if (sv) sv.href = "p/services-cs.html"; }
       const pv = $i("oo-priv-2"); if (pv) pv.textContent = "Žádné cookies, sledování ani reklama. Vaše nastavení (jazyk, zvuk, vybrané suroviny) zůstávají ve vašem prohlížeči. Odesílá se jen váš e-mail, a to jen když se přihlásíte k pondělnímu přehledu nebo k monitoringu.";
       const cr = $i("oo-cred"); if (cr) cr.innerHTML = 'Ostatní otevřená data uvádíme na stránce <a href="p/legal.html">zdroje dat a podmínky</a>; každá lokalita, trasa a zpráva odkazuje na svůj zdroj.';
     }
@@ -1692,7 +1692,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       m.after(box);
       const draw = () => {
         const sel = cur(), K = keys(), names = K.filter(([k]) => sel.includes(k)).map(([, n]) => n);
-        m.innerHTML = `${esc(T("For: ", "Pro: "))}<span>${esc(names.length ? names.join(", ") : T("all twelve minerals", "všech dvanáct surovin"))}</span> · <button type="button" class="wk3-ch">${esc(box.hidden ? T("change", "změnit") : T("done", "hotovo"))}</button>${own ? ` · <button type="button" class="wk3-rs">${esc(T("follow my product", "podle výrobku"))}</button>` : ""}`;
+        m.innerHTML = `${esc(T("For: ", "Suroviny: "))}<span>${esc(names.length ? names.join(", ") : T("all twelve minerals", "všech dvanáct surovin"))}</span> · <button type="button" class="wk3-ch">${esc(box.hidden ? T("change", "změnit") : T("done", "hotovo"))}</button>${own ? ` · <button type="button" class="wk3-rs">${esc(T("follow my product", "podle výrobku"))}</button>` : ""}`;
         box.innerHTML = K.map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${sel.includes(k)}">${esc(n)}</button>`).join("");
       };
       w.addEventListener("click", (ev) => {
@@ -1710,7 +1710,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       set(".hero-copy h1", "Zjistěte, na čem<br><b>závisí váš výrobek.</b>");
       set("#monday .sec-head h2", "Co se tento týden<br><b>děje.</b>");
       set("#teams .sec-head h2", "Začněte zdarma.<br><b>Buďte o krok napřed.</b>");
-      set("#signals .sec-head p", "Sedm živých signálů z otevřených dat a družic. Kliknutím zobrazíte plná data.");
+      set("#signals .sec-head p", "Sedm průběžně aktualizovaných ukazatelů z otevřených dat a družic. Kliknutím zobrazíte plná data.");
       const st = document.querySelectorAll(".steps-band .inner a");
       const S = [["Prověřte svůj výrobek", "Za minutu zjistíte, na čem závisí"], ["Co se tento týden děje", null], ["Upozornění na vaše suroviny", "Monitoring e-mailem"]];
       st.forEach((a, k) => { const sp = a.querySelector("span"); if (!sp || !S[k]) return; const sm = sp.querySelector("small"); const keep = sm ? sm.textContent : ""; sp.innerHTML = esc(S[k][0]) + "<small>" + esc(S[k][1] || keep) + "</small>"; });
@@ -1782,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 63"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 64"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1803,11 +1803,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const apply = () => {
       pin(q(".hero-copy h1"), CS ? "Zjistěte, na čem<br><b>závisí váš výrobek.</b>" : "See what your product<br><b>depends on.</b>");
       const h1 = q(".hero-copy h1"); if (h1 && h1.nextElementSibling && h1.nextElementSibling.tagName === "P") pin(h1.nextElementSibling, esc(T("The twelve critical minerals behind Europe's defence and space industry: who controls them, and what changes this week.", "Dvanáct kritických surovin, na kterých stojí evropský obranný a kosmický průmysl: kdo je ovládá a co se tento týden mění.")));
-      head("check", T("Quick check", "Rychlá kontrola"), T("What does your product<br><b>depend on?</b>", "Na čem váš výrobek<br><b>závisí?</b>"), T("Pick what you make. See which minerals it needs, who controls them and what could hit it next.", "Vyberte, co vyrábíte. Uvidíte, které suroviny potřebuje, kdo je ovládá a co ho může zasáhnout."));
+      head("check", T("Quick check", "Rychlá kontrola"), T("What does your product<br><b>depend on?</b>", "Na čem váš výrobek<br><b>závisí?</b>"), T("Pick what you make. See which minerals it needs, who controls them and what could hit it next.", "Vyberte, co vyrábíte. Uvidíte, které suroviny potřebujete, kdo je ovládá a co vás může zasáhnout."));
       head("monday", T("This week", "Tento týden"), T("What's moving<br><b>this week.</b>", "Co se tento týden<br><b>děje.</b>"), null);
-      head("signals", T("Live evidence", "Živá data"), T("What the open data<br><b>says now.</b>", "Co říkají otevřená data<br><b>právě teď.</b>"), T("Seven live signals from open data and satellites. Open any of them for the full data.", "Sedm živých signálů z otevřených dat a družic. Kliknutím zobrazíte plná data."));
+      head("signals", T("Live evidence", "Živá data"), T("What the open data<br><b>says now.</b>", "Co říkají otevřená data<br><b>právě teď.</b>"), T("Seven live signals from open data and satellites. Open any of them for the full data.", "Sedm průběžně aktualizovaných ukazatelů z otevřených dat a družic. Kliknutím zobrazíte plná data."));
       head("teams", T("Plans", "Ceník"), T("Start free.<br><b>Get alerted. Get ready.</b>", "Začněte zdarma.<br><b>Buďte o krok napřed.</b>"), T("Three levels: the free atlas, monitoring for your minerals, and a readiness review for your board.", "Tři úrovně: atlas zdarma, monitoring vašich surovin a posouzení připravenosti pro vaše vedení."));
-      head("trust", T("Data & method", "Data a metoda"), T("How we <b>know.</b>", "Jak to <b>víme.</b>"), T("Every figure comes from public data, satellite imagery or verified news, and shows its date. Licensed data are credited on the legal page.", "Každé číslo pochází z veřejných dat, družicových snímků nebo ověřených zpráv a má uvedené datum. Licencovaná data uvádíme na právní stránce."));
+      head("trust", T("Data & method", "Data a metoda"), T("How we <b>know.</b>", "Jak to <b>víme.</b>"), T("Every figure comes from public data, satellite imagery or verified news, and shows its date. Licensed data are credited on the legal page.", "Každé číslo pochází z veřejných dat, družicových snímků nebo ověřených zpráv a u každého je uvedeno datum. Licencovaná data uvádíme na právní stránce."));
       pin(q(".wk3-h"), CS ? "Každé pondělí do e-mailu, <b>zdarma.</b>" : "Get this every Monday, <b>free.</b>");
       const d = q(".wk3-d"); if (d) pin(d, CS ? 'Chcete o změnách vědět hned? Monitoring vás upozorní ještě týž den. <a href="#teams">Ceník →</a>' : 'Want to know the same day? Monitoring alerts you when something changes for your minerals. <a href="#teams">See plans →</a>');
       if (CS) {
@@ -1833,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 63 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 64 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1864,7 +1864,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const row = document.querySelector(".pl3");
     if (row && !document.querySelector(".pl3-guar")) {
       const g = document.createElement("div"); g.className = "pl3-guar";
-      g.innerHTML = `<p><b>${esc(T("Money-back guarantee.", "Garance vrácení peněz."))}</b> ${esc(T("Not seeing the value? Ask within the first month and we refund you in full.", "Nevidíte přínos? Napište nám během prvního měsíce a vrátíme vám peníze."))}</p>` +
+      g.innerHTML = `<p><b>${esc(T("Money-back guarantee.", "Záruka vrácení peněz."))}</b> ${esc(T("Not seeing the value? Ask within the first month and we refund you in full.", "Nebude vám k užitku? Napište nám během prvního měsíce a vrátíme vám celou částku."))}</p>` +
         `<p class="pl3-man">${esc(T("Already a client?", "Už jste klient?"))} <a href="manage.php">${esc(T("Manage or cancel your subscription", "Spravovat nebo zrušit předplatné"))} →</a></p>`;
       row.after(g);
     }
