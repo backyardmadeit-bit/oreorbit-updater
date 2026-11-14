@@ -765,7 +765,7 @@ html #sec-pop .sec-act #nav-present, #nav-present { display: none !important; }
 .pin-label.hz.hz-big { font-weight: 600; color: #f1e6ff; border-color: rgba(210,176,255,.6); }
 
 /* ================= v33: the globe's focus label ================= */
-#oo-focus { position: fixed; z-index: 40; left: 16px; top: 128px; max-width: min(340px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(236,238,233,.16); background: rgba(5,6,7,.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); text-align: left; pointer-events: none; animation: oo-up .35s cubic-bezier(.2,.7,.2,1) both; }
+#oo-focus { position: absolute; z-index: 40; left: 16px; top: 128px; max-width: min(340px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(236,238,233,.16); background: rgba(5,6,7,.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); text-align: left; pointer-events: none; animation: oo-up .35s cubic-bezier(.2,.7,.2,1) both; }
 @media (max-width: 760px) { #oo-focus { top: auto; bottom: 168px; left: 12px; right: 12px; max-width: none; } }
 #oo-focus[hidden] { display: none; }
 #oo-focus b { display: block; font-size: 15px; font-weight: 600; }

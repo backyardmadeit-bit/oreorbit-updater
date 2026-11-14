@@ -3833,7 +3833,8 @@ function setFilter(m, fly) {
 /* a clear label on the globe: what the camera is showing and why */
 function showFocus(m) {
   let el = document.getElementById("oo-focus");
-  if (!el) { el = document.createElement("div"); el.id = "oo-focus"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+  /* it sits on the globe (#plate), not on the screen, so it scrolls away with the globe */
+  if (!el) { el = document.createElement("div"); el.id = "oo-focus"; el.setAttribute("role", "status"); (document.getElementById("plate") || document.body).appendChild(el); }
   const sy = sysOf(m);
   if (!m || m === "all" || !isExploring()) { el.hidden = true; return; }
   if (sy) {
