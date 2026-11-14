@@ -11,7 +11,7 @@ window.ATLAS_CONFIG = {
   company: "David Madali · Bohemia Defense",
   companyId: "22229957",        // IČO
   address: "",          // registered address, one line
-  contactEmail: "",     // shown as "Write to us" in the For teams section
+  contactEmail: "david@madali.cz",     // shown under the Monitoring pay button and in the phone pay sheet (the invoice line)
   // v27: the monitoring price, shown everywhere in the atlas (the library pages read it too)
   monitoringPrice: "49",
   monitoringPriceCzk: "1 200",   // shown next to the euro price in Czech (brand book p. 9)
