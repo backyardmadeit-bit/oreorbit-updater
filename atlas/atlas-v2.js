@@ -1271,7 +1271,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const html = `<div class="wk2-status">${status}</div>` +
         `<div class="wk2-grid"><div class="wk2-dl">${nx ? `<p class="wk2-k">${esc(T("Next deadline", "Nejbližší termín"))}</p><p class="wk2-big">${esc(nx.cd || nx.d)}</p><a class="wk2-dlt" href="${esc(nx.href)}" target="_blank" rel="noopener">${esc(nx.t)}</a><p class="wk2-date">${esc(nx.d.trim())}</p>` +
           (later.length ? `<ul class="wk2-later">${later.map((x) => `<li><span>${esc(x.d.trim())}</span><a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a></li>`).join("")}</ul>` : "") : ""}</div>` +
-        `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden změnilo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : `<button type="button" data-k="${k}">${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
+        `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden změnilo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener"${x.en ? ' lang="en"' : ""}>${esc(x.t)}</a>` : `<button type="button" data-k="${k}"${x.en ? ' lang="en"' : ""}>${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
         `<div class="wk2-foot"><button type="button" class="btn small" data-act="pack">${esc(T("Board pack · 7 slides", "Podklady pro vedení · 7 snímků"))}</button><a class="wk2-arch" href="p/briefs.html">${esc(T("All weekly briefs", "Všechny týdenní přehledy"))} →</a></div>`;
       if (html !== sig || boxE.innerHTML.length < 20) { sig = html; boxE.innerHTML = html; }
       lastFeed = feed;
@@ -1463,7 +1463,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const first = (s) => { s = String(s || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
       ((BRIEF && BRIEF.points) || []).forEach((p) => { const tx = first((CS && p.text_cs) || p.text || ""); if (tx) items.push({ t: tx, ms: p.materials || [], href: p.url || "", meta: p.source || "" }); });
       const news = (O.NEWS || []).slice().sort((a, b) => String(b.addedAt || b.date).localeCompare(String(a.addedAt || a.date)));
-      news.forEach((n) => { const tt = (CS && n.title_cs) || n.title; if (tt) items.push({ t: tt, ms: n.materials || [], href: n.url || "", meta: day(n.date || n.addedAt) + " · " + (n.source || "") }); });
+      // build 63: an English headline on the Czech page says so ("EN · …") and carries lang="en"
+      news.forEach((n) => { const tt = (CS && n.title_cs) || n.title, en = CS && !n.title_cs && (n.lang || "en") === "en";
+        if (tt) items.push({ t: tt, ms: n.materials || [], href: n.url || "", en, meta: (en ? "EN · " : "") + day(n.date || n.addedAt) + " · " + (n.source || "") }); });
       const seen = {}; const uniq = items.filter((x) => !seen[x.t] && (seen[x.t] = 1));
       const all10 = !sel.length || sel.length >= 10;
       const mineFeed = uniq.filter((x) => x.ms && x.ms.length && x.ms.some((m) => sel.includes(m)));

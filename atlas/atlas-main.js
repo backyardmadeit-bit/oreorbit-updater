@@ -4122,7 +4122,7 @@ function renderWire() {
     const url = safeUrl(n.url);
     const lang = typeof n.lang === "string" && /^[a-z]{2}$/.test(n.lang) ? ` lang="${n.lang}"` : "";
     return `<li>
-      <span class="n-meta">${esc(fmtDay(n.date))} · ${esc(n.source || "")}</span>
+      <span class="n-meta">${LANG === "cs" && !n.title_cs && (n.lang || "en") === "en" ? "EN · " : ""}${esc(fmtDay(n.date))} · ${esc(n.source || "")}</span>
       ${url ? `<a class="n-title" href="${esc(url)}" target="_blank" rel="noopener"${lang}>${esc(n.title)}</a>` : `<span class="n-title"${lang}>${esc(n.title)}</span>`}
       ${n.summary ? `<p>${esc(n.summary)}</p>` : ""}
       <div class="foot-line">${mtags(n.materials)}${n.auto ? `<span class="n-check n-auto">${esc(T("Found automatically, not yet verified", "Nalezeno automaticky, zatím neověřeno"))}</span>` : n.addedAt ? `<span class="n-check">Verified against ${esc(n.source || "the source")} on ${esc(fmtDay(n.addedAt))}</span>` : ""}</div>
