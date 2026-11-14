@@ -28,6 +28,8 @@ The root `CLAUDE.md` covers the rules, minerals, business model, brand and check
 - Every run uploads only changed files (md5) and writes `runstatus.json`.
 - Imagery fallback for pictures over 30 days old: `s2_clear_scene(relaxed=True)`, which takes scenes < 80 % cloud with the box ≥ 75 % clear and stores `nowClearPct` (build 46).
 - **Forced run:** the live brief keeps the text it was written with. After a wording change in `feed_brief`, or a deadline change, run Actions → Update with `force`, or wait for Monday. Merge changes that must reach the Monday emails before the first Monday run (00:17 UTC).
+- **No relative dates baked into stored text** (audit 14 Nov 2026): the brief stays on the page for a week, so it gives only the date; the atlas counts the days itself. Emails count days with `_in_days()` (today / tomorrow / in N days, dnes / zítra / za N dní), never "in 1 days".
+- **News noise:** `NEWS_BLOCK` drops stock-ticker and price-spam domains. Adding a domain also removes the automatic stories from it that are already on the page.
 
 ## Email (`send_mail()`)
 - **Free Monday brief**, built for each subscriber's minerals and language.
@@ -47,7 +49,7 @@ The root `CLAUDE.md` covers the rules, minerals, business model, brand and check
   - Partial failures stay green and show in the Monday delivery report.
 
 ## Czech in the robot
-- Plurals: `_cs_pl`, `_cs_days`.
+- Plurals: `_cs_pl`, `_cs_days`; days from today: `_in_days`.
 - "z"/"ze" before a number: `_cs_z`.
 - Months in the locative: `MONTH_CS_LOC`.
 - Comext product names: `TRADE_CS`. A new `TRADE_CODES` label needs its Czech there.
@@ -59,6 +61,7 @@ The root `CLAUDE.md` covers the rules, minerals, business model, brand and check
 - Builds about 87 library pages (`p/*.html`, EN; CS for services, about and index), plus the sitemap, embeds and social cards.
 - Meta descriptions go through `meta_desc()`: whole sentences up to 160 characters, otherwise cut at a word with "…". `og:description` keeps the full text.
 - **The Dependency Index stays on the original ten** (`INDEX_TEN`). Mg and Mn are stored in `extra` beside it.
+- **Trade figure on a mineral page** (audit 14 Nov 2026): the headline China share is the rolling 12 months (`trade_chart` returns `share12`), with the latest month in brackets, because one month swings too much. The section prose still uses the month.
 - Counts are computed, never typed: `counts()`, `w_en()`, `w_cs()`. The price comes from `config.js` (services pages are patched in `build()`).
 - **SEO/GEO** (12 Nov 2026, atlas build 58):
   - **FAQ pages:** `p/faq.html` and `p/faq-cs.html`.

@@ -236,7 +236,9 @@ def trade_chart(m, row):
     out.append("</svg>")
     share = (cn[-1] / ext[-1]) if ext[-1] else None
     mm = m0 + n - 2
-    return "".join(out), (share, "%s %d" % (MONTH[mm % 12], y0 + mm // 12), ext[-1])
+    # build 63: one month swings a lot (gallium 7 % in a month against 77 % for the year), so the headline is the 12-month share
+    share12 = (sum(cn) / sum(ext)) if n == 12 and sum(ext) else None
+    return "".join(out), (share, "%s %d" % (MONTH[mm % 12], y0 + mm // 12), ext[-1], share12)
 
 
 def material_page(m, ref, live, today):
@@ -260,7 +262,10 @@ def material_page(m, ref, live, today):
     figs = []
     if wx:
         figs.append((pct_txt(wx), "of %s is in %s" % ((wx.get("what") or STAGE_NAME.get(worst.get("k"), "")).lower(), wx.get("who", ""))))
-    if t_meta and t_meta[0] is not None:
+    if t_meta and t_meta[3] is not None:
+        figs.append(("%d%%" % round(t_meta[3] * 100), "of EU imports of %s from outside the EU came from China in the 12 months to %s%s" % (
+            (trade_rows[0].get("label") or "").lower(), t_meta[1], " (%s alone: %d%%)" % (t_meta[1].split(" ")[0], round(t_meta[0] * 100)) if t_meta[0] is not None else "")))
+    elif t_meta and t_meta[0] is not None:
         figs.append(("%d%%" % round(t_meta[0] * 100), "of EU imports of %s from outside the EU came from China in %s" % ((trade_rows[0].get("label") or "").lower(), t_meta[1])))
     figs.append((str(len(sites)), "site%s watched from orbit on OreOrbit" % ("" if len(sites) == 1 else "s")))
     if dls:

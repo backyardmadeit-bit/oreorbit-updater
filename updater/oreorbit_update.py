@@ -1665,7 +1665,10 @@ NEWS_SPAM = (r"\bsupplements?\b|deficiency|vitamin|\bsleep\b|\bdiet\b|"
              r"market (size|share|report|research|analysis|outlook|growth|trends|insights)|\bCAGR\b|forecast (to|till|period)|\b20\d\d\s*[-–]\s*20\d\d\b|"
              r"press release|sponsored|price target|stock (price|forecast|analysis)|shares? (rise|fall|jump|drop|surge|slump|soar|plunge)|\bETF\b|dividend|horoscope")
 NEWS_BLOCK = ("openpr.", "einpresswire.", "globenewswire.", "prnewswire.", "digitaljournal.", "marketsandmarkets.", "taiwannews.", "newstrail.", "whatech.",
-              "benzinga.", "fool.com", "zacks.", "marketbeat.", "tipranks.", "investorsobserver.", "stocktitan.")
+              "benzinga.", "fool.com", "zacks.", "marketbeat.", "tipranks.", "investorsobserver.", "stocktitan.",
+              # stock and commodity-price noise, not supply news (audit 14 Nov 2026)
+              "themarketsdaily.", "oilprice.", "manilatimes.", "tickerreport.", "etfdailynews.", "americanbankingnews.", "thelincolnianonline.",
+              "thecerbatgem.", "wkrb13.", "dailypolitical.", "modernreaders.", "theenterpriseleader.", "transcriptdaily.")
 
 
 NEWS_GROUPS = [   # GDELT refuses long questions: about five terms each
@@ -1740,6 +1743,8 @@ def feed_news(prev):
     by the words in its title and marked as found automatically and not checked."""
     import re, html as H
     items = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("title")]
+    # a domain added to NEWS_BLOCK also drops the automatic stories already on the page
+    items = [x for x in items if not (x.get("auto") and any(b in str(x.get("source") or "").lower() for b in NEWS_BLOCK))]
     have_url = {x.get("url") for x in items}
     norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
     have_title = {norm(x["title"]) for x in items}
@@ -1847,6 +1852,15 @@ def _cs_days(n):
     return "za %d %s" % (n, _cs_pl(n, "den", "dny", "dní"))
 
 
+def _in_days(n, cs):
+    """today / tomorrow / in 3 days, dnes / zítra / za 3 dny (no "in 1 days")."""
+    if n == 0:
+        return "dnes" if cs else "today"
+    if n == 1:
+        return "zítra" if cs else "tomorrow"
+    return _cs_days(n) if cs else "in %d days" % n
+
+
 def _cs_z(n):
     """Czech "z" or "ze" before a number, by how it is read ("ze 43", "z 59")."""
     n = abs(int(round(n)))
@@ -1907,12 +1921,12 @@ def feed_brief(prev):
     dls = [d for d in deadlines_from_page() if d["date"] >= TODAY.isoformat()]
     if dls:
         d = dls[0]
-        n = (dt.date.fromisoformat(d["date"]) - TODAY).days
         mats_en = ", ".join(MAT_NAME[m][0] for m in d["materials"] if m in MAT_NAME) or "Deadline"
         mats_cs = ", ".join(MAT_NAME[m][1] for m in d["materials"] if m in MAT_NAME) or "Termín"
         pts.append({"materials": d["materials"], "source": d["source"] or "OreOrbit calendar", "url": d["url"],
-                    "text": "%s: %s on %s, in %d days." % (mats_en, d["title"], day_txt(d["date"], False), n),
-                    "text_cs": "%s: %s (%s, %s)." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True), _cs_days(n))})
+                    # only the date: the brief stays on the page (and in the archive) for a week, so "in 3 days" goes stale; the atlas counts the days itself
+                    "text": "%s: %s on %s." % (mats_en, d["title"], day_txt(d["date"], False)),
+                    "text_cs": "%s: %s (%s)." % (mats_cs, d["title_cs"] or d["title"], day_txt(d["date"], True))})
         for x in dls[:3]:
             if x["date"] <= (TODAY + dt.timedelta(days=90)).isoformat():
                 watch_en.append("%s: %s" % (day_txt(x["date"], False), x["title"]))
@@ -2493,10 +2507,10 @@ def send_mail():
                 soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
                 if soon:
                     k = (dt.date.fromisoformat(soon[0]["date"]) - TODAY).days
-                    means.append(_esc(("%s: termín %s. Ověřte, na kolik týdnů vám vystačí zásoby." % (nm, _cs_days(k))) if cs else ("%s: a deadline in %d days. Check how many weeks your stock covers." % (nm, k))))
+                    means.append(_esc(("%s: termín %s. Ověřte, na kolik týdnů vám vystačí zásoby." % (nm, _in_days(k, True))) if cs else ("%s: a deadline %s. Check how many weeks your stock covers." % (nm, _in_days(k, False)))))
                 elif eu is not None and eu >= 50:
                     means.append(_esc(("%s: víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." % nm) if cs else ("%s: more than half of EU imports come from China. Keep a second source in progress." % nm)))
-            dl = ['<b>%s</b> · %s · %s' % (_esc((_cs_days if cs else (lambda n: "in %d days" % n))((dt.date.fromisoformat(d["date"]) - TODAY).days)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
+            dl = ['<b>%s</b> · %s · %s' % (_esc(_in_days((dt.date.fromisoformat(d["date"]) - TODAY).days, cs)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
             wk = (TODAY - dt.timedelta(days=7)).isoformat()
             moved = ['%s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in news if str(n.get("date") or n.get("addedAt") or "") >= wk and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
             subj = ("OreOrbit · vaše pondělní vydání · " if cs else "OreOrbit · your Monday edition · ") + _day(latest["week"], cs)
@@ -2532,7 +2546,7 @@ def send_mail():
             left = (dt.date.fromisoformat(d["date"]) - TODAY).days
             k = "%s|%s|%d" % (d["date"], d.get("title", "")[:40], left)
             if left in (30, 14, 7, 1) and _mins_ok(d.get("materials"), mins) and k not in st["dl"]:
-                due.append('<b>%s</b> · %s · %s' % (_esc(_cs_days(left) if cs else ("in %d days" % left)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
+                due.append('<b>%s</b> · %s · %s' % (_esc(_in_days(left, cs)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
                 st["dl"] = (st["dl"] + [k])[-200:]
         oth = []
         for term in _other_terms(sb):
