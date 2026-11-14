@@ -194,7 +194,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const dd = rag.dd, moving = (dd !== null && dd >= 0 && dd <= 45) || rag.news > 0 || rag.hz > 0 || (rag.cf && rag.cf.length > 0);
     if (moving) {
       pts += 1;
-      if (dd !== null && dd <= 45 && rag.dl) why.push(T(`Deadline in ${dd} days: ${rag.dl.title}`, `Termín za ${dd} ${plural(dd, "", "", "den", "dny", "dní")}: ${rag.dl.title_cs || rag.dl.title}`));
+      if (dd !== null && dd <= 45 && rag.dl) why.push(T(`Deadline ${O.inDays(dd)}: ${rag.dl.title}`, `Termín ${O.inDays(dd)}: ${rag.dl.title_cs || rag.dl.title}`));
       else if (rag.news) why.push(T(`${rag.news} ${rag.news === 1 ? "story" : "stories"} about it this week`, `${rag.news} ${plural(rag.news, "", "", "zpráva", "zprávy", "zpráv")} tento týden`));
       else why.push(T("A live hazard or armed conflict near one of its sites", "Živá hrozba nebo ozbrojený konflikt u některé z lokalit"));
     }
@@ -264,7 +264,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       <div class="as-dist" role="img" aria-label="${esc(T(`${cnt.high} high, ${cnt.med} medium, ${cnt.low} low`, `${cnt.high} vysoké, ${cnt.med} střední, ${cnt.low} nízké`))}">${["high", "med", "low", "none"].map((k) => cnt[k] ? `<i class="lv-${k}" style="flex:${cnt[k] / tot}"></i>` : "").join("")}</div>
       <div class="as-dl">${["high", "med", "low"].map((k) => `<span class="lv-${k}"><i></i>${cnt[k]} ${esc(LV[k][0].toLowerCase())}</span>`).join("")}</div>
       ${top.length ? `<div class="label as-sl">${T("Act on first", "Řešit nejdřív")}</div><ol class="as-top">${top.map(({ it, r }) => `<li><span class="as-tn">${esc(it.part || T("Unnamed part", "Díl bez názvu"))}</span><span class="as-tp">${esc(it.prog)}</span>${lvBadge(r)}<span class="as-tw">${esc(r.why[0] || "")}</span></li>`).join("")}</ol>` : ""}
-      ${next ? `<div class="as-next"><div class="label">${T("Next deadline on your list", "Nejbližší termín pro váš seznam")}</div><p><b>${esc(O.fmtDay(next.date))}</b>${nd !== null ? ` · ${T(`in ${nd} days`, `za ${nd} ${plural(nd, "", "", "den", "dny", "dní")}`)}` : ""}<br>${esc(CS && next.title_cs ? next.title_cs : next.title)}</p></div>` : ""}
+      ${next ? `<div class="as-next"><div class="label">${T("Next deadline on your list", "Nejbližší termín pro váš seznam")}</div><p><b>${esc(O.fmtDay(next.date))}</b>${nd !== null ? ` · ${O.inDays(nd)}` : ""}<br>${esc(CS && next.title_cs ? next.title_cs : next.title)}</p></div>` : ""}
       <div class="as-acts2"><button type="button" class="btn small" data-as="report">${T("Download the assessment", "Stáhnout posouzení")}</button><button type="button" class="btn ghost small" data-as="print">${T("Print", "Tisk")}</button><button type="button" class="btn ghost small" data-as="globe">${T("Show on the globe", "Ukázat na glóbu")}</button></div>`;
   }
 
@@ -654,7 +654,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, lv = LV[rag.level] || null, imp = O.importShare(m);
         if (x && x.pct > 65) { conc++; if (x.who === "China") cn++; }
         (O.deadlinesFor(m) || []).forEach((d) => { if (O.daysUntil(d.date) >= 0 && (!next || d.date < next.date)) next = d; });
-        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Vede Čína")}</b> <span>${T("no public world total", "veřejný světový údaj neexistuje")}</span>`;
+        const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Čína vede")}</b> <span>${T("refining; no public world total", "rafinace; světový podíl není veřejný")}</span>`;
         const im = imp && imp.tp ? `${esc(imTxt(imp.tp))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
         return `<button type="button" class="qc-row" data-m="${m}" style="--c:${O.cssVar(m)}" title="${esc(T("Show on the globe", "Ukázat na glóbu"))}">
           <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
@@ -1176,8 +1176,10 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const fill = () => {
         const nx = document.querySelector("#mon-body .mon-next"); if (!nx) return;
         const n = (nx.querySelector(".mon-count") || {}).textContent || "", p = (nx.querySelector("p") || {}).textContent || "";
-        const days = (n.match(/\d+/) || [])[0]; if (!days || !p) return;
-        const html = `<i></i><span class="hn-k">${esc(T("Next deadline", "Nejbližší termín"))}</span><span class="hn-d">${esc(T("in " + days + " days", "za " + days + " " + O.csPlural(days, "den", "dny", "dní")))}</span><span class="hn-t">${esc(p.trim())}</span><span class="hn-a" aria-hidden="true">→</span>`;
+        // the count reads "Today"/"Dnes" on the day itself, otherwise a number of days
+        const dm = n.match(/\d+/), days = dm ? parseInt(dm[0], 10) : /today|dnes/i.test(n) ? 0 : null;
+        if (days === null || !p) { if (a.innerHTML) a.innerHTML = ""; return; }
+        const html = `<i></i><span class="hn-k">${esc(T("Next deadline", "Nejbližší termín"))}</span><span class="hn-d">${esc(O.inDays(days))}</span><span class="hn-t">${esc(p.trim())}</span><span class="hn-a" aria-hidden="true">→</span>`;
         if (a.innerHTML !== html) a.innerHTML = html;
       };
       fill(); const mb = $i("mon-body"); if (mb) new MutationObserver(fill).observe(mb, { childList: true, subtree: true });
@@ -1269,7 +1271,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const html = `<div class="wk2-status">${status}</div>` +
         `<div class="wk2-grid"><div class="wk2-dl">${nx ? `<p class="wk2-k">${esc(T("Next deadline", "Nejbližší termín"))}</p><p class="wk2-big">${esc(nx.cd || nx.d)}</p><a class="wk2-dlt" href="${esc(nx.href)}" target="_blank" rel="noopener">${esc(nx.t)}</a><p class="wk2-date">${esc(nx.d.trim())}</p>` +
           (later.length ? `<ul class="wk2-later">${later.map((x) => `<li><span>${esc(x.d.trim())}</span><a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a></li>`).join("")}</ul>` : "") : ""}</div>` +
-        `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden změnilo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : `<button type="button" data-k="${k}">${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
+        `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden změnilo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener"${x.en ? ' lang="en"' : ""}>${esc(x.t)}</a>` : `<button type="button" data-k="${k}"${x.en ? ' lang="en"' : ""}>${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
         `<div class="wk2-foot"><button type="button" class="btn small" data-act="pack">${esc(T("Board pack · 7 slides", "Podklady pro vedení · 7 snímků"))}</button><a class="wk2-arch" href="p/briefs.html">${esc(T("All weekly briefs", "Všechny týdenní přehledy"))} →</a></div>`;
       if (html !== sig || boxE.innerHTML.length < 20) { sig = html; boxE.innerHTML = html; }
       lastFeed = feed;
@@ -1446,7 +1448,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const day = (iso) => { const d = new Date(iso + "T12:00:00Z"); return isNaN(d) ? iso : (CS ? d.getUTCDate() + ". " + (d.getUTCMonth() + 1) + ". " + d.getUTCFullYear() : d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear()); };
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
     const left = (iso) => Math.round((new Date(iso + "T00:00:00") - t0) / 86400000);
-    const inTxt = (n) => n === 0 ? T("today", "dnes") : n === 1 ? T("tomorrow", "zítra") : T("in " + n + " days", "za " + n + " " + O.csPlural(n, "den", "dny", "dní"));
+    const inTxt = O.inDays;
     /* This week: deadlines, the latest brief and the news straight from the data */
     let BRIEF = null;
     fetch((C.dataBase || "live-data/") + "briefs.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((b) => { if (Array.isArray(b) && b.length) { BRIEF = b.slice().sort((x, y) => String(y.week).localeCompare(String(x.week)))[0]; } if (typeof window.ooWeekRender === "function") window.ooWeekRender(); }).catch(() => {});
@@ -1461,7 +1463,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const first = (s) => { s = String(s || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
       ((BRIEF && BRIEF.points) || []).forEach((p) => { const tx = first((CS && p.text_cs) || p.text || ""); if (tx) items.push({ t: tx, ms: p.materials || [], href: p.url || "", meta: p.source || "" }); });
       const news = (O.NEWS || []).slice().sort((a, b) => String(b.addedAt || b.date).localeCompare(String(a.addedAt || a.date)));
-      news.forEach((n) => { const tt = (CS && n.title_cs) || n.title; if (tt) items.push({ t: tt, ms: n.materials || [], href: n.url || "", meta: day(n.date || n.addedAt) + " · " + (n.source || "") }); });
+      // build 63: an English headline on the Czech page says so ("EN · …") and carries lang="en"
+      news.forEach((n) => { const tt = (CS && n.title_cs) || n.title, en = CS && !n.title_cs && (n.lang || "en") === "en";
+        if (tt) items.push({ t: tt, ms: n.materials || [], href: n.url || "", en, meta: (en ? "EN · " : "") + day(n.date || n.addedAt) + " · " + (n.source || "") }); });
       const seen = {}; const uniq = items.filter((x) => !seen[x.t] && (seen[x.t] = 1));
       const all10 = !sel.length || sel.length >= 10;
       const mineFeed = uniq.filter((x) => x.ms && x.ms.length && x.ms.some((m) => sel.includes(m)));
@@ -1778,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 62"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 63"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1829,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 62 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 63 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1963,7 +1967,10 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     cell.querySelectorAll(".oo-sub").forEach((f) => f.remove());
     const b = document.createElement("a"); b.className = "btn pl3-pay"; b.href = "go-pay.php"; b.textContent = T("Start monitoring", "Spustit monitoring");
     const note = document.createElement("p"); note.className = "pl3-paynote";
-    note.innerHTML = `${esc(T("Secure payment by Stripe. Cancel anytime.", "Zabezpečená platba přes Stripe. Zrušíte kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a>`;
+    // build 63: a company buyer needs a person and an invoice; the line shows only when config.js has a contact address (the phone sheet copies this note)
+    const mail = typeof CFG.contactEmail === "string" && /^[^@\s<>"]+@[^@\s<>"]+\.[a-z]{2,}$/i.test(CFG.contactEmail) ? CFG.contactEmail : "";
+    const inv = mail ? ` ${esc(T("Need an invoice for your company, or have a question first? Write to", "Potřebujete fakturu na firmu nebo se chcete nejdřív na něco zeptat? Napište na"))}\u00a0<a href="mailto:${esc(mail)}?subject=${encodeURIComponent("OreOrbit Monitoring")}">${esc(mail)}</a>.` : "";
+    note.innerHTML = `${esc(T("Secure payment by Stripe. Cancel anytime.", "Zabezpečená platba přes Stripe. Zrušíte kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a>${inv}`;
     cell.append(b, note);
     const goPay = () => {   // build 60: shared with the phone sheet; false when an unknown extra mineral blocks payment
       if (window.ooMonOtherCheck && !window.ooMonOtherCheck()) { ooHit("act:mon-other-bad"); return false; }
