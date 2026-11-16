@@ -551,6 +551,40 @@ def dependency_series(trade):
     return out
 
 
+YTD_MIN_MONTHS = 3          # fewer months than this and the mover card is skipped (January alone is one month)
+YTD_MIN_EUR = 2_000_000     # each period needs at least this much extra-EU import value, or the share is too thin to compare
+
+
+def ytd_shares(trade, last):
+    """China's share of extra-EU import value per material, January..last month of this year against the same months
+    a year earlier, all tracked products of a material added up. Returns ((year, months), {m: (share_before, share_now)})."""
+    y, n = int(last[:4]), int(last[5:7])
+    if n < YTD_MIN_MONTHS:
+        return None
+    want = {"%04d-%02d" % (yy, i): yy for yy in (y - 1, y) for i in range(1, n + 1)}
+    tot = {}
+    for m, rows in ((trade or {}).get("materials") or {}).items():
+        for r in rows:
+            mo = r.get("monthly") or {}
+            frm, cn, ext = mo.get("from"), mo.get("cn") or [], mo.get("ext") or []
+            if not frm:
+                continue
+            y0, m0 = int(frm[:4]), int(frm[5:7])
+            for i in range(min(len(cn), len(ext))):
+                k = "%04d-%02d" % (y0 + (m0 - 1 + i) // 12, (m0 - 1 + i) % 12 + 1)
+                if k in want:
+                    t = tot.setdefault(m, {}).setdefault(want[k], [0.0, 0.0, set()])
+                    t[0] += float(cn[i] or 0)
+                    t[1] += float(ext[i] or 0)
+                    t[2].add(k)
+    out = {}
+    for m, by in tot.items():
+        a, b = by.get(y - 1), by.get(y)
+        if a and b and len(a[2]) == n and len(b[2]) == n and min(a[1], b[1]) >= YTD_MIN_EUR:
+            out[m] = (a[0] / a[1], b[0] / b[1])
+    return ((y, n), out) if out else None
+
+
 def month_txt(k):
     return "%s %s" % (MONTH[int(k[5:7]) - 1], k[:4])
 
@@ -852,23 +886,30 @@ def social_cards(ref, live, today):
                       "cs": "Čína v %s dodala %d %% dovozu deseti surovin indexu, na kterých stojí evropský obranný průmysl, do EU%s.\n\nTo je Index závislosti OreOrbit: každá surovina má stejnou váhu, takže galium se počítá stejně jako lithium. Rozpad a metodika v prvním komentáři." % (
                           MONTH_CS_LOC[int(last["month"][5:7]) - 1] + " " + last["month"][:4], v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else ""),
                       "link": BASE + "p/dependency-index.html"})
-        if yago:
-            moves = sorted(((round(last["per"][m] * 100) - round(yago["per"][m] * 100), m) for m in last["per"] if m in yago["per"]), key=lambda t: -abs(t[0]))
-            if moves:
-                d, m = moves[0]
+    # Biggest move: year to date against the same months a year earlier, never one month against one month.
+    # A single month of a small market can be one shipment (gallium went "97% -> 1%" that way in Sep 2025 -> Sep 2026).
+    if series:
+        ytd = ytd_shares(live.get("trade"), series[-1]["month"])
+        if ytd:
+            (y1, n), sh = ytd
+            moves = sorted(((round(b * 100) - round(a * 100), m, a, b) for m, (a, b) in sh.items()), key=lambda t: -abs(t[0]))
+            if moves and moves[0][0]:
+                d, m, a, b = moves[0]
+                a, b = round(a * 100), round(b * 100)
                 nm = ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m)
-                a, b = round(yago["per"][m] * 100), round(last["per"][m] * 100)
-                inner = ('<div class="main"><div class="k">Biggest move this year · %s</div><h1 style="font-size:80px">%s: China\'s share <b>%s %d points</b> in a year</h1>'
+                p0, p1 = "%s–%s %d" % (MONTH[0][:3], MONTH[n - 1][:3], y1 - 1), "%s–%s %d" % (MONTH[0][:3], MONTH[n - 1][:3], y1)
+                inner = ('<div class="main"><div class="k">Biggest move this year · %s</div><h1 style="font-size:80px">%s: China\'s share <b>%s %d points</b> on a year earlier</h1>'
                          '<div class="list">'
                          '<div class="r"><div class="nm"><i style="background:#555"></i><b>%s</b><span>China\'s share of EU imports</span></div><div class="bar"><div class="tr"><div class="fl" style="width:%d%%;background:#6b7277"></div></div><div class="v">%d%%</div></div></div>'
                          '<div class="r"><div class="nm"><i style="background:%s"></i><b>%s</b><span>China\'s share of EU imports</span></div><div class="bar"><div class="tr"><div class="fl" style="width:%d%%;background:%s"></div></div><div class="v">%d%%</div></div></div></div>'
-                         '<div class="sub">One month can swing, so read it as a signal, not a verdict. The full monthly series is on OreOrbit.</div></div>'
-                         '<div class="src">Share of extra-EU import value · Eurostat Comext via OreOrbit</div>') % (
-                    month_txt(last["month"]), nm, "up" if d > 0 else "down", abs(d), month_txt(yago["month"]), a, a, COL.get(m, "#eee"), month_txt(last["month"]), b, COL.get(m, "#eee"), b)
+                         '<div class="sub">%d months added up, against the same months a year earlier. A single month can be one shipment. The full monthly series is on OreOrbit.</div></div>'
+                         '<div class="src">Share of extra-EU import value, %s · Eurostat Comext via OreOrbit</div>') % (
+                    p1, nm, "up" if d > 0 else "down", abs(d), p0, a, a, COL.get(m, "#eee"), p1, b, COL.get(m, "#eee"), b, n, "%s to %s" % (MONTH[0], MONTH[n - 1]))
                 cards.append({"slug": "mover", "title": "%s, %+d points" % (nm, d), "html": card_doc((inner, "Every mineral, month by month")),
-                              "en": "%s: China's share of the EU's imports went from %d%% to %d%% in a year (%s to %s).\n\nWhen one supplier's share moves this much, someone in a European purchasing department either found a second source, or lost one. Monthly data per mineral in the first comment.\n\n#CriticalRawMaterials #SupplyChain #DefenceIndustry" % (
-                                  nm, a, b, month_txt(yago["month"]), month_txt(last["month"])),
-                              "cs": "%s: podíl Číny na dovozu do EU se za rok změnil z %d %% na %d %%.\n\nKdyž se podíl jednoho dodavatele pohne takhle, někdo v evropském nákupu buď našel druhý zdroj, nebo ho ztratil. Měsíční data v prvním komentáři." % (MAT_CS.get(m, nm), a, b),
+                              "en": "%s: China's share of the EU's imports went from %d%% to %d%% (%s to %s %d, against the same months of %d).\n\nWhen one supplier's share moves this much, someone in a European purchasing department either found a second source, or lost one. Monthly data per mineral in the first comment.\n\n#CriticalRawMaterials #SupplyChain #DefenceIndustry" % (
+                                  nm, a, b, MONTH[0], MONTH[n - 1], y1, y1 - 1),
+                              "cs": "%s: podíl Číny na dovozu do EU se změnil z %d %% na %d %% (%s až %s %d proti stejným měsícům roku %d).\n\nKdyž se podíl jednoho dodavatele pohne takhle, někdo v evropském nákupu buď našel druhý zdroj, nebo ho ztratil. Měsíční data v prvním komentáři." % (
+                                  MAT_CS.get(m, nm), a, b, MONTH_CS_NOM[0], MONTH_CS_NOM[n - 1], y1, y1 - 1),
                               "link": BASE + "p/dependency-index.html"})
     wk = dt.date.fromisoformat(today).isocalendar()[1]
     pen, pcs, uses = PRODUCTS[wk % len(PRODUCTS)]
