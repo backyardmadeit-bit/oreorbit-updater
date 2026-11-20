@@ -981,7 +981,8 @@ def trade_one(code):
             cn[t] = cn.get(t, 0) + v
         if is_ext(p):
             ext[t] = ext.get(t, 0) + v
-            by.setdefault(p, {})[t] = by[p].get(t, 0) + v
+            row = by.setdefault(p, {})
+            row[t] = row.get(t, 0) + v
     months = sorted(set(cn) | set(ext))
     if not months:
         raise RuntimeError("no monthly data for %s" % code)
