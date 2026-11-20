@@ -2345,11 +2345,20 @@ def _site_lines(ev, mins, cs):
     return [_esc(("Žádná neobvyklá změna u %d lokalit vašich surovin." % n) if cs else ("No unusual change at the %d sites for your minerals." % n))]
 
 
+_LIVE = {}
+
+def _live_files():
+    """trade.json, hotspots.json and so2.json as the website serves them, fetched once per run for all clients."""
+    if not _LIVE:
+        _LIVE["trade"] = (current("live-data/live/trade.json") or {}).get("materials") or {}
+        _LIVE["hs"] = current("live-data/live/hotspots.json") or {}
+        _LIVE["so"] = current("live-data/live/so2.json") or {}
+    return _LIVE["trade"], _LIVE["hs"], _LIVE["so"]
+
+
 def _data_csv(mins):
     """The weekly data file for a paying client: monthly EU imports, daily heat and SO2 at their minerals' sites."""
-    trade = (current("live-data/live/trade.json") or {}).get("materials") or {}
-    hs_file = current("live-data/live/hotspots.json") or {}
-    so_file = current("live-data/live/so2.json") or {}
+    trade, hs_file, so_file = _live_files()
     hs, so = hs_file.get("sites") or {}, so_file.get("sites") or {}
     hs_src, so_src = hs_file.get("source") or "NASA FIRMS", so_file.get("source") or "NOAA-20 OMPS"
     ms = [m for m in (mins or list(MAT_NAME)) if m in MAT_NAME]
@@ -2381,6 +2390,23 @@ def _data_csv(mins):
             if isinstance(x.get("near"), (int, float)):
                 w.writerow(["site_so2", MAT_NAME[s["m"]][0], s.get("name"), x.get("d"), "so2_within_%dkm" % (so_file.get("radiusKm") or 50), x["near"], "DU", so_src])
     return "\ufeff" + buf.getvalue()   # the BOM makes Excel read the accents right
+
+
+def _data_files(mins, cs, week):
+    """The paid Monday edition's attachments: the branded Excel workbook (oreorbit_xlsx.py) and the plain CSV.
+    If the workbook fails (or XlsxWriter is missing), the client still gets the CSV."""
+    text = _data_csv(mins)
+    att = []
+    try:
+        import oreorbit_pages as _P
+        import oreorbit_xlsx as _X
+        trade, hs_file, so_file = _live_files()
+        att.append(("oreorbit-data-%s.xlsx" % week, _X.build(trade, hs_file, so_file, CFG["sites"], mins, "cs" if cs else "en", week, text,
+                                                           MAT_NAME, TRADE_CS, _P.CC_EN, _P.CC_CS)))
+    except Exception as ex:
+        log("mail      Excel file for one client failed, sending the CSV only: %s" % str(ex)[:100])
+    att.append(("oreorbit-data-%s.csv" % week, text))
+    return att
 
 
 MANAGE = "https://bohemiadefense.com/atlas/manage.php"
@@ -2447,7 +2473,7 @@ def send_mail():
             html = _mail_html(cs, "Vítejte v OreOrbit" if cs else "Welcome to OreOrbit",
                               "Vítejte v OreOrbit. Jsme rádi, že jste s námi." if cs else "Welcome to OreOrbit. We're glad you're here.",
                               ("Děkujeme, že jste se k nám přidali. Patříte k malému okruhu firem, které vidí změny u svých surovin dřív, než dorazí do dodavatelského řetězce. Hlídáme: " if cs else "Thank you for joining us. You are part of a small circle of companies that see changes to their minerals before they reach the supply chain. We watch: ") + names + ".",
-                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ještě v den, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás, s daty v příloze (CSV).", "Připomínky termínů 30, 14 a 7 dní předem.", "Upozornění, když lokalita vašich surovin ztichne nebo se rozjede.", "Jednou měsíčně se nás můžete na cokoli zeptat: stačí odpovědět. Odpoví člověk do dvou pracovních dnů."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you, with the data attached (CSV).", "Deadline reminders 30, 14 and 7 days ahead.", "An alert when a site for your minerals goes quiet or starts up.", "One question a month: just reply, and a person answers within two working days."])]),
+                              [("Co pro vás děláme" if cs else "What we do for you", [_esc(x) for x in (["Upozornění ještě v den, kdy se u vašich surovin něco změní.", "Každé pondělí osobní vydání jen pro vás, s daty v příloze (Excel a CSV).", "Připomínky termínů 30, 14 a 7 dní předem.", "Upozornění, když lokalita vašich surovin ztichne nebo se rozjede.", "Jednou měsíčně se nás můžete na cokoli zeptat: stačí odpovědět. Odpoví člověk do dvou pracovních dnů."] if cs else ["An alert the moment something changes for your minerals.", "Every Monday a personal edition, just for you, with the data attached (Excel and CSV).", "Deadline reminders 30, 14 and 7 days ahead.", "An alert when a site for your minerals goes quiet or starts up.", "One question a month: just reply, and a person answers within two working days."])]),
                                ("Osobně" if cs else "Personally", [_esc("Na tento e-mail odpovídá osobně David Madali, zakladatel. Chcete jiné suroviny nebo cokoli probrat? Stačí odpovědět." if cs else "David Madali, the founder, answers this email personally. Want different minerals or to talk anything through? Just reply.") + "<br><br><b>David Madali</b>"])], unsub(sb))
         else:
             subj = "Vítejte v pondělním přehledu OreOrbit" if cs else "Welcome to the OreOrbit Monday brief"
@@ -2532,11 +2558,11 @@ def send_mail():
                                ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs, only_unusual=False)),
                                ("Další suroviny" if cs else "Your other minerals", [x for t in _other_terms(sb) for x in (['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(t, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for it in _other_news(state, t, pbudget)[:3]]
                                                                                         or (['<b>%s</b> · %s' % (_esc(_other_label(t, cs)), _esc("za posledních 14 dní jsme nenašli žádnou zprávu" if cs else "no news found in the last 14 days"))] if _other_quiet(state, t) else []))]),
-                               ("Data" if cs else "Your data", [_esc("V příloze je CSV s daty za tímto vydáním: měsíční dovoz do EU a denní teplo a SO2 u lokalit vašich surovin. Otevře se v Excelu." if cs else "Attached: a CSV with the data behind this edition, monthly EU imports and daily heat and SO2 at your minerals' sites. It opens in Excel.")]),
+                               ("Data" if cs else "Your data", [_esc("V příloze jsou data za tímto vydáním: sešit Excelu s přehledem a grafy (dovoz do EU po měsících, podíl Číny, satelitní signály u lokalit vašich surovin) a stejná data jako CSV." if cs else "Attached: the data behind this edition, as an Excel workbook with an overview and charts (EU imports by month, China's share, satellite signals at your minerals' sites) and as a CSV with the same data.")]),
                                ("Vaše otázka" if cs else "Your question", [_esc("Jednou měsíčně se nás můžete na cokoli kolem vašich surovin nebo dodavatelů zeptat. Stačí odpovědět na tento e-mail; odpoví člověk do dvou pracovních dnů." if cs else "Once a month you can ask us anything about your minerals or suppliers. Just reply to this email; a person answers within two working days.")]),
                                ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
             try:
-                att = [("oreorbit-data-%s.csv" % latest["week"], _data_csv(mins))]
+                att = _data_files(mins, cs, latest["week"])
             except Exception as ex:
                 log("mail      data file for one client failed: %s" % str(ex)[:100]); att = []
             out.append((e, subj, html, att))
@@ -2623,7 +2649,11 @@ def send_mail():
                 m.set_content("Open this email in an HTML-capable mail app, or read the brief at " + BASE)
                 m.add_alternative(html, subtype="html")
                 for fname, data in (item[3] if len(item) > 3 else []):
-                    if data and len(data) <= 5_000_000:
+                    if not data or len(data) > 5_000_000:
+                        continue
+                    if isinstance(data, bytes):
+                        m.add_attachment(data, maintype="application", subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=fname)
+                    else:
                         m.add_attachment(data, subtype="csv", charset="utf-8", filename=fname)
                 smtp.send_message(m)
                 sent += 1
