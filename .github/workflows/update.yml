@@ -29,7 +29,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install "websockets>=12,<16"
+        run: pip install "websockets>=12,<16" "XlsxWriter==3.2.0"
 
       - name: Fetch the feeds and send them to the website
         env:
