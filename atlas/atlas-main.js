@@ -7466,7 +7466,7 @@ connectWire();
 /* v15: a read-only bridge for atlas-v2.js (assessment register, teams section). Nothing here changes the atlas. */
 window.OO = {
   T, esc, safeUrl, fmtDay, daysUntil, todayIso, toast, cssVar, reduceMotion,
-  get LANG() { return LANG; }, get NEWS() { return NEWS; }, get DEADLINES() { return DEADLINES; }, get layers() { return layers; }, setLayer: (k, on) => setLayer(k, on), renderSecList: () => renderSecList(), get SND() { return typeof SND !== "undefined" ? SND : null; },
+  get LANG() { return LANG; }, get pick() { return { filter, selected, route: selRoute, choke: selChoke, mats: matsOf(filter), routeMats: selRoute && ROUTE_BY_ID[selRoute] ? ROUTE_BY_ID[selRoute].m : null }; }, get NEWS() { return NEWS; }, get DEADLINES() { return DEADLINES; }, get layers() { return layers; }, setLayer: (k, on) => setLayer(k, on), renderSecList: () => renderSecList(), get SND() { return typeof SND !== "undefined" ? SND : null; },
   SITES, SITE_BY_ID, MATERIALS, STAGES, SYSTEMS, SYS_ICON, ORDER, PIN, SCENARIOS, EU_SP, EOL_RIR, ONLINE, PART_KEYS, STRATEGIC, LIVE,
   worstOf, ragFor, deadlinesFor, newsFor, importShare, mName, stageTxt, stageWhat, ctry, pctTxt, trStr, chainOf, fromCc, inCtry, csPlural, inDays, zeZ,
   showSite(id) { goGlobe(); select(id, true); },

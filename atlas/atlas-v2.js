@@ -1387,7 +1387,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       if (!em.value || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value)) { msg.textContent = T("Please enter a valid email.", "Zadejte prosím platný e-mail."); msg.className = "oo-msg err"; em.focus(); return; }
       const b = f.querySelector('button[type="submit"]'); b.disabled = true; msg.textContent = T("Sending…", "Odesílám…"); msg.className = "oo-msg";
       try {
-        const r = await fetch("subscribe.php", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em.value.trim(), consent: true, plan: f.dataset.plan, minerals: (f.closest(".wk3") && window.ooBriefMins) ? window.ooBriefMins() : (f.closest(".pl3-y") && window.ooMonMins) ? window.ooMonMins() : selMins(), other: (f.closest(".pl3-y") && window.ooMonOther) ? window.ooMonOther() : "", product: window.ooProduct || "", lang: CS ? "cs" : "en", website: f.querySelector(".oo-hp").value }) });
+        const r = await fetch("subscribe.php", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em.value.trim(), consent: true, plan: f.dataset.plan, minerals: f.dataset.mins ? f.dataset.mins.split(",") : (f.closest(".wk3") && window.ooBriefMins) ? window.ooBriefMins() : (f.closest(".pl3-y") && window.ooMonMins) ? window.ooMonMins() : selMins(), other: (f.closest(".pl3-y") && window.ooMonOther) ? window.ooMonOther() : "", product: window.ooProduct || "", lang: CS ? "cs" : "en", website: f.querySelector(".oo-hp").value }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) throw new Error("x");
         if (j.pay && /^https:\/\//.test(j.pay)) { msg.className = "oo-msg ok"; msg.textContent = T("Taking you to the secure payment page…", "Přesměrování na zabezpečenou platební stránku…"); ooHit("act:to-pay"); setTimeout(() => { location.href = j.pay; }, 700); return; }
@@ -1782,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 70"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 71"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1833,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 70 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 71 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2084,6 +2084,66 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     setInterval(() => { if (PH()) pickT(); }, 1200);
   }
   try { v60(); } catch (e) { window.ooErrs && window.ooErrs.push("v60: " + e.message); }
+
+
+  /* ---------- build 71: a soft Monday-brief prompt after some exploring (never a wall) ----------
+     After three different picks on the globe, or a minute in explore mode, a small card offers the free
+     Monday brief for the minerals the visitor looked at. It can be closed (kept closed for 30 days), it never
+     shows during the tour or presenting, and not to anyone who already left an email. Reads the picks through
+     OO.pick (atlas-main.js); no MutationObserver, one light timer. */
+  function v71() {
+    if (!O.pick) return;
+    const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+    const ss = (k, v) => { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } };
+    const quiet = () => ls("oo-unlocked") === "1" || ss("oo-nudge") === "1" || (+ls("oo-nudge-x") || 0) > Date.now() - 30 * 864e5;
+    if (quiet()) return;
+    const B = document.body, ORDER = O.ORDER || [];
+    const seen = new Set(), keys = new Set();
+    let last = "", secs = 0, card = null, done = false;
+    const add = (list) => (list || []).forEach((m) => { if (O.MATERIALS[m]) seen.add(m); });
+    const mins = () => ORDER.filter((m) => seen.has(m));
+    // phones: the drawer is a bottom sheet over the globe; wait until it is closed, and hide the card while it is open
+    const sheet = () => innerWidth < 1024 && [...document.querySelectorAll(".drawer")].some((d) => !d.hidden && d.offsetParent !== null);
+    const names = (ms) => ms.slice(0, 4).map((m) => O.mName(m).toLowerCase()).join(", ") + (ms.length > 4 ? T(" and " + (ms.length - 4) + " more", " a " + (ms.length - 4) + " další") : "");
+    const show = (why) => {
+      if (done || quiet()) return; done = true; ss("oo-nudge", "1");
+      const ms = mins();
+      card = document.createElement("aside"); card.className = "oo-nudge"; card.setAttribute("data-notr", ""); card.setAttribute("aria-label", T("Monday brief", "Pondělní přehled"));
+      const line = ms.length
+        ? T("One short email on what changed for the minerals you looked at: " + names(ms) + ". Unsubscribe any time.", "Krátký e-mail o tom, co se změnilo u surovin, které jste si prohlíželi: " + names(ms) + ". Odhlásit se můžete kdykoli.")
+        : T("One short email on what changed for your minerals, and the deadlines ahead. Unsubscribe any time.", "Krátký e-mail o tom, co se změnilo u vašich surovin, a o blížících se termínech. Odhlásit se můžete kdykoli.");
+      card.innerHTML = `<button type="button" class="oo-nudge-x" aria-label="${esc(T("Close", "Zavřít"))}">×</button>` +
+        `<b>${esc(T("Get this every Monday, free.", "Dostávejte to každé pondělí, zdarma."))}</b><p>${esc(line)}</p>` +
+        `<form class="oo-sub" data-plan="brief"${ms.length ? ` data-mins="${esc(ms.join(","))}"` : ""} novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(T("Subscribe", "Odebírat"))}</button></div>` +
+        `<input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span><a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
+      if (CS) card.querySelectorAll(":scope > b, :scope > p").forEach((el) => { el.innerHTML = el.innerHTML.replace(/(^|[\s(„])([vkszaiouVKSZAIOU]) (?=\S)/g, "$1$2 "); });
+      card.querySelector(".oo-nudge-x").addEventListener("click", () => { ls("oo-nudge-x", String(Date.now())); card.remove(); ooHit("act:nudge-x"); });
+      (document.getElementById("plate") || B).appendChild(card);
+      requestAnimationFrame(() => card.classList.add("on"));
+      ooHit("act:nudge-" + why);
+    };
+    document.addEventListener("oo-sub-ok", (ev) => {
+      if (!card || !ev.detail || !card.contains(ev.detail.form)) return;
+      ooHit("act:nudge-sub"); setTimeout(() => { if (card) card.remove(); }, 4000);
+    });
+    const t = setInterval(() => {
+      if (done) { if (card && !card.isConnected) card = null; if (!card) clearInterval(t); else card.hidden = !B.classList.contains("exploring") || B.classList.contains("touring") || sheet(); return; }
+      if (!B.classList.contains("exploring") || B.classList.contains("touring") || document.hidden) return;
+      const p = O.pick;
+      const k = [p.filter, p.selected, p.route, p.choke].join("|");
+      if (k !== last) {
+        last = k;
+        add(p.mats);
+        if (p.selected && O.SITE_BY_ID[p.selected]) add([O.SITE_BY_ID[p.selected].m]);
+        if (p.routeMats) add(p.routeMats);
+        if (k !== "all|||") keys.add(k);
+      }
+      secs++;
+      if (sheet()) return;
+      if (keys.size >= 3) show("picks"); else if (secs >= 60) show("time");
+    }, 1000);
+  }
+  try { v71(); } catch (e) { window.ooErrs && window.ooErrs.push("v71: " + e.message); }
 
   try { motion(); } catch (e) { /* the atlas works without it */ }
 
