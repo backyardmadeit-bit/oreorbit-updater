@@ -1782,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 71"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 72"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1833,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 71 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 72 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2181,12 +2181,22 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
           const a = ((per[k] = per[k] || {})[m] = per[k][m] || [0, 0]); a[0] += +cn[i] || 0; a[1] += +ext[i] || 0;
         }
       }));
-      const ks = Object.keys(per).sort().filter((k) => Object.values(per[k]).filter((v) => v[1] > 0).length >= 8);
-      if (!ks.length) return false;
-      const k = ks[ks.length - 1], sh = Object.values(per[k]).filter((v) => v[1] > 0).map((v) => v[0] / v[1]);
-      const v = Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length);
-      const mon = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 15).toLocaleDateString(O.LANG === "cs" ? "cs-CZ" : "en-GB", { month: "short", year: "numeric" });
-      badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}%</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(mon)}</span>`;
+      /* build 72, index version 2: each mineral's share over the latest three months (all products and months added up,
+         so a thin month weighs only what it is worth), then the plain average of the ten; same as dependency_series() */
+      const add = (k, n) => { const t = +k.slice(0, 4) * 12 + (+k.slice(5, 7) - 1) + n; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
+      let k = null, v = null;
+      Object.keys(per).sort().forEach((key) => {
+        const win = [add(key, -2), add(key, -1), key]; if (!win.every((w) => per[w])) return;
+        const tot = {}; win.forEach((w) => Object.entries(per[w]).forEach(([m, a]) => { const t = (tot[m] = tot[m] || [0, 0]); t[0] += a[0]; t[1] += a[1]; }));
+        const sh = Object.values(tot).filter((t) => t[1] > 0).map((t) => t[0] / t[1]);
+        if (sh.length >= 8) { k = key; v = Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length); }
+      });
+      if (k === null) return false;
+      const mi = +k.slice(5, 7) - 1, yr = k.slice(0, 4);
+      const GEN = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
+      const win = O.LANG === "cs" ? "3\u00a0měsíce do\u00a0" + GEN[mi] + "\u00a0" + yr
+        : "3 months to " + new Date(+yr, mi, 15).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+      badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}${O.LANG === "cs" ? "\u00a0%" : "%"}</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(win)}</span>`;
       badge.hidden = false; badge.classList.remove("idx-wait"); badge.removeAttribute("aria-hidden"); badge.removeAttribute("tabindex"); return true;
     };
     let n = 0; const t = setInterval(() => { if (calc() || ++n > 30) clearInterval(t); }, 1000); calc();

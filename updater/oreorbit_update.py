@@ -966,18 +966,22 @@ def is_ext(p):
     return isinstance(p, str) and len(p) == 2 and p not in EU27 and not (p.startswith("Q") and p != "QA")
 
 
+TRADE_TOP_PARTNERS = 8      # partners kept per product in monthly["by"]
+
+
 def trade_one(code):
     y = TODAY.year
     tdim = lambda r: r.get("time") or r.get("TIME_PERIOD")
     # monthly, every partner, since January last year
     m = comext({"freq": "M", "product": code, "indicators": "VALUE_IN_EUROS", "sinceTimePeriod": "%d-01" % (y - 1)})
-    cn, ext = {}, {}
+    cn, ext, by = {}, {}, {}
     for r, v in jsonstat_rows(m):
         t, p = tdim(r), r.get("partner")
         if p == "CN":
             cn[t] = cn.get(t, 0) + v
         if is_ext(p):
             ext[t] = ext.get(t, 0) + v
+            by.setdefault(p, {})[t] = by[p].get(t, 0) + v
     months = sorted(set(cn) | set(ext))
     if not months:
         raise RuntimeError("no monthly data for %s" % code)
@@ -987,6 +991,10 @@ def trade_one(code):
         seq.append(d.strftime("%Y-%m"))
         d = dt.date(d.year + (d.month == 12), d.month % 12 + 1, 1)
     monthly = {"cn": [round(cn.get(k, 0)) for k in seq], "ext": [round(ext.get(k, 0)) for k in seq], "from": seq[0]}
+    # the biggest extra-EU suppliers of the last 12 months, month by month (the Dependency Index's "who supplies" list)
+    recent = seq[-12:]
+    big = sorted(by, key=lambda p: -sum(by[p].get(k, 0) for k in recent))[:TRADE_TOP_PARTNERS]
+    monthly["by"] = {p: [round(by[p].get(k, 0)) for k in seq] for p in big if sum(by[p].get(k, 0) for k in recent) > 0}
     # the last two full years, every partner, value and quantity
     a = comext({"freq": "A", "product": code, "indicators": ["VALUE_IN_EUROS", "QUANTITY_IN_100KG"],
                 "sinceTimePeriod": str(y - 2), "untilTimePeriod": str(y - 1)})
@@ -2503,7 +2511,7 @@ def send_mail():
                 if _sh is None: _sh = ((last or {}).get("extra") or {}).get(m)
                 eu = round(_sh * 100) if _sh is not None else None
                 status.append("<b>%s</b>%s%s" % (_esc(nm), (" · " + _esc(("nejužší fáze: " if cs else "tightest stage: ") + lead)) if lead else "",
-                              (" · " + _esc(("Čína dodává %d %% dovozu do EU" % eu) if cs else ("China supplies %d%% of EU imports" % eu))) if eu is not None else ""))
+                              (" · " + _esc(("Čína dodala %d %% dovozu do EU za poslední 3 měsíce" % eu) if cs else ("China supplied %d%% of EU imports over the last 3 months" % eu))) if eu is not None else ""))
                 soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
                 if soon:
                     k = (dt.date.fromisoformat(soon[0]["date"]) - TODAY).days
