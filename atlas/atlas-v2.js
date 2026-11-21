@@ -587,13 +587,25 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (!before || document.getElementById("check")) return;
     const P = [
       ["drones", T("Drones", "Drony"), { ree: T("motor magnets", "magnety motorů"), li: T("battery cells", "bateriové články"), gr: T("battery anodes", "anody baterií"), co: T("battery cathodes", "katody baterií"), ni: T("battery cathodes", "katody baterií"), ga: T("radio links (GaN)", "rádiová spojení (GaN)"), ge: T("thermal camera lenses", "čočky termokamer") , mn: T("battery cathodes", "katody baterií") }],
-      ["ammo", T("Ammunition and guided munitions", "Munice a řízená munice"), { sb: T("primers and hardened lead", "zápalky a tvrzené olovo"), w: T("penetrators and fragmentation", "penetrátory a střepinové účinky"), ree: T("fin actuators of guided rounds", "akční členy kormidel řízené munice"), ga: T("seekers and fuzes (GaN, GaAs)", "hlavice navádění a zapalovače (GaN, GaAs)") , mg: T("decoy flares and tracers", "klamné cíle a svítící náboje"), mn: T("steel shells and casings", "ocelové granáty a nábojnice") }],
-      ["optics", T("Optics and thermal imaging", "Optika a termovize"), { ge: T("infrared lenses and windows", "infračervené čočky a okna"), ga: T("detectors (GaAs, InGaAs)", "detektory (GaAs, InGaAs)"), ree: T("laser rangefinders (Nd:YAG)", "laserové dálkoměry (Nd:YAG)") }],
-      ["radar", T("Radar and electronics", "Radary a elektronika"), { ga: T("GaN power amplifiers", "výkonové zesilovače GaN"), ge: T("high-frequency chips", "vysokofrekvenční čipy"), ree: T("magnets and microwave garnets", "magnety a mikrovlnné granáty"), sb: T("infrared detectors (InSb)", "infračervené detektory (InSb)") }],
-      ["vehicles", T("Armoured vehicles", "Obrněná vozidla"), { ti: T("armour and structures", "pancéřování a konstrukce"), w: T("penetrators and tooling", "penetrátory a nástroje"), ni: T("armour steel", "pancéřová ocel"), ree: T("electric drives and turrets", "elektrické pohony a věže") , mn: T("armour steel", "pancéřová ocel"), mg: T("light alloy parts", "díly z lehkých slitin") }],
+      ["ammo", T("Ammunition and guided munitions", "Munice a řízená munice"), { sb: T("primers and hardened lead", "zápalky a tvrzené olovo"), w: T("penetrators and fragmentation", "penetrátory a střepinové účinky"), ree: T("fin actuators of guided rounds", "akční členy kormidel řízené munice"), ga: T("seekers and fuzes (GaN, GaAs)", "hlavice navádění a zapalovače (GaN, GaAs)") , mg: T("decoy flares and tracers", "klamné cíle a svítící náboje"), mn: [T("steel shells and casings", "ocelové granáty a nábojnice"), "mine", "260200"] }],
+      ["optics", T("Optics and thermal imaging", "Optika a termovize"), { ge: T("infrared lenses and windows", "infračervené čočky a okna"), ga: T("detectors (GaAs, InGaAs)", "detektory (GaAs, InGaAs)"), ree: [T("laser rangefinders (Nd:YAG)", "laserové dálkoměry (Nd:YAG)"), "refine"], sb: T("infrared detectors (InSb)", "infračervené detektory (InSb)") }],
+      ["radar", T("Radar and electronics", "Radary a elektronika"), { ga: T("GaN power amplifiers", "výkonové zesilovače GaN"), ge: T("high-frequency chips", "vysokofrekvenční čipy"), ree: T("magnets and microwave garnets", "magnety a mikrovlnné granáty") }],
+      ["vehicles", T("Armoured vehicles", "Obrněná vozidla"), { ti: T("armour and structures", "pancéřování a konstrukce"), w: T("penetrators and tooling", "penetrátory a nástroje"), ni: T("armour steel", "pancéřová ocel"), ree: T("electric drives and turrets", "elektrické pohony a věže") , mn: [T("armour steel", "pancéřová ocel"), "mine", "260200"], mg: T("light alloy parts", "díly z lehkých slitin") }],
       ["aero", T("Aircraft and space", "Letectví a kosmonautika"), { ti: T("airframes and engines", "draky a motory"), ni: T("engine superalloys", "superslitiny motorů"), co: T("engine superalloys", "superslitiny motorů"), ree: T("actuators and motors", "akční členy a motory"), ga: T("solar cells (GaAs)", "solární články (GaAs)"), ge: T("solar-cell substrates", "podložky solárních článků") , mg: T("titanium metal (Kroll process) and light alloys", "výroba titanu (Krollův proces) a lehké slitiny") }],
       ["batteries", T("Batteries and energy storage", "Baterie a úložiště energie"), { li: T("cells", "články"), co: T("cathodes", "katody"), ni: T("cathodes", "katody"), gr: T("anodes", "anody") , mn: T("NMC and LMFP cathodes", "katody NMC a LMFP") }],
     ];
+    /* build 76: a use may name the stage on its path ([label, "mine"|"refine"|"part"]): Nd:YAG lasers need refined rare earths, not
+       magnets; steel needs manganese ore (via ferromanganese), not electrolytic metal. Without one, the tightest stage of the mineral. */
+    const useOf = (v) => Array.isArray(v) ? v[0] : v;
+    const impOf = (m, v) => O.importShare(m, Array.isArray(v) ? v[2] : undefined);   // [label, stage, CN code]: the import row of that product
+    const stOf = (m, v) => { const k = Array.isArray(v) ? v[1] : null, c = k ? O.chainOf(m).find((z) => z[0] === k && z[1]) : null; return c ? { k: c[0], x: c[1], m } : O.worstOf(m); };
+    const levelOf = (m, w) => {   // the risk rule of ragFor, with the concentration read from this use's stage
+      const r = O.ragFor(m) || {}, conc = !!(w && w.x && w.x.pct > 65);
+      const moving = (r.dd !== null && r.dd !== undefined && r.dd <= 45) || r.news > 0 || r.hz > 0 || (r.cf || []).length > 0;
+      const why = (r.why || []).slice(r.w && r.w.x && r.w.x.pct > 65 ? 1 : 0);
+      if (conc) why.unshift(T(`${O.pctTxt(w.x)} of ${O.stageWhat(w.k, w.x)} in ${w.x.who}`, `${O.pctTxt(w.x)} ${O.stageWhat(w.k, w.x)}: ${O.ctry(w.x.who)}`));
+      return { level: conc && moving ? "red" : (conc || moving) ? "amber" : "green", why };
+    };
     window.ooQC = {}; P.forEach((p) => { window.ooQC[p[0]] = { name: p[1], mins: Object.keys(p[2]) }; });   // v24: shared with This week and the sign-up forms
     const LV = { red: [T("High risk", "Vysoké riziko"), "qc-red"], amber: [T("Medium risk", "Střední riziko"), "qc-amber"], green: [T("Low risk", "Nízké riziko"), "qc-green"] };   // v47: "Watch" read as ambiguous to a first user
     const sec = document.createElement("section");
@@ -651,13 +663,13 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const ms = O.ORDER.filter((m) => p[2][m]);
       let conc = 0, cn = 0, next = null;
       const rows = ms.map((m) => {
-        const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, lv = LV[rag.level] || null, imp = O.importShare(m);
+        const w = stOf(m, p[2][m]), x = w && w.x, rag = levelOf(m, w), lv = LV[rag.level] || null, imp = impOf(m, p[2][m]);
         if (x && x.pct > 65) { conc++; if (x.who === "China") cn++; }
         (O.deadlinesFor(m) || []).forEach((d) => { if (O.daysUntil(d.date) >= 0 && (!next || d.date < next.date)) next = d; });
         const share = x ? `<b>${esc(O.pctTxt(x))} ${esc(O.ctry(x.who))}</b> <span>${esc(stg(w))}</span>` : `<b>${T("China leads", "Čína vede")}</b> <span>${T("refining; no public world total", "v rafinaci; světový podíl není zveřejněn")}</span>`;
         const im = imp && imp.tp ? `${esc(imTxt(imp.tp))} <span>(${esc(imp.tp.y || "")})</span>` : "–";
         return `<button type="button" class="qc-row" data-m="${m}" style="--c:${O.cssVar(m)}" title="${esc(T("Show on the globe", "Ukázat na glóbu"))}">
-          <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(p[2][m])}</small></span>
+          <span class="qc-name"><i></i>${esc(O.mName(m))}<small>${esc(useOf(p[2][m]))}</small></span>
           <span class="qc-share">${share}<span class="qc-bar"><span style="width:${x ? Math.min(100, x.pct) : 0}%"></span></span></span>
           <span class="qc-imp"><small>${T("EU imports", "Dovoz do EU")}</small>${im}</span>
           <span class="qc-lv">${lv ? `<em class="${lv[1]}" title="${esc((rag.why || []).join(" · ") || T("Nothing unusual this week", "Tento týden nic neobvyklého"))}">${lv[0]}</em>` : ""}</span></button>`;
@@ -666,11 +678,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
                     `${p[1]} obvykle závisí na <b>${ms.length} z dvanácti</b> kritických surovin. U <b>${conc}</b> z nich drží jedna země přes 65 % některé fáze dodavatelského řetězce${cn ? `, u ${cn} je to Čína` : ""}.`);
       const dl = next ? `<p class="qc-dl"><span>${T("Next deadline", "Nejbližší termín")}</span> <b>${esc(O.fmtDay(next.date))}</b> · ${esc(O.LANG === "cs" && next.title_cs ? next.title_cs : next.title)}</p>` : "";
       last = { id, name: p[1], sum, dl: next ? [O.trStr(O.fmtDay(next.date)), O.LANG === "cs" && next.title_cs ? next.title_cs : next.title] : null,
-        rows: ms.map((m) => { const w = O.worstOf(m), x = w && w.x, rag = O.ragFor(m) || {}, imp = O.importShare(m);
+        rows: ms.map((m) => { const w = stOf(m, p[2][m]), x = w && w.x, rag = levelOf(m, w), imp = impOf(m, p[2][m]);
           let col = O.cssVar(m);
           const vm = /^var\((--[^),]+)/.exec(col || "");
           if (vm) col = getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim() || getComputedStyle(document.body).getPropertyValue(vm[1]).trim() || "#9aa1a5";
-          return { m, name: O.mName(m), use: p[2][m], color: col, pct: x ? x.pct : null,
+          return { m, name: O.mName(m), use: useOf(p[2][m]), color: col, pct: x ? x.pct : null,
             share: x ? `${O.pctTxt(x)} ${O.ctry(x.who)}`.replace(/(\d)%/g, O.LANG === "cs" ? "$1\u00a0%" : "$1%") : T("China leads", "Vede Čína"),   // Czech "94 % Čína", as on the page
             stage: x ? stg(w) : T("no public world total", "veřejný světový údaj neexistuje"),   // build 56: the PDF column says "tightest stage", so it shows it, as the page row does
             imp: imp && imp.tp ? `${imTxt(imp.tp)} (${imp.tp.y || ""})` : "–", lv: (LV[rag.level] || [""])[0] }; }) };
@@ -1782,7 +1794,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 75"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 76"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1833,7 +1845,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 75 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 76 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

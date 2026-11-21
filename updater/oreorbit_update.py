@@ -897,7 +897,7 @@ TRADE_CODES = {
     "ree": [("850511", "Permanent magnets of metal"), ("284690", "Rare-earth compounds"), ("280530", "Rare-earth metals")],
     "sb": [("811010", "Unwrought antimony"), ("282580", "Antimony oxides")],
     "ti": [("810820", "Unwrought titanium (sponge)"), ("261400", "Titanium ores")],
-    "w": [("810194", "Unwrought tungsten"), ("261100", "Tungsten ores")],
+    "w": [("284180", "Ammonium paratungstate"), ("28499030", "Tungsten carbide"), ("810194", "Unwrought tungsten"), ("261100", "Tungsten ores")],
     "mg": [("810411", "Unwrought magnesium, 99.8% or more"), ("810419", "Other unwrought magnesium")],
     "mn": [("811100", "Manganese metal and articles"), ("260200", "Manganese ores")],
 }
@@ -905,8 +905,7 @@ TRADE_CODES = {
 # trade.json["basket"] so the atlas's trade cards stay as they are. The pages decide which codes the index counts (INDEX_BASKET).
 TRADE_BASKET = {
     "ti": [("810890", "Wrought titanium and articles")],
-    "w": [("284180", "Ammonium paratungstate (APT)"), ("28499030", "Tungsten carbide"), ("810110", "Tungsten powders"),
-          ("810199", "Other tungsten articles"), ("28259040", "Tungsten oxides and hydroxides")],
+    "w": [("810110", "Tungsten powders"), ("810199", "Other tungsten articles"), ("28259040", "Tungsten oxides and hydroxides")],
     "ni": [("750220", "Unwrought nickel alloys")],
 }
 TRADE_FROM = "2022-01"      # monthly history kept from here on, so old months never roll off (index archive, vintages)
@@ -919,7 +918,7 @@ TRADE_CS = {"Cobalt mattes and unwrought cobalt": "kobaltové kamínky a surový
             "Antimony oxides": "oxidy antimonu", "Unwrought titanium (sponge)": "surový titan (houba)", "Titanium ores": "titanové rudy",
             "Unwrought tungsten": "surový wolfram", "Tungsten ores": "wolframové rudy", "Unwrought magnesium, 99.8% or more": "neopracovaný hořčík, nejméně 99,8 %",
             "Other unwrought magnesium": "ostatní neopracovaný hořčík", "Manganese metal and articles": "kovový mangan a výrobky z něj", "Manganese ores": "manganové rudy",
-            "Wrought titanium and articles": "tvářený titan a výrobky z něj", "Ammonium paratungstate (APT)": "parawolframan amonný (APT)",
+            "Wrought titanium and articles": "tvářený titan a výrobky z něj", "Ammonium paratungstate": "parawolframan amonný",
             "Tungsten carbide": "karbid wolframu", "Tungsten powders": "wolframový prášek", "Other tungsten articles": "ostatní výrobky z wolframu",
             "Tungsten oxides and hydroxides": "oxidy a hydroxidy wolframu", "Unwrought nickel alloys": "surové slitiny niklu"}
 
@@ -1047,7 +1046,7 @@ def feed_trade(prev):
             rows = []
             for code, label in codes:
                 total += 1
-                old = next((r for r in mats.get(m, []) if r.get("code") == code), None)
+                old = next((r for t in ("materials", "basket") for r in (prev.get(t) or {}).get(m, []) if r.get("code") == code), None)
                 try:
                     monthly, years = trade_one(code)
                     rows.append({"code": code, "label": label, "monthly": monthly, "years": years})
