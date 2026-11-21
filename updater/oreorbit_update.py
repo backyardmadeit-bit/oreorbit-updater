@@ -1747,6 +1747,59 @@ def rss_items(url):
     return out
 
 
+NEWS_JOIN = r"(?:Led|Based|Owned|Backed|Linked|Funded|Run|Made|Listed|Focused|Grade|Term|Scale)"
+NEWS_STOP = set("the and for with from into over under after ahead amid its their this that than more less new says said will has have are was were not but about".split())
+NEWS_GENERIC = set("rare earth earths mineral minerals critical mining mine mines project projects metal metals supply chain chains plant deal".split())
+
+
+NEWS_MATW = set(w for kw in NEWS_KW.values() for w in re.findall(r"[a-z]{4,}", kw.lower()))
+
+
+def clean_title(t):
+    """Undo the spaces GDELT puts around punctuation ("East Africa : Kenya Selects US - Led ...") without touching a real
+    "Title - Source" dash."""
+    import re
+    t = re.sub(r"\s+", " ", t or "").strip()
+    t = re.sub(r"(\d) ([.,]) (?=\d)", r"\1\2", t)                     # "2 . 9" -> "2.9"
+    t = re.sub(r"(\w) ' s\b", r"\1's", t)                                # "Brazil ' s" -> "Brazil's"
+    t = re.sub(r"\s+([,.:;!?%)\]])", r"\1", t)                           # "Africa : Kenya" -> "Africa: Kenya"
+    t = re.sub(r"([(\[])\s+", r"\1", t)                                  # "[ SMM" -> "[SMM"
+    t = re.sub(r"(\w) - (?=[a-z0-9]|%s\b)" % NEWS_JOIN, r"\1-", t)       # "US - Led", "high - grade", "9 - billion"
+    return t
+
+
+def news_words(t):
+    import re
+    return {w for w in re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).split() if len(w) >= 3 and w not in NEWS_STOP}
+
+
+def same_story(a, b):
+    """Two headlines tell the same story: most of the shorter one's words are in the other one, and at least two of the
+    shared words are not the generic ones every mining story has ("rare earth", "lithium project" ...)."""
+    if not a or not b or min(len(a), len(b)) < 4:
+        return False
+    both = a & b
+    return len(both) / min(len(a), len(b)) >= 0.6 and len(both - NEWS_GENERIC - NEWS_MATW) >= 2
+
+
+def news_dupe(title, day, items):
+    """An automatic story already on the page tells the same story within two days (another outlet, another headline)."""
+    try:
+        d0 = dt.date.fromisoformat(day)
+    except (TypeError, ValueError):
+        return False
+    w = news_words(title)
+    for x in items:
+        try:
+            if abs((dt.date.fromisoformat(str(x.get("date"))[:10]) - d0).days) > 2:
+                continue
+        except ValueError:
+            continue
+        if same_story(w, news_words(x.get("title"))):
+            return True
+    return False
+
+
 def feed_news(prev):
     """Recent English headlines for every tracked material from GDELT (two grouped questions), each sorted to its material(s)
     by the words in its title and marked as found automatically and not checked."""
@@ -1754,6 +1807,15 @@ def feed_news(prev):
     items = [x for x in (prev if isinstance(prev, list) else []) if isinstance(x, dict) and x.get("title")]
     # a domain added to NEWS_BLOCK also drops the automatic stories already on the page
     items = [x for x in items if not (x.get("auto") and any(b in str(x.get("source") or "").lower() for b in NEWS_BLOCK))]
+    # tidy the automatic headlines already on the page and keep one story per event (the first one found)
+    kept = []
+    for x in items:
+        if x.get("auto"):
+            x = dict(x, title=clean_title(x["title"]))
+            if news_dupe(x["title"], str(x.get("date") or "")[:10], [y for y in kept if y.get("auto")]):
+                continue
+        kept.append(x)
+    items = kept
     have_url = {x.get("url") for x in items}
     norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
     have_title = {norm(x["title"]) for x in items}
@@ -1762,9 +1824,11 @@ def feed_news(prev):
 
     def take(title, url, dom, day):
         nonlocal added
-        title = H.unescape(title or "").strip()
+        title = clean_title(H.unescape(title or ""))
         dom = (dom or "").lower()
         if not title or not url.startswith("https://") or url in have_url or norm(title) in have_title:
+            return
+        if news_dupe(title, day, [x for x in items if x.get("auto")]):
             return
         if re.search(NEWS_SPAM, title, re.I) or any(b in dom for b in NEWS_BLOCK):
             return
