@@ -527,18 +527,18 @@ INDEX_WINDOW = 3            # every mineral adds up at least the latest three mo
 INDEX_MIN_EUR = 10_000_000  # v3: a mineral's window grows month by month until its extra-EU imports reach this value...
 INDEX_MAX_WINDOW = 12       # ...or twelve months, so one delivery cannot swing a thin market
 INDEX_V2_FROM = "November 2026"
-INDEX_V3_FROM = "December 2026"
-# v3 (Dec 2026): the products counted for each index mineral, from the atlas trade table ("materials") and the extra
+INDEX_V3_FROM = "21 November 2026"
+# v3 (21 Nov 2026): the products counted for each index mineral, from the atlas trade table ("materials") and the extra
 # index products the robot stores under "basket". Titanium ores (261400) feed the atlas card but not the index:
 # most titanium ore goes into white pigment, not metal.
 INDEX_BASKET = {"ree": ("850511", "284690", "280530"), "ti": ("810820", "810890"),
                 "w": ("810194", "261100", "284180", "28499030", "810110", "810199", "28259040"),
                 "sb": ("811010", "282580"), "ga": ("81129289",), "ge": ("81129295",), "li": ("283691", "282520"),
                 "co": ("810520", "282200"), "ni": ("750210", "750110", "750220"), "gr": ("380110", "250410")}
-INDEX_CHANGELOG = [("December 2026", "Version 3: wider product basket (tungsten APT, carbide, powder, oxides and articles; wrought titanium; nickel alloys), a window that grows from three to up to twelve months until a mineral reaches EUR 10 million of imports, monthly history from January 2022, first-published values kept next to revisions, a tonnes and a value-weighted check, supplier concentration and a CSV download."),
+INDEX_CHANGELOG = [("21 November 2026", "Version 3: wider product basket (tungsten APT, carbide, powder, oxides and articles; wrought titanium; nickel alloys), a window that grows from three to up to twelve months until a mineral reaches EUR 10 million of imports, monthly history from January 2022, first-published values kept next to revisions, a tonnes and a value-weighted check, supplier concentration and a CSV download."),
                    ("November 2026", "Version 2: three months added up per mineral instead of a single month; top three suppliers per mineral."),
                    ("2026", "Version 1: a single month per mineral, equal weight across the ten index minerals.")]
-INDEX_CHANGELOG_CS = [("prosinec 2026", "Verze 3: širší koš produktů (u wolframu parawolframan amonný, karbid, prášek, oxidy a výrobky, tvářený titan, slitiny niklu), okno, které se prodlužuje ze tří až na dvanáct měsíců, dokud dovoz suroviny nedosáhne 10 mil. €, měsíční řada od ledna 2022, první zveřejněné hodnoty vedle revizí, kontrola podle tun a podle hodnoty, koncentrace dodavatelů a soubor CSV."),
+INDEX_CHANGELOG_CS = [("21. listopadu 2026", "Verze 3: širší koš produktů (u wolframu parawolframan amonný, karbid, prášek, oxidy a výrobky, tvářený titan, slitiny niklu), okno, které se prodlužuje ze tří až na dvanáct měsíců, dokud dovoz suroviny nedosáhne 10 mil. €, měsíční řada od ledna 2022, první zveřejněné hodnoty vedle revizí, kontrola podle tun a podle hodnoty, koncentrace dodavatelů a soubor CSV."),
                       ("listopad 2026", "Verze 2: tři měsíce sečtené pro každou surovinu místo jediného měsíce; tři největší dodavatelé každé suroviny."),
                       ("2026", "Verze 1: jediný měsíc pro každou surovinu, stejná váha pro deset surovin indexu.")]
 CC_EN = {"AR": "Argentina", "AU": "Australia", "BA": "Bosnia and Herzegovina", "BI": "Burundi", "BO": "Bolivia", "BR": "Brazil", "CA": "Canada", "CD": "DR Congo",
@@ -602,7 +602,7 @@ def _trade_months(trade):
 
 
 def dependency_series(trade):
-    """The OreOrbit Dependency Index (version 3, from December 2026), month by month.
+    """The OreOrbit Dependency Index (version 3, from 21 November 2026), month by month.
 
     For each of the ten index minerals, China's share of the value of EU imports from outside the EU of the products in
     INDEX_BASKET, over a window that ends with the month: at least three months, extended one month at a time (up to
@@ -1029,7 +1029,7 @@ def dependency_page(ref, live, today):
         "rev": rev_p, "drivers": drivers_p, "robust": robust, "conc": conc_s,
         "m1": (" Under the single-month method, %s reads %d%%." % (e(month_txt(last["month"])), round(m1 * 100))) if m1 is not None else "",
         "cite": cite_box(title, path, today)}
-    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for the ten index materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite), over at least the latest three months and up to twelve for thin markets. Version 3 since December 2026, series from January 2022. Source: Eurostat Comext.",
+    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for the ten index materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite), over at least the latest three months and up to twelve for thin markets. Version 3 since 21 November 2026, series from January 2022. Source: Eurostat Comext.",
            "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": "3",
            "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]), "variableMeasured": "China's share of extra-EU import value, at least three months per material, equal-weighted across the ten index materials",
            "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + "p/dependency-index.csv"}],
@@ -1226,7 +1226,7 @@ def dependency_page_cs(ref, live, today):
 <li>Index je prostý průměr deseti podílů, takže malá, ale kritická surovina jako galium váží stejně jako lithium.</li>
 <li>Hořčík a mangan, přidané v listopadu 2026, sledujeme zvlášť, aby index zůstal srovnatelný v čase.</li>
 <li>Hodnoty, jen dovoz ze zemí mimo EU; verzi podle tun a verzi váženou hodnotou ukazujeme jako kontrolu. Obnovuje se automaticky, jakmile Eurostat zveřejní nový měsíc, obvykle zhruba šest týdnů po jeho konci. Eurostat poslední měsíce zpřesňuje; první zveřejněnou hodnotu každého měsíce uchováváme vedle současné.</li></ul></section>
-<section id="versions"><h2>Verze 3, od prosince 2026</h2><p>Verze 3 sleduje podoby, které průmysl skutečně nakupuje: wolfram jako parawolframan amonný, karbid a prášek, nejen rudu, titan jako tvářený kov, nikl jako slitiny. Vypouští titanové rudy, které z většiny končí v bílém pigmentu, ne v kovu. Surovina, jejíž dovoz ze zemí mimo EU za tři měsíce nedosáhne %(minv)s, se měří za delší okno, aby s ní nepohnula jediná dodávka. Celá řada od ledna 2022 počítá verzí 3; každá měsíční stránka (anglicky) uchovává hodnotu, která byla pro daný měsíc zveřejněna jako první.</p><ul class="plain">%(log)s</ul></section>
+<section id="versions"><h2>Verze 3, od 21. listopadu 2026</h2><p>Verze 3 sleduje podoby, které průmysl skutečně nakupuje: wolfram jako parawolframan amonný, karbid a prášek, nejen rudu, titan jako tvářený kov, nikl jako slitiny. Vypouští titanové rudy, které z většiny končí v bílém pigmentu, ne v kovu. Surovina, jejíž dovoz ze zemí mimo EU za tři měsíce nedosáhne %(minv)s, se měří za delší okno, aby s ní nepohnula jediná dodávka. Celá řada od ledna 2022 počítá verzí 3; každá měsíční stránka (anglicky) uchovává hodnotu, která byla pro daný měsíc zveřejněna jako první.</p><ul class="plain">%(log)s</ul></section>
 <section><h2>Verze 2, listopad 2026</h2><p>Do listopadu 2026 byl titulním číslem jediný měsíc. Když dorazilo málo zásilek, skočil podíl z měsíce na měsíc až o %(sw)d %(swb)s, a proto verze 2 sečetla tři měsíce.%(m1)s</p></section>
 %(cite)s
 <p class="open"><a class="cta" href="../?lang=cs">Suroviny na živém atlasu</a></p></article>""" % {
