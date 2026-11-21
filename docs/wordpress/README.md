@@ -1,5 +1,19 @@
 # WordPress (bohemiadefense.com)
 
+## 21. 11. 2026: podmínky Monitoringu a GDPR pro platící klienty
+
+Právní stránky jsou nově v repu: [`legal-en.html`](legal-en.html) a [`legal-cs.html`](legal-cs.html). Starší kopie v `06 Weby/bohemiadefense.com (WordPress)/legal-page-*.txt` tím přestávají platit.
+
+1. **EN `/legal/`**: Stránky → „Legal information“ → upravit, klikni na blok **Vlastní HTML**, v poli s kódem dej Cmd+A a vlož celý obsah `legal-en.html`.
+2. **CS `/pravni-informace/`**: totéž se souborem `legal-cs.html`.
+3. **Aktualizovat** a W3 Total Cache → **Purge All Caches**. Pak napiš „zkontroluj WordPress“.
+
+Co se mění: nový oddíl `#monitoring` (podmínky předplatného: co klient dostane, cena jen odkazem na atlas a pokladnu, platba předem přes Stripe, zrušení kdykoli s během do konce zaplaceného měsíce, záruka vrácení peněz 30 dnů, odstoupení spotřebitele do 14 dnů, ČOI, omezení odpovědnosti, změny s 30denním předstihem). V GDPR (`#privacy`) je souhlas jen u pondělního přehledu zdarma; Monitoring má nově základ smlouva a účetní povinnost a jsou doplněni zpracovatelé Stripe, Calendly a GitHub a předávání do USA. Atlas (build 78) na oba oddíly odkazuje u platby („Podmínky“ · „Ochrana údajů“).
+
+Ve Stripe (ručně, jednou):
+- **Customer portal** → Cancellations: „Cancel at end of billing period“ (ne okamžitě), aby to sedělo s textem podmínek.
+- **Payment Link** Monitoringu → Options → „Require customers to accept your terms of service“ a v Settings → Public details vyplň Terms of service `https://bohemiadefense.com/legal/#monitoring` a Privacy policy `https://bohemiadefense.com/legal/#privacy`.
+
 ## 12. 11. 2026: SEO/GEO
 
 Čtyři věci k ručnímu vložení:
