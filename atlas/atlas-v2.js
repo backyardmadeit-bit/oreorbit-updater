@@ -1391,7 +1391,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     // the sign-up forms: the free Monday brief and paid monitoring
     const selMins = () => PK() ? [...PK().querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.dataset.my) : [];
     const minNames = () => { const n = selMins().map((m) => { const c = PK().querySelector('.chip2[data-my="' + m + '"]'); return c ? c.textContent.trim() : m; }); return n.length ? n.join(", ") : T("all twelve minerals", "všech dvanáct surovin"); };
-    const form = (plan, btn, cons) => `<form class="oo-sub" data-plan="${plan}" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(btn)}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span>${esc(cons)} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
+    const form = (plan, btn, cons) => `<form class="oo-sub" data-plan="${plan}" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(btn)}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span>${esc(cons)} <a href="${T("https://bohemiadefense.com/legal/", "https://bohemiadefense.com/pravni-informace/")}#privacy" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
     document.addEventListener("submit", async (ev) => {
       const f = ev.target.closest && ev.target.closest(".oo-sub"); if (!f) return;
       ev.preventDefault();
@@ -1494,7 +1494,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (grid && !document.querySelector(".sig-gate")) {
       const gate = document.createElement("div"); gate.className = "sig-gate"; gate.hidden = true;
       gate.innerHTML = `<div><b>${esc(T("Open the full data, free.", "Otevřete plná data, zdarma."))}</b><span>${esc(T("Leave your email once and every panel opens. You also get the Monday brief; unsubscribe any time.", "Zadejte jednou e-mail a otevřou se všechny panely. Dostanete i pondělní přehled; odhlásit se můžete kdykoli."))}</span></div>` +
-        `<form class="oo-sub" data-plan="brief" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(T("Open the data", "Otevřít data"))}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span>${esc(T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
+        `<form class="oo-sub" data-plan="brief" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(T("Open the data", "Otevřít data"))}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span>${esc(T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))} <a href="${T("https://bohemiadefense.com/legal/", "https://bohemiadefense.com/pravni-informace/")}#privacy" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
       grid.after(gate);
       let want = null;
       grid.addEventListener("click", (ev) => {
@@ -1601,7 +1601,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const ext = /^https?:/.test(BOOK) ? ' target="_blank" rel="noopener"' : "";
     const PRICE = String(C.monitoringPrice || "49").trim();
     const snd = (big) => { try { if (O.SND && O.SND.on) { if (big && O.SND.chord) O.SND.chord([523.25, 659.25, 783.99], 0.03); else if (O.SND.tick) O.SND.tick(); } } catch (e) {} };
-    const cons = (txt) => `<p class="oo-cons"><span>${esc(txt)} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p>`;
+    const cons = (txt) => `<p class="oo-cons"><span>${esc(txt)} <a href="${T("https://bohemiadefense.com/legal/", "https://bohemiadefense.com/pravni-informace/")}#privacy" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p>`;
     const form = (plan, btn, consTxt) => `<form class="oo-sub" data-plan="${plan}" novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(btn)}</button></div><input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">${cons(consTxt)}<p class="oo-msg" role="status" aria-live="polite"></p></form>`;
     /* plans: three columns, thin rules, one aligned row of actions */
     const row = document.querySelector(".pl-row, .wx-row");
@@ -1794,7 +1794,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 77"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 78"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1845,7 +1845,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 77 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 78 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1982,7 +1982,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     // build 63: a company buyer needs a person and an invoice; the line shows only when config.js has a contact address (the phone sheet copies this note)
     const mail = typeof CFG.contactEmail === "string" && /^[^@\s<>"]+@[^@\s<>"]+\.[a-z]{2,}$/i.test(CFG.contactEmail) ? CFG.contactEmail : "";
     const inv = mail ? ` ${esc(T("Need an invoice for your company, or have a question first? Write to", "Potřebujete fakturu na firmu nebo se chcete nejdřív na něco zeptat? Napište na"))}\u00a0<a href="mailto:${esc(mail)}?subject=${encodeURIComponent("OreOrbit Monitoring")}">${esc(mail)}</a>.` : "";
-    note.innerHTML = `${esc(T("Secure payment by Stripe. Cancel anytime.", "Zabezpečená platba přes Stripe. Zrušíte kdykoli."))} <a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a>${inv}`;
+    note.innerHTML = `${esc(T("Secure payment by Stripe. Cancel anytime.", "Zabezpečená platba přes Stripe. Zrušíte kdykoli."))} <a href="${T("https://bohemiadefense.com/legal/", "https://bohemiadefense.com/pravni-informace/")}#monitoring" target="_blank" rel="noopener">${esc(T("Terms", "Podmínky"))}</a> · <a href="${T("https://bohemiadefense.com/legal/", "https://bohemiadefense.com/pravni-informace/")}#privacy" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a>${inv}`;
     cell.append(b, note);
     const goPay = () => {   // build 60: shared with the phone sheet; false when an unknown extra mineral blocks payment
       if (window.ooMonOtherCheck && !window.ooMonOtherCheck()) { ooHit("act:mon-other-bad"); return false; }
@@ -2127,7 +2127,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       card.innerHTML = `<button type="button" class="oo-nudge-x" aria-label="${esc(T("Close", "Zavřít"))}">×</button>` +
         `<b>${esc(T("Get this every Monday, free.", "Dostávejte to každé pondělí, zdarma."))}</b><p>${esc(line)}</p>` +
         `<form class="oo-sub" data-plan="brief"${ms.length ? ` data-mins="${esc(ms.join(","))}"` : ""} novalidate><div class="oo-sub-row"><input type="email" name="email" required autocomplete="email" placeholder="${esc(T("Work email", "Pracovní e-mail"))}" aria-label="${esc(T("Work email", "Pracovní e-mail"))}"><button type="submit" class="btn">${esc(T("Subscribe", "Odebírat"))}</button></div>` +
-        `<input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span><a href="https://bohemiadefense.com/legal/" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
+        `<input class="oo-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="oo-cons"><span><a href="${T("https://bohemiadefense.com/legal/", "https://bohemiadefense.com/pravni-informace/")}#privacy" target="_blank" rel="noopener">${esc(T("Privacy", "Ochrana údajů"))}</a></span></p><p class="oo-msg" role="status" aria-live="polite"></p></form>`;
       if (CS) card.querySelectorAll(":scope > b, :scope > p").forEach((el) => { el.innerHTML = el.innerHTML.replace(/(^|[\s(„])([vkszaiouVKSZAIOU]) (?=\S)/g, "$1$2 "); });
       card.querySelector(".oo-nudge-x").addEventListener("click", () => { ls("oo-nudge-x", String(Date.now())); card.remove(); ooHit("act:nudge-x"); });
       (document.getElementById("plate") || B).appendChild(card);
