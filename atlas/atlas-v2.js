@@ -1782,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 74"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 75"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1833,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 74 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 75 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2172,18 +2172,28 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     /* build 74, index version 3: the robot publishes the index itself (live-data/live/depindex.json, the same numbers as
        the library page, with the adaptive windows); the calculation below is only the fallback until that file exists */
     let pub = null;
-    const show = (k, v) => {
-      const mi = +k.slice(5, 7) - 1, yr = k.slice(0, 4);
+    /* build 75: the window line says what the index really used. Version 3 gives each mineral at least three months and up
+       to twelve where imports are thin (gallium), so the badge reads "3–12 months" and its tooltip names the longer windows */
+    const IDX_NAMES = { ree: ["rare earths", "vzácné zeminy"], ti: ["titanium", "titan"], w: ["tungsten", "wolfram"], sb: ["antimony", "antimon"],
+      ga: ["gallium", "galium"], ge: ["germanium", "germanium"], li: ["lithium", "lithium"], co: ["cobalt", "kobalt"], ni: ["nickel", "nikl"], gr: ["graphite", "grafit"] };
+    const show = (k, v, wins) => {
+      const cs = O.LANG === "cs", mi = +k.slice(5, 7) - 1, yr = k.slice(0, 4);
       const GEN = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
-      const win = O.LANG === "cs" ? "3\u00a0měsíce do\u00a0" + GEN[mi] + "\u00a0" + yr
-        : "3 months to " + new Date(+yr, mi, 15).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
-      badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}${O.LANG === "cs" ? "\u00a0%" : "%"}</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(win)}</span>`;
+      const w = Object.entries(wins || {}).filter(([m, n]) => IDX_NAMES[m] && n > 0);
+      const ns = w.map(([, n]) => n), lo = ns.length ? Math.min(...ns) : 3, hi = ns.length ? Math.max(...ns) : 3;
+      const span = lo === hi ? String(lo) : lo + "\u2013" + hi;
+      const win = cs ? span + "\u00a0" + (lo === hi && lo > 1 && lo < 5 ? "měsíce" : "měsíců") + " do\u00a0" + GEN[mi] + "\u00a0" + yr
+        : span + " months to " + new Date(+yr, mi, 15).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+      const longer = w.filter(([, n]) => n > lo).map(([m, n]) => IDX_NAMES[m][cs ? 1 : 0] + " " + n);
+      badge.title = longer.length ? (cs ? "Každá surovina nejméně za " + lo + "\u00a0" + (lo < 5 ? "měsíce" : "měsíců") + ", déle tam, kde je dovoz slabý: " + longer.join(", ") + "."
+        : "Each mineral over at least " + lo + " months, longer where imports are thin: " + longer.join(", ") + ".") : "";
+      badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}${cs ? "\u00a0%" : "%"}</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(win)}</span>`;
       badge.hidden = false; badge.classList.remove("idx-wait"); badge.removeAttribute("aria-hidden"); badge.removeAttribute("tabindex"); return true;
     };
     try {
       fetch("live-data/live/depindex.json?u=" + Math.floor(Date.now() / 36e5), { cache: "no-cache" }).then((r) => r.ok ? r.json() : null).then((j) => {
         const s = j && Array.isArray(j.series) ? j.series.filter((x) => x && /^\d{4}-\d{2}$/.test(x.month) && typeof x.value === "number") : [];
-        if (s.length) { const x = s[s.length - 1]; pub = [x.month, Math.round(x.value * 100)]; show(pub[0], pub[1]); }
+        if (s.length) { const x = s[s.length - 1]; pub = [x.month, Math.round(x.value * 100), x.win]; show(pub[0], pub[1], pub[2]); }
       }).catch(() => {});
     } catch (e) { /* the fallback below still runs */ }
     const calc = () => {
