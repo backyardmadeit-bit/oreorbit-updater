@@ -1782,7 +1782,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 73"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 74"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1833,7 +1833,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 73 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 74 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2169,7 +2169,25 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     /* the page carries an invisible badge (.idx-wait) that keeps its place, so filling it moves nothing */
     let badge = copy.querySelector(".idx-badge");
     if (!badge) { badge = document.createElement("a"); badge.className = "idx-badge"; badge.href = "p/dependency-index.html"; badge.hidden = true; copy.insertBefore(badge, copy.firstChild); }
+    /* build 74, index version 3: the robot publishes the index itself (live-data/live/depindex.json, the same numbers as
+       the library page, with the adaptive windows); the calculation below is only the fallback until that file exists */
+    let pub = null;
+    const show = (k, v) => {
+      const mi = +k.slice(5, 7) - 1, yr = k.slice(0, 4);
+      const GEN = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
+      const win = O.LANG === "cs" ? "3\u00a0měsíce do\u00a0" + GEN[mi] + "\u00a0" + yr
+        : "3 months to " + new Date(+yr, mi, 15).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+      badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}${O.LANG === "cs" ? "\u00a0%" : "%"}</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(win)}</span>`;
+      badge.hidden = false; badge.classList.remove("idx-wait"); badge.removeAttribute("aria-hidden"); badge.removeAttribute("tabindex"); return true;
+    };
+    try {
+      fetch("live-data/live/depindex.json?u=" + Math.floor(Date.now() / 36e5), { cache: "no-cache" }).then((r) => r.ok ? r.json() : null).then((j) => {
+        const s = j && Array.isArray(j.series) ? j.series.filter((x) => x && /^\d{4}-\d{2}$/.test(x.month) && typeof x.value === "number") : [];
+        if (s.length) { const x = s[s.length - 1]; pub = [x.month, Math.round(x.value * 100)]; show(pub[0], pub[1]); }
+      }).catch(() => {});
+    } catch (e) { /* the fallback below still runs */ }
     const calc = () => {
+      if (pub) return true;
       const mats = (O.LIVE.trade && O.LIVE.trade.materials) || null; if (!mats) return false;
       /* the index keeps its original ten (INDEX_TEN in updater/oreorbit_pages.py); magnesium and manganese sit outside it */
       const TEN = ["ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr"], per = {};
@@ -2191,13 +2209,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const sh = Object.values(tot).filter((t) => t[1] > 0).map((t) => t[0] / t[1]);
         if (sh.length >= 8) { k = key; v = Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length); }
       });
+      if (pub) return true;
       if (k === null) return false;
-      const mi = +k.slice(5, 7) - 1, yr = k.slice(0, 4);
-      const GEN = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
-      const win = O.LANG === "cs" ? "3\u00a0měsíce do\u00a0" + GEN[mi] + "\u00a0" + yr
-        : "3 months to " + new Date(+yr, mi, 15).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
-      badge.innerHTML = `<i></i>${T("Dependency Index", "Index závislosti")} <b>${v}${O.LANG === "cs" ? "\u00a0%" : "%"}</b> <span>· ${esc(T("China's share of EU imports", "podíl Číny na dovozu do EU"))} · ${esc(win)}</span>`;
-      badge.hidden = false; badge.classList.remove("idx-wait"); badge.removeAttribute("aria-hidden"); badge.removeAttribute("tabindex"); return true;
+      return show(k, v);
     };
     let n = 0; const t = setInterval(() => { if (calc() || ++n > 30) clearInterval(t); }, 1000); calc();
   }

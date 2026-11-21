@@ -38,7 +38,7 @@ const ALLOWED = '#^(?:live-data/(?:live/[a-z0-9]{1,32}|meta/status|news|briefs|w
     . '|data/(?:imagery|orbit-extras|timelapse|landsat|emit)\.json'
     . '|data/terrain/[a-z0-9-]{1,48}\.json'
     . '|img/[a-z0-9-]{1,96}\.(?:jpg|png)'
-    . '|p/[a-z0-9-]{1,60}\.html|sitemap\.xml)$#';
+    . '|p/[a-z0-9-]{1,60}\.(?:html|csv)|sitemap\.xml)$#';
 
 const PRUNE_AFTER_DAYS = 7;          // an unused picture is kept this long after it was last written
 const PRUNE_KEEP = ['og-oreorbit.png']; // never removed, whatever the data files say
@@ -194,6 +194,11 @@ if ($ext === 'json') {
     $low = strtolower($body);
     if (strncmp(ltrim($low), '<?xml', 5) !== 0 || strpos($low, '<urlset') === false || strpos($low, '<script') !== false) {
         reply(400, ['ok' => false, 'error' => 'not a sitemap']);
+    }
+} elseif ($ext === 'csv') {
+    // the index as a table: plain UTF-8 text, no markup, and no cell that a spreadsheet would run as a formula
+    if (preg_match('//u', $body) !== 1 || strpos($body, '<') !== false || preg_match('#(?:^|[\n,])"?(?:[=+@\t\r]|-(?![0-9]))#', $body)) {
+        reply(400, ['ok' => false, 'error' => 'not a plain CSV']);
     }
 } else {
     reply(400, ['ok' => false, 'error' => 'file not allowed']);
