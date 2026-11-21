@@ -30,6 +30,7 @@ The root `CLAUDE.md` covers the rules, minerals, business model, brand and check
 - **Forced run:** the live brief keeps the text it was written with. After a wording change in `feed_brief`, or a deadline change, run Actions → Update with `force`, or wait for Monday. Merge changes that must reach the Monday emails before the first Monday run (00:17 UTC).
 - **No relative dates baked into stored text** (audit 14 Nov 2026): the brief stays on the page for a week, so it gives only the date; the atlas counts the days itself. Emails count days with `_in_days()` (today / tomorrow / in N days, dnes / zítra / za N dní), never "in 1 days".
 - **News noise:** `NEWS_BLOCK` drops stock-ticker and price-spam domains. Adding a domain also removes the automatic stories from it that are already on the page.
+- **One story, one line** (PR with build 73): `clean_title()` undoes GDELT's spaced punctuation ("Africa : Kenya", "US - Led") but keeps a real "Title - Source" dash; `news_dupe()` drops an automatic story when an automatic one within ±2 days shares ≥60 % of the shorter headline's words and at least two of them are not generic (`NEWS_GENERIC`, mineral words). Both also run over the stories already on the page; the first one found stays.
 
 ## Email (`send_mail()`)
 - **Free Monday brief**, built for each subscriber's minerals and language.

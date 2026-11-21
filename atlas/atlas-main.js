@@ -1259,7 +1259,8 @@ const globe = (function initGlobe() {
   if (HI_TEX) window.addEventListener("globe-tex", function hiOnce(e) {
     if (e.detail !== 3) return;
     window.removeEventListener("globe-tex", hiOnce);
-    whenIdle(() => { hiTex("textures/earth-day-hi.jpg", "dayMap", 3, "textures/earth-day.jpg"); hiTex("textures/earth-night-hi.jpg", "nightMap", 3, "textures/earth-night.jpg"); hiTex("textures/earth-water.jpg", "specMap", 2); }, 1200);
+    /* build 73: no 4k maps on the server (the requests only gave two 404s on every desktop load): go straight to the 2k ones */
+    whenIdle(() => { hiTex("textures/earth-day.jpg", "dayMap", 2); hiTex("textures/earth-night.jpg", "nightMap", 2); hiTex("textures/earth-water.jpg", "specMap", 2); }, 1200);
   });
   fetch("data/borders.json").then((r) => r.ok ? r.json() : null).then((rings) => {
     if (!Array.isArray(rings)) return;
@@ -4175,10 +4176,8 @@ function renderMiniWire() {
   const ms = String(el.dataset.m || "").split(",");
   if (wireState !== "ready") { el.innerHTML = ""; return; }
   const items = NEWS.filter((n) => touches(n, ms)).slice(0, 3);
-  el.innerHTML = items.length ? `<h3>In the news</h3>` + items.map((n) => {
-    const url = safeUrl(n.url);
-    return `<div class="mini-item">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(n.title)}</a>` : esc(n.title)}<span class="meta">${esc(fmtDay(n.date))} · ${esc(n.source || "")}</span></div>`;
-  }).join("") : "";
+  el.innerHTML = items.length ? `<h3>${T("In the news", "Ve zprávách")}</h3>` + items.map((n) =>
+    `<div class="mini-item">${newsLink(n)}<span class="meta">${newsEn(n) ? "EN · " : ""}${esc(fmtDay(n.date))} · ${esc(n.source || "")}</span></div>`).join("") : "";
 }
 
 const briefBody = $("#brief-body"), briefH = $("#brief-h"), briefEyebrow = $("#brief-eyebrow");
@@ -5351,6 +5350,10 @@ function allDeadlines() {
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 const deadlinesFor = (m) => allDeadlines().filter((w) => (!m || (Array.isArray(w.materials) && w.materials.includes(m))) && (daysUntil(w.date) === null || daysUntil(w.date) >= 0));
+/* build 73: an English headline on the Czech page says so ("EN · ") and carries lang="en" in every news list, not only the news panel */
+const newsEn = (n) => LANG === "cs" && !n.title_cs && (n.lang || "en") === "en";
+const newsTitle = (n) => (LANG === "cs" && n.title_cs) || n.title;
+const newsLink = (n) => { const url = safeUrl(n.url), la = newsEn(n) ? ' lang="en"' : ""; return url ? `<a href="${esc(url)}" target="_blank" rel="noopener"${la}>${esc(newsTitle(n))}</a>` : `<span${la}>${esc(newsTitle(n))}</span>`; };
 function newsFor(ms, days) {
   const now = new Date(), today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   return NEWS.filter((n) => touches(n, ms) && !isNaN(parseDay(n.date)) && (today - parseDay(n.date)) / 86400000 <= days);
@@ -5518,7 +5521,7 @@ monPick.addEventListener("click", (e) => {
 window.ooSetMy = (list) => { const want = ORDER.filter((x) => (list || []).includes(x)); if (!want.length) return; MY = want; saveMy(); renderMonday(); };
 function changesForV13(ms) {
   const items = [];
-  newsFor(ms, 7).slice(0, 6).forEach((n) => items.push({ kind: "news", d: n.date, html: `${safeUrl(n.url) ? `<a href="${esc(safeUrl(n.url))}" target="_blank" rel="noopener">${esc(n.title)}</a>` : esc(n.title)}<span class="ch-meta">${esc(fmtDay(n.date))}${n.source ? ` · ${esc(n.source)}` : ""}</span>`, text: n.title, src: n.source || "" }));
+  newsFor(ms, 7).slice(0, 6).forEach((n) => items.push({ kind: "news", d: n.date, html: `${newsLink(n)}<span class="ch-meta">${newsEn(n) ? "EN · " : ""}${esc(fmtDay(n.date))}${n.source ? ` · ${esc(n.source)}` : ""}</span>`, text: newsTitle(n), src: n.source || "" }));
   if (HZ.length) nearSupplyChain().filter((x) => x.sites.some((y) => ms.includes(y.s.m))).slice(0, 3).forEach((x) => {
     const y = x.sites.find((z) => ms.includes(z.s.m));
     const t = T(`${x.h.title || x.h.short}: ${Math.round(y.d)} km from ${y.s.name}`, `${x.h.title || x.h.short}: ${Math.round(y.d)} km od lokality ${y.s.name}`);
