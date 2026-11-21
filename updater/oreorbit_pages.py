@@ -929,10 +929,6 @@ def _conc_rows(conc, last, names, cs=False):
     return "".join(rows)
 
 
-def _basket_txt(names, cs=False):
-    return "; ".join("%s %s" % (e(MAT_CS.get(m, m) if cs else names.get(m, m)), ", ".join(INDEX_BASKET[m])) for m in INDEX_TEN if m in INDEX_BASKET)
-
-
 def _changelog(cs=False):
     return "".join("<li><b>%s</b> · %s</li>" % (e(d), e(t)) for d, t in (INDEX_CHANGELOG_CS if cs else INDEX_CHANGELOG))
 
@@ -1019,8 +1015,7 @@ def dependency_page(ref, live, today):
 <li>The window ends with the latest month Eurostat has published. It covers at least three months and grows one month at a time, up to twelve, until the mineral's imports reach %(minv)s, so a market with few shipments is measured over enough deliveries. A month weighs only what it is worth.</li>
 <li>The index is the plain average of the ten shares, so a small but critical mineral such as gallium counts as much as lithium.</li>
 <li>Magnesium and manganese, added in November 2026, are tracked separately so the index stays comparable over time.</li>
-<li>Values, imports from outside the EU only; a tonnes version and a value-weighted version are shown as checks. Updated automatically when Eurostat publishes a new month, usually about six weeks after the month ends. Eurostat revises recent months; the value first published for each month is kept next to the current one.</li></ul>
-<p class="small">Products counted (Combined Nomenclature codes): %(basket)s.</p></section>
+<li>Values, imports from outside the EU only; a tonnes version and a value-weighted version are shown as checks. Updated automatically when Eurostat publishes a new month, usually about six weeks after the month ends. Eurostat revises recent months; the value first published for each month is kept next to the current one.</li></ul></section>
 <section id="versions"><h2>Version 3, from %(v3)s</h2><p>Version 3 follows the forms industry actually buys: tungsten as APT, carbide and powder as well as ore, titanium as wrought metal, nickel as alloys. It drops titanium ores, most of which go into white pigment rather than metal. A mineral whose imports from outside the EU stay under %(minv)s in three months is measured over a longer window, so one delivery cannot swing it. The whole series back to January 2022 uses version 3; every <a href="#months">monthly page</a> keeps the value first published for that month.</p><ul class="plain">%(log)s</ul></section>
 <section><h2>Version 2, %(v2)s</h2><p>Until %(v2)s the headline was a single month. Single months swung by up to %(swing)d points from one month to the next when few shipments arrived, so version 2 added up three months.%(m1)s</p></section>
 <section><h2>Embed this chart</h2><p>Paste this code into an article or a blog post. The chart updates itself every month and credits OreOrbit.</p>
@@ -1030,7 +1025,7 @@ def dependency_page(ref, live, today):
         "embed": e('<iframe src="' + BASE + 'p/embed-index.html" width="100%" height="420" style="border:0;max-width:760px" title="OreOrbit Dependency Index" loading="lazy"></iframe>'),
         "month": e(month_txt(last["month"])), "win": e(win), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
         "chart": index_chart(series, single=True), "quote": e(quote), "trs": trs, "thin": e(thin_note), "supply": supply, "outside": outside,
-        "v2": INDEX_V2_FROM, "v3": INDEX_V3_FROM, "swing": _max_swing(series), "minv": e(_eur_txt(INDEX_MIN_EUR)), "basket": _basket_txt(names), "log": _changelog(),
+        "v2": INDEX_V2_FROM, "v3": INDEX_V3_FROM, "swing": _max_swing(series), "minv": e(_eur_txt(INDEX_MIN_EUR)), "log": _changelog(),
         "rev": rev_p, "drivers": drivers_p, "robust": robust, "conc": conc_s,
         "m1": (" Under the single-month method, %s reads %d%%." % (e(month_txt(last["month"])), round(m1 * 100))) if m1 is not None else "",
         "cite": cite_box(title, path, today)}
@@ -1230,15 +1225,14 @@ def dependency_page_cs(ref, live, today):
 <li>Okno končí posledním měsícem, který Eurostat zveřejnil. Má nejméně tři měsíce a prodlužuje se po jednom měsíci, nejvýš na dvanáct, dokud dovoz suroviny nedosáhne %(minv)s, takže trh s málo zásilkami se měří přes dost dodávek. Měsíc s málo zásilkami váží jen tolik, kolik v něm skutečně dorazilo.</li>
 <li>Index je prostý průměr deseti podílů, takže malá, ale kritická surovina jako galium váží stejně jako lithium.</li>
 <li>Hořčík a mangan, přidané v listopadu 2026, sledujeme zvlášť, aby index zůstal srovnatelný v čase.</li>
-<li>Hodnoty, jen dovoz ze zemí mimo EU; verzi podle tun a verzi váženou hodnotou ukazujeme jako kontrolu. Obnovuje se automaticky, jakmile Eurostat zveřejní nový měsíc, obvykle zhruba šest týdnů po jeho konci. Eurostat poslední měsíce zpřesňuje; první zveřejněnou hodnotu každého měsíce uchováváme vedle současné.</li></ul>
-<p class="small">Započtené produkty (kódy kombinované nomenklatury): %(basket)s.</p></section>
+<li>Hodnoty, jen dovoz ze zemí mimo EU; verzi podle tun a verzi váženou hodnotou ukazujeme jako kontrolu. Obnovuje se automaticky, jakmile Eurostat zveřejní nový měsíc, obvykle zhruba šest týdnů po jeho konci. Eurostat poslední měsíce zpřesňuje; první zveřejněnou hodnotu každého měsíce uchováváme vedle současné.</li></ul></section>
 <section id="versions"><h2>Verze 3, od prosince 2026</h2><p>Verze 3 sleduje podoby, které průmysl skutečně nakupuje: wolfram jako parawolframan amonný, karbid a prášek, nejen rudu, titan jako tvářený kov, nikl jako slitiny. Vypouští titanové rudy, které z většiny končí v bílém pigmentu, ne v kovu. Surovina, jejíž dovoz ze zemí mimo EU za tři měsíce nedosáhne %(minv)s, se měří za delší okno, aby s ní nepohnula jediná dodávka. Celá řada od ledna 2022 počítá verzí 3; každá měsíční stránka (anglicky) uchovává hodnotu, která byla pro daný měsíc zveřejněna jako první.</p><ul class="plain">%(log)s</ul></section>
 <section><h2>Verze 2, listopad 2026</h2><p>Do listopadu 2026 byl titulním číslem jediný měsíc. Když dorazilo málo zásilek, skočil podíl z měsíce na měsíc až o %(sw)d %(swb)s, a proto verze 2 sečetla tři měsíce.%(m1)s</p></section>
 %(cite)s
 <p class="open"><a class="cta" href="../?lang=cs">Suroviny na živém atlasu</a></p></article>""" % {
         "gen": e(mon_gen), "win": e(win), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
         "chart": index_chart(series, single=True), "quote": e(quote), "trs": trs, "thin": e(thin_note), "supply": supply, "outside": outside,
-        "sw": sw, "swb": _body_cs(sw), "minv": e(_eur_txt(INDEX_MIN_EUR, cs=True)), "basket": _basket_txt({}, cs=True), "log": _changelog(cs=True),
+        "sw": sw, "swb": _body_cs(sw), "minv": e(_eur_txt(INDEX_MIN_EUR, cs=True)), "log": _changelog(cs=True),
         "rev": rev_p, "drivers": drivers_p, "robust": robust, "conc": conc_s,
         "m1": (" Podle metody jednoho měsíce vychází %s na %d %%." % (e(mon_nom), round(m1 * 100))) if m1 is not None else "",
         "cite": cite_box_cs(title, path, today)}
