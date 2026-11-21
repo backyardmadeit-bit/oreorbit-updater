@@ -39,7 +39,8 @@ def main():
     live = {"trade": get("live-data/live/trade.json", {}), "imagery": get("data/imagery.json", {}),
             "extras": get("data/orbit-extras.json", {}), "hotspots": get("live-data/live/hotspots.json", {}),
             "so2": get("live-data/live/so2.json", {}), "conflict": get("live-data/live/conflict.json", {}),
-            "news": get("live-data/news.json", []), "briefs": get("live-data/briefs.json", [])}
+            "news": get("live-data/news.json", []), "briefs": get("live-data/briefs.json", []),
+            "depindex": get("live-data/live/depindex.json", {})}
     txt = open(os.path.join(ROOT, "atlas/config.js"), encoding="utf-8").read()
     cfg = {k: v for k, v in re.findall(r'(\w+)\s*:\s*"([^"]*)"', txt) if v}
     pages = P.build(ref, live, cfg, date.today().isoformat())

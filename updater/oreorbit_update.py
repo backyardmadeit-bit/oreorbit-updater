@@ -901,6 +901,15 @@ TRADE_CODES = {
     "mg": [("810411", "Unwrought magnesium, 99.8% or more"), ("810419", "Other unwrought magnesium")],
     "mn": [("811100", "Manganese metal and articles"), ("260200", "Manganese ores")],
 }
+# Dependency Index version 3 (Dec 2026): further products of the index basket, fetched like TRADE_CODES and stored under
+# trade.json["basket"] so the atlas's trade cards stay as they are. The pages decide which codes the index counts (INDEX_BASKET).
+TRADE_BASKET = {
+    "ti": [("810890", "Wrought titanium and articles")],
+    "w": [("284180", "Ammonium paratungstate (APT)"), ("28499030", "Tungsten carbide"), ("810110", "Tungsten powders"),
+          ("810199", "Other tungsten articles"), ("28259040", "Tungsten oxides and hydroxides")],
+    "ni": [("750220", "Unwrought nickel alloys")],
+}
+TRADE_FROM = "2022-01"      # monthly history kept from here on, so old months never roll off (index archive, vintages)
 # Czech names of the trade items for Czech text (the same wording as the atlas's CS dictionary)
 TRADE_CS = {"Cobalt mattes and unwrought cobalt": "kobaltové kamínky a surový kobalt", "Cobalt oxides and hydroxides": "oxidy a hydroxidy kobaltu",
             "Unwrought gallium": "surové galium", "Unwrought germanium": "surové germanium", "Artificial graphite": "syntetický grafit",
@@ -909,7 +918,10 @@ TRADE_CS = {"Cobalt mattes and unwrought cobalt": "kobaltové kamínky a surový
             "Rare-earth compounds": "sloučeniny vzácných zemin", "Rare-earth metals": "kovy vzácných zemin", "Unwrought antimony": "surový antimon",
             "Antimony oxides": "oxidy antimonu", "Unwrought titanium (sponge)": "surový titan (houba)", "Titanium ores": "titanové rudy",
             "Unwrought tungsten": "surový wolfram", "Tungsten ores": "wolframové rudy", "Unwrought magnesium, 99.8% or more": "neopracovaný hořčík, nejméně 99,8 %",
-            "Other unwrought magnesium": "ostatní neopracovaný hořčík", "Manganese metal and articles": "kovový mangan a výrobky z něj", "Manganese ores": "manganové rudy"}
+            "Other unwrought magnesium": "ostatní neopracovaný hořčík", "Manganese metal and articles": "kovový mangan a výrobky z něj", "Manganese ores": "manganové rudy",
+            "Wrought titanium and articles": "tvářený titan a výrobky z něj", "Ammonium paratungstate (APT)": "parawolframan amonný (APT)",
+            "Tungsten carbide": "karbid wolframu", "Tungsten powders": "wolframový prášek", "Other tungsten articles": "ostatní výrobky z wolframu",
+            "Tungsten oxides and hydroxides": "oxidy a hydroxidy wolframu", "Unwrought nickel alloys": "surové slitiny niklu"}
 
 
 def jsonstat_rows(j):
@@ -972,11 +984,17 @@ TRADE_TOP_PARTNERS = 8      # partners kept per product in monthly["by"]
 def trade_one(code):
     y = TODAY.year
     tdim = lambda r: r.get("time") or r.get("TIME_PERIOD")
-    # monthly, every partner, since January last year
-    m = comext({"freq": "M", "product": code, "indicators": "VALUE_IN_EUROS", "sinceTimePeriod": "%d-01" % (y - 1)})
-    cn, ext, by = {}, {}, {}
+    # monthly, every partner, value and quantity, since TRADE_FROM (fixed, so history only grows)
+    m = comext({"freq": "M", "product": code, "indicators": ["VALUE_IN_EUROS", "QUANTITY_IN_100KG"], "sinceTimePeriod": TRADE_FROM})
+    cn, ext, by, cn_t, ext_t = {}, {}, {}, {}, {}
     for r, v in jsonstat_rows(m):
-        t, p = tdim(r), r.get("partner")
+        t, p, ind = tdim(r), r.get("partner"), r.get("indicators")
+        if ind == "QUANTITY_IN_100KG":
+            if p == "CN":
+                cn_t[t] = cn_t.get(t, 0) + v / 10
+            if is_ext(p):
+                ext_t[t] = ext_t.get(t, 0) + v / 10
+            continue
         if p == "CN":
             cn[t] = cn.get(t, 0) + v
         if is_ext(p):
@@ -986,12 +1004,13 @@ def trade_one(code):
     months = sorted(set(cn) | set(ext))
     if not months:
         raise RuntimeError("no monthly data for %s" % code)
-    start, last = dt.date(y - 1, 1, 1), months[-1]
+    start, last = dt.date(int(TRADE_FROM[:4]), int(TRADE_FROM[5:7]), 1), months[-1]
     seq, d = [], start
     while d.strftime("%Y-%m") <= last:
         seq.append(d.strftime("%Y-%m"))
         d = dt.date(d.year + (d.month == 12), d.month % 12 + 1, 1)
-    monthly = {"cn": [round(cn.get(k, 0)) for k in seq], "ext": [round(ext.get(k, 0)) for k in seq], "from": seq[0]}
+    monthly = {"cn": [round(cn.get(k, 0)) for k in seq], "ext": [round(ext.get(k, 0)) for k in seq], "from": seq[0],
+               "cn_t": [round(cn_t.get(k, 0), 1) for k in seq], "ext_t": [round(ext_t.get(k, 0), 1) for k in seq]}
     # the biggest extra-EU suppliers of the last 12 months, month by month (the Dependency Index's "who supplies" list)
     recent = seq[-12:]
     big = sorted(by, key=lambda p: -sum(by[p].get(k, 0) for k in recent))[:TRADE_TOP_PARTNERS]
@@ -1020,29 +1039,32 @@ def trade_one(code):
 
 def feed_trade(prev):
     prev = prev or {}
-    mats = {k: list(v) for k, v in (prev.get("materials") or {}).items()}
-    ok, errors = 0, []
-    for m, codes in TRADE_CODES.items():
-        rows = []
-        for code, label in codes:
-            old = next((r for r in mats.get(m, []) if r.get("code") == code), None)
-            try:
-                monthly, years = trade_one(code)
-                rows.append({"code": code, "label": label, "monthly": monthly, "years": years})
-                ok += 1
-            except Exception as e:
-                errors.append("%s %s" % (code, str(e)[:120]))
-                if old:
-                    rows.append(old)
-            time.sleep(1)
-        if rows:
-            mats[m] = rows
+    ok, errors, total = 0, [], 0
+    out = dict(prev)
+    for key, table in (("materials", TRADE_CODES), ("basket", TRADE_BASKET)):
+        mats = {k: list(v) for k, v in (prev.get(key) or {}).items()}
+        for m, codes in table.items():
+            rows = []
+            for code, label in codes:
+                total += 1
+                old = next((r for r in mats.get(m, []) if r.get("code") == code), None)
+                try:
+                    monthly, years = trade_one(code)
+                    rows.append({"code": code, "label": label, "monthly": monthly, "years": years})
+                    ok += 1
+                except Exception as e:
+                    errors.append("%s %s" % (code, str(e)[:120]))
+                    if old:
+                        rows.append(old)
+                time.sleep(1)
+            if rows:
+                mats[m] = rows
+        out[key] = mats
     if not ok:
         raise RuntimeError("; ".join(errors[:3]))
-    out = dict(prev)
-    out.update({"fetchedAt": iso(), "materials": mats, "source": "Eurostat Comext, EU trade by CN8 (DS-045409)", "unit": "EUR; tonnes",
+    out.update({"fetchedAt": iso(), "source": "Eurostat Comext, EU trade by CN8 (DS-045409)", "unit": "EUR; tonnes",
                 "url": "https://ec.europa.eu/eurostat/comext/newxtweb/"})
-    return out, "ok (%d of %d products%s)" % (ok, sum(len(v) for v in TRADE_CODES.values()), ("; failed: " + "; ".join(errors[:3])) if errors else "")
+    return out, "ok (%d of %d products%s)" % (ok, total, ("; failed: " + "; ".join(errors[:3])) if errors else "")
 
 
 SO2_SITES = ["ganzhou", "imip", "kokkola", "norilsk", "panzhihua", "xikuangshan"]
@@ -1251,7 +1273,8 @@ def upload_bytes(path, body):
         return "dry run"
     if REMOTE.get(path, {}).get("md5") == hashlib.md5(body).hexdigest():
         return "unchanged"
-    ctype = {"png": "image/png", "jpg": "image/jpeg", "html": "text/html; charset=utf-8", "xml": "application/xml"}[path.rsplit(".", 1)[-1]]
+    ctype = {"png": "image/png", "jpg": "image/jpeg", "html": "text/html; charset=utf-8", "xml": "application/xml",
+             "csv": "text/csv; charset=utf-8", "json": "application/json"}[path.rsplit(".", 1)[-1]]
     r = json.loads(http(BASE + "update.php?f=" + urllib.parse.quote(path, safe="/"), data=body,
                         headers={"X-Atlas-Key": KEY, "Content-Type": ctype}, method="POST", timeout=120).decode("utf-8"))
     if not r.get("ok"):
@@ -2176,7 +2199,8 @@ def feed_pages(prev):
     get = lambda path: current(path) or {}
     live = {"trade": get("live-data/live/trade.json"), "imagery": get("data/imagery.json"), "extras": get("data/orbit-extras.json"),
             "hotspots": get("live-data/live/hotspots.json"), "so2": get("live-data/live/so2.json"), "conflict": get("live-data/live/conflict.json"),
-            "news": current("live-data/news.json") or [], "briefs": current("live-data/briefs.json") or []}
+            "news": current("live-data/news.json") or [], "briefs": current("live-data/briefs.json") or [],
+            "depindex": current("live-data/live/depindex.json") or {}}      # the index as first published, per month (vintages)
     cfg = {}
     try:
         txt = http(BASE + "config.js?u=%d" % time.time(), timeout=30).decode("utf-8", "replace")
@@ -2601,8 +2625,9 @@ def send_mail():
                 _sh = ((last or {}).get("per") or {}).get(m)
                 if _sh is None: _sh = ((last or {}).get("extra") or {}).get(m)
                 eu = round(_sh * 100) if _sh is not None else None
+                _w = int(((last or {}).get("win") or {}).get(m) or 3)       # index v3: a thin mineral adds up more months
                 status.append("<b>%s</b>%s%s" % (_esc(nm), (" · " + _esc(("nejužší fáze: " if cs else "tightest stage: ") + lead)) if lead else "",
-                              (" · " + _esc(("Čína dodala %d %% dovozu do EU za poslední 3 měsíce" % eu) if cs else ("China supplied %d%% of EU imports over the last 3 months" % eu))) if eu is not None else ""))
+                              (" · " + _esc(("Čína dodala %d %% dovozu do EU za posledních %d %s" % (eu, _w, "měsíce" if _w < 5 else "měsíců")).replace("posledních 3 měsíce", "poslední 3 měsíce").replace("posledních 4 měsíce", "poslední 4 měsíce") if cs else ("China supplied %d%% of EU imports over the last %d months" % (eu, _w)))) if eu is not None else ""))
                 soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
                 if soon:
                     k = (dt.date.fromisoformat(soon[0]["date"]) - TODAY).days
@@ -2820,10 +2845,13 @@ def main():
                 st.update({"ok": iso(), "fails": 0, "status": note})
                 note = note + " · %d files sent" % len(obj)
             elif name == "pages":
-                res = [upload_bytes(p, h.encode("utf-8")) for p, h in obj.items()]
+                # pages first, the index CSV and the vintage file (live-data/live/depindex.json) last
+                items = sorted(obj.items(), key=lambda kv: not kv[0].endswith((".html", ".xml")))
+                res = [upload_bytes(p, h if isinstance(h, bytes) else h.encode("utf-8")) for p, h in items]
                 sent = sum(1 for r in res if r != "unchanged")
-                st.update({"ok": iso(), "fails": 0, "status": "ok (%d pages)" % len(obj)})
-                note = "ok (%d pages and the sitemap, %d changed)" % (len(obj) - 1, sent)
+                npg = sum(1 for p in obj if p.endswith(".html"))
+                st.update({"ok": iso(), "fails": 0, "status": "ok (%d pages)" % npg})
+                note = "ok (%d pages, the sitemap and %d data files, %d changed)" % (npg, len(obj) - npg - 1, sent)
             elif name == "clouds":
                 res = [upload(p, o) for p, o in obj.items()]
                 st.update({"ok": iso(), "fails": 0, "status": note})
