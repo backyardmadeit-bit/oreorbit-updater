@@ -317,16 +317,15 @@ def river_levels(prev):
                 out.append(old[r["id"]])
     return out, "%d of %d river gauges" % (ok, len(RIVERS))
 
+def _river_txt(r, cs):
+    """One gauge as an email line: "Rhine, Kaub: 78 cm · low water: barges carry less cargo"."""
+    what = {"low": ("nízká voda: lodě vezou méně nákladu" if cs else "low water: barges carry less cargo"), "high": ("vysoká voda: plavba může být omezená" if cs else "high water: shipping may be restricted")}.get(r.get("state"), "")
+    return _esc("%s, %s: %s cm%s" % ((r.get("river_cs") if cs else r.get("river")) or "", r.get("name", ""), r.get("cm", "?"), (" · " + what) if what else ""))
+
 def river_lines(cs, only_unusual=True):
     """For the emails: the gauges that are low or high (a line each)."""
     rv = (current("live-data/live/hazards.json") or {}).get("rivers") or []
-    lines = []
-    for r in rv:
-        if only_unusual and r.get("state") not in ("low", "high"):
-            continue
-        what = {"low": ("nízká voda: lodě vezou méně nákladu" if cs else "low water: barges carry less cargo"), "high": ("vysoká voda: plavba může být omezená" if cs else "high water: shipping may be restricted")}.get(r.get("state"), "")
-        lines.append(_esc("%s, %s: %s cm%s" % ((r.get("river_cs") if cs else r.get("river")) or "", r.get("name", ""), r.get("cm", "?"), (" · " + what) if what else "")))
-    return lines
+    return [_river_txt(r, cs) for r in rv if not only_unusual or r.get("state") in ("low", "high")]
 
 def feed_scenes(prev):
     prev = prev or {}
@@ -2286,29 +2285,185 @@ def _day(iso, cs):
     return ("%d. %d. %d" % (d.day, d.month, d.year)) if cs else d.strftime("%-d %b %Y")
 
 
-def _mail_html(cs, kicker, title, lede, sections, unsub):
-    """A plain, readable email in the OreOrbit style: white page, dark text, green accents."""
-    rows = ""
-    for head, items in sections:
-        if not items:
+# ---- the email look (mail v2, 21 November 2026). Every mineral is a chip (its atlas colour + symbol, never the colour
+# alone); numbers are the Dependency Index numbers, so the email, the atlas and the Excel file say the same thing.
+MAIL_COL = [("ree", "Nd", "#a78bfa"), ("ti", "Ti", "#fb923c"), ("w", "W", "#facc15"), ("sb", "Sb", "#a9b8cc"), ("mg", "Mg", "#2dd4bf"),
+            ("mn", "Mn", "#e879f9"), ("ga", "Ga", "#22d3ee"), ("ge", "Ge", "#4ade80"), ("li", "Li", "#f472b6"), ("co", "Co", "#60a5fa"),
+            ("ni", "Ni", "#a3e635"), ("gr", "C", "#e4e4e7")]
+_SYM = {m: s for m, s, c in MAIL_COL}
+_CLR = {m: c for m, s, c in MAIL_COL}
+_INK, _MUTE, _LINE, _GREEN = "#13171a", "#5b6267", "#e6e8e5", "#0f6b46"
+_FONT, _MONO = "Arial,Helvetica,sans-serif", "Menlo,Consolas,monospace"
+
+
+def _chip(m):
+    return ('<span style="display:inline-block;white-space:nowrap;font:600 12px %s;color:%s;border:1px solid %s;border-radius:999px;padding:1px 8px 1px 6px;margin:0 4px 2px 0">'
+            '<span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:%s;margin-right:5px;vertical-align:0"></span>%s</span>') % (_MONO, _INK, _LINE, _CLR[m], _SYM[m])
+
+
+def _chips(ms, mins=None):
+    return "".join(_chip(m) for m in (ms or []) if m in _SYM and (not mins or m in mins))
+
+
+def _mhead(txt):
+    return '<tr><td style="padding:26px 0 8px;font:12px/1.4 %s;color:%s">%s</td></tr>' % (_MONO, _MUTE, _esc(txt))
+
+
+def _mrow(html):
+    return '<tr><td style="padding:12px 0;border-top:1px solid %s;font:15px/1.5 %s;color:%s">%s</td></tr>' % (_LINE, _FONT, _INK, html)
+
+
+def _mnote(txt):
+    return '<tr><td style="padding:6px 0 0;font:12px/1.5 %s;color:%s">%s</td></tr>' % (_FONT, _MUTE, _esc(txt))
+
+
+def _mbar(pct, w=110):
+    """A small bar for a share (0-100), as two table cells so every mail app draws it."""
+    pct = max(0, min(100, pct or 0))
+    on = max(1, round(w * pct / 100)) if pct else 0
+    cells = ('<td width="%d" style="width:%dpx;height:6px;background:%s;border-radius:3px 0 0 3px;font-size:0;line-height:0">&nbsp;</td>' % (on, on, _INK)) if on else ""
+    cells += '<td style="height:6px;background:#dfe2de;font-size:0;line-height:0">&nbsp;</td>'
+    return '<table role="presentation" cellpadding="0" cellspacing="0" width="%d" style="width:%dpx;margin-top:6px"><tr>%s</tr></table>' % (w, w, cells)
+
+
+def _mbox(html, soft=False):
+    bg, bd = ("#f6f7f4", _LINE) if soft else ("#eef7f2", "#cfe8db")
+    return ('<tr><td style="padding:14px 0 0"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0"><tr><td style="background:%s;border:1px solid %s;'
+            'border-radius:10px;padding:14px 16px;font:15px/1.55 %s;color:%s">%s</td></tr></table></td></tr>') % (bg, bd, _FONT, _INK, html)
+
+
+def _pill(n, cs):
+    """Days to a deadline; black when two weeks or less are left."""
+    txt = ("dnes" if cs else "today") if n == 0 else ("zítra" if cs else "tomorrow") if n == 1 else \
+          ("%d %s" % (n, _cs_pl(n, "den", "dny", "dní")) if cs else "%d days" % n)
+    urgent = n <= 14
+    return '<span style="display:inline-block;white-space:nowrap;font:600 12px %s;color:%s;background:%s;border-radius:999px;padding:2px 9px">%s</span>' % (
+        _MONO, "#ffffff" if urgent else _INK, "#050607" if urgent else "#eceee9", _esc(txt))
+
+
+def _pct(x, cs):
+    return ("%d %%" if cs else "%d%%") % x
+
+
+def _share(rec, m):
+    """China's share for a mineral in a Dependency Index record: the ten index minerals, then magnesium and manganese."""
+    v = ((rec or {}).get("per") or {}).get(m)
+    return ((rec or {}).get("extra") or {}).get(m) if v is None else v
+
+
+def _names(ms, cs):
+    """"Tungsten, gallium and germanium" / "Wolfram, gallium a germanium"."""
+    n = [MAT_NAME[m][1 if cs else 0] for m in ms if m in MAT_NAME]
+    n = n[:1] + [x.lower() for x in n[1:]]
+    if len(n) <= 1:
+        return "".join(n)
+    return ", ".join(n[:-1]) + (" a " if cs else " and ") + n[-1]
+
+
+def _cap(s):
+    return s[:1].upper() + s[1:]
+
+
+def _month(k, cs):
+    """'2026-09' -> 'September 2026' / 'září 2026' (Czech in the genitive, as after "do")."""
+    try:
+        y, mo = int(str(k)[:4]), int(str(k)[5:7])
+    except ValueError:
+        return str(k)
+    if not 1 <= mo <= 12:
+        return str(k)
+    return ("%s %d" % (MON_CS[mo - 1], y)) if cs else ("%s %d" % (MONTH_EN[mo - 1], y))
+
+
+def _stage(ref, m, cs):
+    """'Tightest stage: China 79% of mining', from reference.json, worded as on the library pages."""
+    R = (ref.get("materials") or {}).get(m) or {}
+    try:
+        import oreorbit_pages as _P
+        t = _P._tight(R, m, cs)
+    except Exception:
+        x = (R.get("worst") or {}).get("x") or {}
+        t = ("%s %s" % (x.get("who"), x.get("txt") or ("%s%%" % x.get("pct")))) if x.get("pct") else ("Čína vede v rafinaci" if cs else "China leads refining")
+    return ("Nejužší fáze: " if cs else "Tightest stage: ") + t
+
+
+def _page_url(m):
+    try:
+        import oreorbit_pages as _P
+        return BASE + "p/%s.html" % _P.SLUG.get(m, m)
+    except Exception:
+        return BASE
+
+
+def _news_row(n, mins, cs):
+    """A news item: its minerals as chips, date and source, the headline and a link."""
+    t = (cs and n.get("title_cs")) or n.get("title") or ""
+    d = str(n.get("date") or n.get("addedAt") or "")[:10]
+    meta = " · ".join(x for x in (_day(d, cs) if d else "", n.get("source") or "", "EN" if (cs and not n.get("title_cs")) else "") if x)
+    url = str(n.get("url") or "")
+    link = (' <a href="%s" style="color:%s">%s</a>' % (_esc(url), _GREEN, "Číst" if cs else "Read")) if url.startswith("http") else ""
+    return _mrow('%s<span style="font:12px %s;color:%s">%s</span><br>%s%s' % (_chips(n.get("materials"), mins), _MONO, _MUTE, _esc(meta), _esc(t), link))
+
+
+def _other_row(term, it, cs):
+    d = str(it.get("d") or "")[:10]
+    meta = " · ".join(x for x in (_day(d, cs) if len(d) == 10 and d[0].isdigit() else "", it.get("s") or "", "EN" if cs else "") if x)
+    url = str(it.get("u") or "")
+    link = (' <a href="%s" style="color:%s">%s</a>' % (_esc(url), _GREEN, "Číst" if cs else "Read")) if url.startswith("http") else ""
+    return _mrow('<b>%s</b> <span style="font:12px %s;color:%s">· %s</span><br>%s%s' % (_esc(_other_label(term, cs)), _MONO, _MUTE, _esc(meta), _esc(it.get("t") or ""), link))
+
+
+_SUPPLY_RE = re.compile(r"\b(mine|mines|mined|miner|miners|mining|smelt\w*|refin\w*|export\w*|import\w*|supply|supplies|supplier\w*|price\w*|tariff\w*|"
+                        r"output|production|produc\w*|ore|ores|metal\w*|market\w*|ban|bans|banned|quota\w*|shortage\w*|stockpil\w*|deposit\w*|concentrate\w*)\b")
+
+
+def _other_clean(term, items):
+    """Stories for an other mineral, kept only when the headline names the mineral and is about supply: clean titles, no
+    repeats of the same story. A loose news search otherwise brings sport, celebrity and crime pages."""
+    o = _other_list()["by_id"].get(term) or {}
+    words = [str(w).lower() for w in (list(o.get("q") or []) + [o.get("en") or term] + list(o.get("aka") or [])) if w and len(str(w)) >= 3]
+    words = words or [term.lower()]
+    out, seen = [], []
+    for it in items or []:
+        t = clean_title(it.get("t") or "")
+        tl = t.lower()
+        if not t or not any(re.search(r"\b%s\b" % re.escape(w), tl) for w in words) or not _SUPPLY_RE.search(tl):
             continue
-        lis = "".join('<tr><td style="padding:10px 0;border-top:1px solid #e6e8e5;font:15px/1.5 Arial,sans-serif;color:#13171a">%s</td></tr>' % it for it in items)
-        rows += ('<tr><td style="padding:22px 0 6px;font:12px/1.4 Menlo,Consolas,monospace;color:#5b6267">%s</td></tr>%s' % (_esc(head), lis))
-    atlas = BASE + ("?lang=cs" if cs else "")
-    _h = ('<!doctype html><html><body style="margin:0;background:#f3f4f1"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f3f4f1"><tr><td align="center" style="padding:24px 12px">'
-            '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:14px">'
-            '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:24px 28px;font:600 16px Arial,sans-serif;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span><div style="margin-top:12px">' + "".join('<span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:%s;margin-right:4px"></span>' % c for c in ("#a78bfa", "#fb923c", "#facc15", "#a9b8cc", "#22d3ee", "#4ade80", "#f472b6", "#60a5fa", "#a3e635", "#e4e4e7")) + '</div></td></tr>'
-            '<tr><td style="padding:26px 28px 8px"><p style="margin:0 0 6px;font:12px Menlo,Consolas,monospace;color:#0f6b46">%s</p>'
-            '<h1 style="margin:0;font:600 24px/1.25 Arial,sans-serif;color:#050607">%s</h1><p style="margin:12px 0 0;font:15px/1.55 Arial,sans-serif;color:#3b4247">%s</p></td></tr>'
-            '<tr><td style="padding:0 28px"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0">%s</table></td></tr>'
-            '<tr><td style="padding:24px 28px"><a href="%s" style="display:inline-block;background:#050607;color:#eceee9;text-decoration:none;font:600 14px Arial,sans-serif;padding:12px 20px;border-radius:999px">%s</a></td></tr>'
-            '<tr><td style="padding:18px 28px 26px;border-top:1px solid #e6e8e5;font:12px/1.6 Arial,sans-serif;color:#868c90">%s<br>'
-            '<a href="%s" style="color:#868c90">%s</a></td></tr></table></td></tr></table></body></html>') % (
-        _esc("Kritické suroviny z oběžné dráhy" if cs else "Critical minerals from orbit"), _esc(kicker), _esc(title), _esc(lede), rows, atlas,
-        _esc("Otevřít atlas" if cs else "Open the atlas"),
-        _esc("Bohemia Defense · David Madali · IČO 22229957 · bohemiadefense.com/atlas"), unsub,
+        if news_dupe(t, str(it.get("d") or "")[:10], seen):
+            continue
+        seen.append({"title": t, "date": str(it.get("d") or "")[:10]})
+        out.append(dict(it, t=t))
+    return out
+
+
+def _mail_html(cs, kicker, title, lede, sections, unsub, body="", cta=None, foot_extra=""):
+    """A plain, readable email in the OreOrbit style: white page, dark text, green accents, the twelve mineral colours.
+    `sections` are simple (heading, [html items]) lists; `body` is ready table rows (_mhead, _mrow, _mbox ...)."""
+    rows = ""
+    for head, items in sections or []:
+        if items:
+            rows += _mhead(head) + "".join(_mrow(it) for it in items)
+    rows += body or ""
+    label, url = cta or (("Otevřít atlas" if cs else "Open the atlas"), BASE + ("?lang=cs" if cs else ""))
+    dots = "".join('<span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:%s;margin-right:4px"></span>' % c for m, s, c in MAIL_COL)
+    _h = ('<!doctype html><html lang="%s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">'
+          '<title>%s</title></head><body style="margin:0;background:#f3f4f1">'
+          '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f3f4f1"><tr><td align="center" style="padding:24px 10px">'
+          '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:14px">'
+          '<tr><td style="background:#050607;border-radius:14px 14px 0 0;padding:22px 24px;font:600 16px %s;color:#eceee9">OreOrbit <span style="font-weight:400;color:#a3aaae">· %s</span>'
+          '<div style="margin-top:12px">%s</div></td></tr>'
+          '<tr><td style="padding:24px 24px 4px"><p style="margin:0 0 6px;font:12px %s;color:%s">%s</p>'
+          '<h1 style="margin:0;font:600 24px/1.25 %s;color:#050607">%s</h1><p style="margin:10px 0 0;font:15px/1.55 %s;color:#3b4247">%s</p></td></tr>'
+          '<tr><td style="padding:0 24px"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0">%s</table></td></tr>'
+          '<tr><td style="padding:24px"><a href="%s" style="display:inline-block;background:#050607;color:#eceee9;text-decoration:none;font:600 14px %s;padding:12px 20px;border-radius:999px">%s</a></td></tr>'
+          '<tr><td style="padding:16px 24px 24px;border-top:1px solid %s;font:12px/1.6 %s;color:#868c90">%s%s<br>'
+          '<a href="%s" style="color:#868c90">%s</a></td></tr></table></td></tr></table></body></html>') % (
+        "cs" if cs else "en", _esc(title), _FONT, _esc("Kritické suroviny z oběžné dráhy" if cs else "Critical minerals from orbit"), dots,
+        _MONO, _GREEN, _esc(kicker), _FONT, _esc(title), _FONT, _esc(lede), rows, _esc(url), _FONT, _esc(label),
+        _LINE, _FONT, foot_extra, _esc("Bohemia Defense · David Madali · IČO 22229957 · bohemiadefense.com/atlas"), _esc(unsub),
         _esc("Odhlásit odběr" if cs else "Unsubscribe"))
     return _nb_cs(_h) if cs else _h
+
 
 def _mins_ok(item_mins, mins):
     return not mins or not item_mins or any(m in mins for m in item_mins)
@@ -2488,8 +2643,12 @@ def _data_files(mins, cs, week):
         import oreorbit_pages as _P
         import oreorbit_xlsx as _X
         trade, hs_file, so_file = _live_files()
+        try:
+            dep = _P.dependency_series(current("live-data/live/trade.json"))
+        except Exception:
+            dep = None
         att.append(("oreorbit-data-%s.xlsx" % week, _X.build(trade, hs_file, so_file, CFG["sites"], mins, "cs" if cs else "en", week, text,
-                                                           MAT_NAME, TRADE_CS, _P.CC_EN, _P.CC_CS)))
+                                                           MAT_NAME, TRADE_CS, _P.CC_EN, _P.CC_CS, dep=dep)))
     except Exception as ex:
         log("mail      Excel file for one client failed, sending the CSV only: %s" % str(ex)[:100])
     att.append(("oreorbit-data-%s.csv" % week, text))
@@ -2519,6 +2678,265 @@ def _deliv(state, to, subj, ok, err=""):
     lg = state.setdefault("log", [])
     lg.append({"d": iso(), "e": (to or "").lower(), "k": _kind(subj), "ok": 1 if ok else 0, **({"err": err} if err else {})})
     del lg[:-1500]
+
+def _link(url, txt):
+    return '<a href="%s" style="color:%s">%s</a>' % (_esc(url), _GREEN, _esc(txt))
+
+
+def _two(left, right, rw=110):
+    """A row with text on the left and a number + bar on the right (a table, so mail apps keep it side by side)."""
+    return ('<table role="presentation" width="100%%" cellpadding="0" cellspacing="0"><tr><td valign="top" style="font:15px/1.5 %s;color:%s;padding-right:10px">%s</td>'
+            '<td valign="top" align="right" width="%d" style="width:%dpx;white-space:nowrap">%s</td></tr></table>') % (_FONT, _INK, left, rw, rw, right)
+
+
+def _thin(w, cs):
+    if w <= 3:
+        return ""
+    return (" · delší okno (%d %s), malý objem obchodu" % (w, _cs_pl(w, "měsíc", "měsíce", "měsíců"))) if cs else (" · %d-month window, thin trade" % w)
+
+
+def _dl_row(d, mins, cs):
+    left = (dt.date.fromisoformat(d["date"]) - TODAY).days
+    return '%s %s<br><b>%s</b> · %s' % (_pill(left, cs), _chips(d.get("materials"), mins), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title")))
+
+
+def _river_names(rv, cs):
+    """"Rhine and Elbe" / "Rýn a Labe": the rivers with a gauge, each once."""
+    n = []
+    for r in rv:
+        x = ((r.get("river_cs") if cs else r.get("river")) or "").strip()
+        if x and x not in n:
+            n.append(x)
+    if len(n) <= 1:
+        return "".join(n)
+    return ", ".join(n[:-1]) + (" a " if cs else " and ") + n[-1]
+
+
+def _mail_free(sb, latest, dls, ser, ref, unsub_url):
+    """The free Monday brief: the week's points, the subscriber's minerals at a glance, deadlines, unusual rivers."""
+    cs = sb.get("lang") == "cs"
+    mins = [m for m in (sb.get("minerals") or []) if m in MAT_NAME]
+    show = mins or [m for m, s, c in MAIL_COL]
+    body = ""
+    pts = [x for x in (latest.get("points") or []) if _mins_ok(x.get("materials"), mins)][:8]
+    if pts:
+        body += _mhead("Tento týden" if cs else "This week")
+        for x in pts:
+            ch = _chips(x.get("materials"), mins)
+            src = (" " + _link(x["url"], x.get("source") or ("Zdroj" if cs else "Source"))) if str(x.get("url", "")).startswith("https://") else ""
+            body += _mrow((ch + "<br>" if ch else "") + ("EN · " if cs and x.get("text_cs") in (None, "", x.get("text")) else "") + _esc((cs and x.get("text_cs")) or x.get("text")) + src)
+    last = ser[-1] if ser else None
+    if last:
+        body += _mhead(("Vaše suroviny v kostce" if mins else "Suroviny v kostce") if cs else ("Your minerals at a glance" if mins else "The minerals at a glance"))
+        for m in show:
+            v = _share(last, m)
+            w = int(((last.get("win") or {}).get(m)) or 3)
+            left = '%s<b>%s</b><br><span style="font-size:13px;color:%s">%s%s</span><br>%s' % (
+                _chip(m), _esc(MAT_NAME[m][1 if cs else 0]), _MUTE, _esc(_stage(ref, m, cs)), _esc(_thin(w, cs)),
+                _link(_page_url(m), "Dodavatelský řetězec (anglicky)" if cs else "Supply chain page"))
+            right = ('<div style="font:600 18px %s;color:%s">%s</div>%s' % (_FONT, _INK, _pct(round(v * 100), cs), _mbar(v * 100, 90))) if v is not None else ""
+            body += _mrow(_two(left, right, 96))
+        body += _mnote(("Podíl Číny na dovozu do EU, 3 měsíce do %s (Eurostat Comext)" if cs else "China's share of EU imports, 3 months to %s (Eurostat Comext)") % _month(last.get("month"), cs))
+    dl = [d for d in dls if _mins_ok(d.get("materials"), mins)][:4]
+    if dl:
+        body += _mhead("Nejbližší termíny" if cs else "Next deadlines") + "".join(_mrow(_dl_row(d, mins, cs)) for d in dl)
+    rl = river_lines(cs)
+    if rl:
+        body += _mhead("Řeky v Evropě" if cs else "Europe's rivers") + "".join(_mrow(x) for x in rl)
+    teams = BASE + ("?lang=cs" if cs else "") + "#teams"
+    body += _mbox(("<b>Chcete to vědět ještě ten den?</b><br>Monitoring pošle upozornění v den, kdy se u vašich surovin něco změní, každé pondělí osobní vydání s daty "
+                   "v Excelu a jednou měsíčně odpoví na vaši otázku. " + _link(teams, "Více o Monitoringu")) if cs else
+                  ("<b>Want to hear it the day it happens?</b><br>Monitoring sends an alert the same day something changes for your minerals, a personal Monday edition "
+                   "with the data in Excel, and answers one question a month. " + _link(teams, "See Monitoring")), soft=True)
+    wk = latest["week"]
+    kicker = ("Pondělní přehled · týden od " if cs else "Monday brief · week of ") + _day(wk, cs)
+    subj = ("OreOrbit · pondělní přehled · " if cs else "OreOrbit · Monday brief · ") + _day(wk, cs)
+    ttl = (latest.get("title_cs") or ("Týden v datech, " + _day(wk, True))) if cs else (latest.get("title") or subj)
+    led = (latest.get("lede_cs") or "Hlavní změny týdne u vašich surovin, z dat OreOrbit a zpráv týdne.") if cs else (latest.get("lede") or "")
+    return subj, _mail_html(cs, kicker, ttl, led, [], unsub_url, body=body)
+
+
+def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
+    """The paid personal Monday edition: in short, where things stand, what it means, deadlines, what moved, sites,
+    rivers, other minerals, the attached data and the monthly question. Returns (subject, html, attachments)."""
+    cs = sb.get("lang") == "cs"
+    mins = [m for m in (sb.get("minerals") or []) if m in MAT_NAME] or [m for m, s, c in MAIL_COL]
+    wk = latest["week"]
+    try:
+        att = _data_files(mins, cs, wk)
+    except Exception as ex:
+        log("mail      data file for one client failed: %s" % str(ex)[:100]); att = []
+    last = ser[-1] if ser else None
+    prev = ser[-4] if len(ser) >= 4 else None
+    sh = {m: _share(last, m) for m in mins}
+    dpp = {}
+    for m in mins:
+        p = _share(prev, m)
+        if sh[m] is not None and p is not None:
+            dpp[m] = round((sh[m] - p) * 100)
+    mydl = [d for d in dls if _mins_ok(d.get("materials"), mins)]
+    left_of = lambda d: (dt.date.fromisoformat(d["date"]) - TODAY).days
+    affects = lambda d: [m for m in mins if m in (d.get("materials") or [])] or [m for m in (d.get("materials") or []) if m in MAT_NAME]
+    mine_ev = [v for v in sev.values() if v.get("m") in mins]
+    nsites = sum(1 for s in CFG["sites"] if s.get("m") in mins)
+    rv = (current("live-data/live/hazards.json") or {}).get("rivers") or []
+    rv_bad = [r for r in rv if r.get("state") in ("low", "high")]
+    # in short
+    short = []
+    if dpp:
+        m = max(dpp, key=lambda k: abs(dpp[k]))
+        if abs(dpp[m]) >= 5:
+            up = dpp[m] > 0
+            short.append(("<b>%s</b>: podíl Číny na dovozu do EU %s o %d p. b. na %s." % (_esc(MAT_NAME[m][1]), "vzrostl" if up else "klesl", abs(dpp[m]), _pct(round(sh[m] * 100), True))) if cs else
+                         ("<b>%s</b>: China's share of EU imports %s %d points to %s." % (_esc(MAT_NAME[m][0]), "rose" if up else "fell", abs(dpp[m]), _pct(round(sh[m] * 100), False))))
+    if mydl:
+        d = mydl[0]
+        short.append("<b>%s</b> (%s): %s. %s %s." % (_esc(_cap(_in_days(left_of(d), cs))), _esc(_day(d["date"], cs)), _esc(((cs and d.get("title_cs")) or d.get("title") or "").rstrip(".")),
+                                                       "Týká se:" if cs else "Affects", _esc(_names(affects(d), cs).lower())))
+    if mine_ev:
+        n = len(mine_ev)
+        short.append(("<b>%d %s</b> u vašich lokalit: viz níže." % (n, _cs_pl(n, "neobvyklý signál", "neobvyklé signály", "neobvyklých signálů"))) if cs else
+                     ("<b>%d unusual signal%s</b> at your sites: see below." % (n, "" if n == 1 else "s")))
+    elif nsites:
+        short.append(("<b>%d %s</b> vašich surovin: z oběžné dráhy nic neobvyklého." % (nsites, _cs_pl(nsites, "lokalita", "lokality", "lokalit"))) if cs else
+                     ("<b>%d sites</b> for your minerals: nothing unusual from orbit." % nsites))
+    if rv:
+        if rv_bad:
+            r = rv_bad[0]
+            short.append(("<b>%s, %s</b>: %s hladina, viz níže." % (_esc(r.get("river_cs") or r.get("river") or ""), _esc(r.get("name", "")), "nízká" if r.get("state") == "low" else "vysoká")) if cs else
+                         ("<b>%s, %s</b>: %s water, see below." % (_esc(r.get("river") or ""), _esc(r.get("name", "")), r.get("state"))))
+        else:
+            short.append(("%s: běžná hladina." if cs else "%s: normal water levels.") % _esc(_river_names(rv, cs)))
+    body = ""
+    if short:
+        body += _mbox('<div style="font:12px %s;color:%s;margin-bottom:6px">%s</div>%s' % (_MONO, _GREEN, "Ve zkratce" if cs else "In short",
+                      "".join('<div style="margin:4px 0">%s</div>' % x for x in short)))
+    # where things stand
+    if last:
+        body += _mhead(("Stav · dovoz do EU z Číny, 3 měsíce do %s" if cs else "Where things stand · EU imports from China, 3 months to %s") % _month(last.get("month"), cs))
+        for m in mins:
+            w = int(((last.get("win") or {}).get(m)) or 3)
+            left = '%s<b>%s</b><br><span style="font-size:13px;color:%s">%s%s</span><br>%s' % (
+                _chip(m), _esc(MAT_NAME[m][1 if cs else 0]), _MUTE, _esc(_stage(ref, m, cs)), _esc(_thin(w, cs)),
+                _link(_page_url(m), "Dodavatelský řetězec (anglicky)" if cs else "Supply chain page"))
+            right = ""
+            if sh[m] is not None:
+                arrow = ""
+                if m in dpp and dpp[m]:
+                    arrow = ' <span style="font:600 12px %s;color:%s">%s%d</span>' % (_MONO, _MUTE, "▲" if dpp[m] > 0 else "▼", abs(dpp[m]))
+                right = '<div style="font:600 20px %s;color:%s">%s%s</div>%s' % (_FONT, _INK, _pct(round(sh[m] * 100), cs), arrow, _mbar(sh[m] * 100, 110))
+            body += _mrow(_two(left, right, 120))
+        body += _mnote(("Šipka: změna proti stavu o tři měsíce dříve, v procentních bodech. Nejužší fáze: USGS 2026, IEA 2026%s." if cs else
+                        "Arrow: change against three months earlier, in percentage points. Tightest stage: USGS 2026, IEA 2026%s.") % (", SMM" if "mn" in mins else ""))
+    # what it means for you
+    means, used = [], set()
+    for d in [d for d in mydl if left_of(d) <= 30][:2]:
+        ms = affects(d)
+        used |= set(ms)
+        means.append("%s<br><b>%s</b>: %s" % (_chips(ms), _esc(_names(ms, cs)), _esc(("termín %s. Ověřte, na kolik týdnů vám vystačí zásoby." % _in_days(left_of(d), True)) if cs else
+                                                                                   ("a deadline %s. Check how many weeks your stock covers." % _in_days(left_of(d), False)))))
+    high = [m for m in mins if m not in used and sh[m] is not None and sh[m] >= 0.5]
+    if high:
+        used |= set(high)
+        means.append("%s<br><b>%s</b>: %s" % (_chips(high), _esc(_names(high, cs)), _esc("víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." if cs else
+                                                                                        "more than half of EU imports come from China. Keep a second source in progress.")))
+    rising = [m for m in mins if m not in used and dpp.get(m, 0) >= 5]
+    if rising:
+        means.append("%s<br><b>%s</b>: %s" % (_chips(rising), _esc(_names(rising, cs)), _esc("podíl Číny roste. Zeptejte se dodavatele, odkud materiál pochází." if cs else
+                                                                                            "China's share is rising. Ask your supplier where their material comes from.")))
+    body += _mhead("Co to pro vás znamená" if cs else "What it means for you")
+    body += "".join(_mrow(x) for x in means) if means else _mrow(_esc("Tento týden nic, co by vyžadovalo kroky." if cs else "Nothing that needs action this week."))
+    # deadlines
+    if mydl:
+        body += _mhead("Termíny" if cs else "Deadlines") + "".join(_mrow(_dl_row(d, mins, cs)) for d in mydl[:5])
+    # what moved
+    since = (TODAY - dt.timedelta(days=7)).isoformat()
+    moved = [n for n in news if str(n.get("date") or n.get("addedAt") or "") >= since and n.get("materials") and _mins_ok(n.get("materials"), mins)][:8]
+    body += _mhead("Co se změnilo za týden" if cs else "What moved this week")
+    body += "".join(_news_row(n, mins, cs) for n in moved) if moved else _mrow(_esc("Tento týden žádné nové zprávy k vašim surovinám." if cs else "No new reports on your minerals this week."))
+    # sites and rivers, only when something is unusual
+    if mine_ev:
+        body += _mhead("Vaše lokality" if cs else "Your sites") + "".join(_mrow(_chip(v["m"]) + " " + _esc(v["cs" if cs else "en"])) for v in mine_ev[:8])
+    if rv_bad:
+        body += _mhead("Řeky v Evropě" if cs else "Europe's rivers") + "".join(_mrow(x) for x in river_lines(cs))
+    # other minerals
+    terms = _other_terms(sb)
+    if terms:
+        body += _mhead("Další suroviny" if cs else "Your other minerals")
+        for t in terms:
+            its = _other_clean(t, _other_news(state, t, pbudget))[:3]
+            if its:
+                body += "".join(_other_row(t, it, cs) for it in its)
+            else:
+                body += _mrow("<b>%s</b> · %s" % (_esc(_other_label(t, cs)), _esc("tento týden žádná zpráva o dodávkách neprošla naší kontrolou relevance." if cs else
+                                                                                   "no supply news this week passed our relevance check.")))
+    # the attached data
+    xl = any(f.endswith(".xlsx") for f, _ in att)
+    if att:
+        tile = ('<td width="50" valign="top" style="width:50px"><div style="width:38px;height:44px;background:%s;border-radius:6px;color:#ffffff;font:600 10px/44px %s;text-align:center">%s</div></td>'
+                % (_GREEN, _MONO, "XLSX" if xl else "CSV"))
+        if xl:
+            txt = (("<b>Data za týden jsou v příloze</b><br>Přehled s grafy vývoje · dovoz do EU po měsících a produktech · satelitní signály u vašich %d %s · tabulka surových dat. Stejná data jsou přiložena i jako CSV."
+                    % (nsites, _cs_pl(nsites, "lokality", "lokalit", "lokalit"))) if cs else
+                   ("<b>Your data for the week is attached</b><br>Overview with trend charts · EU imports by month and product · satellite signals at your %d sites · raw table. The same data is attached as CSV." % nsites))
+        else:
+            txt = (("<b>Data za týden jsou v příloze jako CSV</b><br>Dovoz do EU po měsících a produktech a satelitní signály u vašich %d %s, připravené pro Excel."
+                    % (nsites, _cs_pl(nsites, "lokality", "lokalit", "lokalit"))) if cs else
+                   ("<b>Your data for the week is attached as CSV</b><br>EU imports by month and product and the satellite signals at your %d sites, ready for Excel." % nsites))
+        body += _mbox('<table role="presentation" cellpadding="0" cellspacing="0" width="100%%"><tr>%s<td valign="top" style="font:15px/1.55 %s;color:%s">%s</td></tr></table>' % (tile, _FONT, _INK, txt))
+    body += _mbox(("<b>Vaše otázka na tento měsíc</b><br>Zeptejte se na cokoli kolem vašich surovin nebo dodavatelů: stačí odpovědět na tento e-mail. David Madali odpoví do dvou pracovních dnů.") if cs else
+                  ("<b>Your question this month</b><br>Ask anything about your minerals or suppliers: just reply to this email. David Madali answers within two working days."), soft=True)
+    foot = '<a href="%s" style="color:#868c90">%s</a> · %s<br>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription",
+                                                                 _esc("Jiné suroviny? Stačí odpovědět na tento e-mail." if cs else "To change your minerals, reply to this email."))
+    subj = ("OreOrbit · vaše pondělní vydání · " if cs else "OreOrbit · your Monday edition · ") + _day(wk, cs)
+    html = _mail_html(cs, ("Monitoring · týden od " if cs else "Monitoring · week of ") + _day(wk, cs), "Vaše suroviny tento týden" if cs else "Your minerals this week",
+                      ("Osobní vydání pro: " if cs else "Personal edition for: ") + _names(mins, cs) + ".", [], unsub_url, body=body, foot_extra=foot)
+    return subj, html, att
+
+
+def _mail_alert(sb, mins, since, fresh, due, oth, se_new, riv, unsub_url):
+    """A same-day alert for a paying client. fresh: news items; due: [(deadline, days left)]; oth: [(term, item)];
+    se_new: new site events; riv: river gauges whose state just turned low or high."""
+    cs = sb.get("lang") == "cs"
+    def who(ms):
+        ms = [m for m in ms if m in MAT_NAME]
+        return ("Vaše suroviny" if cs else "Your minerals") if (not ms or len(ms) > 3) else _names(ms, cs)
+    aff = lambda d: [m for m in (d.get("materials") or []) if m in MAT_NAME and (not mins or m in mins)]
+    if due:
+        d, left = due[0]
+        ttl = ("%s: termín %s" if cs else "%s: deadline %s") % (who(aff(d)), _in_days(left, cs))
+    elif fresh:
+        ms = []
+        for n in fresh:
+            ms += [m for m in n.get("materials") or [] if m not in ms and (not mins or m in mins)]
+        ttl = ("%s: nové zprávy" if cs else "%s: new reports") % who(ms)
+    elif se_new:
+        ttl = ("%s: změna u lokality" if cs else "%s: change at a site") % who(list(dict.fromkeys(v.get("m") for v in se_new)))
+    elif riv:
+        ttl = "Řeky: změna hladiny" if cs else "Rivers: water level changed"
+    else:
+        ttl = ("%s: nové zprávy" if cs else "%s: new reports") % _other_label(oth[0][0], cs)
+    body = ""
+    if due:
+        body += _mhead("Blíží se termín" if cs else "Deadline coming up")
+        for d, left in due:
+            body += _mrow(_dl_row(d, mins, cs))
+        body += _mnote("Co ověřit: na kolik týdnů vám vystačí zásoby a zda se termín týká vašich dodavatelů." if cs else
+                       "What to check: how many weeks your stock covers, and whether your suppliers are affected.")
+    if fresh:
+        body += _mhead("Nové od posledního upozornění" if cs else "New since your last alert") + "".join(_news_row(n, mins, cs) for n in fresh)
+    if oth:
+        body += _mhead("Další suroviny" if cs else "Your other minerals") + "".join(_other_row(t, it, cs) for t, it in oth)
+    if se_new:
+        body += _mhead("Vaše lokality" if cs else "Your sites") + "".join(_mrow(_chip(v["m"]) + " " + _esc(v["cs" if cs else "en"])) for v in se_new if v.get("m") in _SYM)
+    if riv:
+        body += _mhead("Řeky v Evropě" if cs else "Europe's rivers") + "".join(_mrow(_river_txt(r, cs)) for r in riv)
+    lede = ("Co se u vašich surovin změnilo dnes." if cs else "What changed for your minerals today.") if since >= TODAY.isoformat() else \
+           (("Co se u vašich surovin změnilo od %s." if cs else "What changed for your minerals since %s.") % _day(since, cs))
+    foot = '<a href="%s" style="color:#868c90">%s</a><br>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")
+    subj = ("OreOrbit · upozornění · " if cs else "OreOrbit · alert · ") + ttl
+    return subj, _mail_html(cs, "Monitoring · upozornění" if cs else "Monitoring · alert", ttl, lede, [], unsub_url, body=body, foot_extra=foot)
+
 
 def send_mail():
     host, user, pw = os.environ.get("SMTP_HOST", "").strip(), os.environ.get("SMTP_USER", "").strip(), os.environ.get("SMTP_PASS", "")
@@ -2583,121 +3001,69 @@ def send_mail():
     state["welcomed"] = sorted(done)[-5000:]
     # 1. the free Monday brief, once a week, to everyone who signed up for it (each for their minerals)
     latest = max(briefs, key=lambda b: str(b.get("week", ""))) if briefs else None
+    try:
+        import oreorbit_pages as _P
+        ser = _P.dependency_series(current("live-data/live/trade.json"))
+    except Exception:
+        ser = []
+    ref = current("data/reference.json") or {}
     if latest and latest.get("week") and latest["week"] != state.get("brief_week") and TODAY.weekday() in (0, 1, 2):
         for sb in [x for x in subs if x.get("plan") == "brief"]:
-            cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
-            pts = [x for x in (latest.get("points") or []) if _mins_ok(x.get("materials"), mins)][:8]
-            items = ['%s%s' % (_esc((cs and x.get("text_cs")) or x.get("text")), (' <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(x["url"]), _esc(x.get("source") or "Source"))) if str(x.get("url", "")).startswith("https://") else "") for x in pts]
-            dl = ['<b>%s</b> · %s' % (_esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:4]
-            kicker = ("Pondělní přehled · týden od " if cs else "Monday brief · week of ") + _day(latest["week"], cs)
-            subj = ("OreOrbit · pondělní přehled · " if cs else "OreOrbit · Monday brief · ") + _day(latest["week"], cs)
-            ttl = (latest.get("title_cs") or ("Týden v datech, " + _day(latest["week"], True))) if cs else (latest.get("title") or subj)
-            led = (latest.get("lede_cs") or "Hlavní změny týdne u vašich surovin, z dat OreOrbit a zpráv týdne.") if cs else (latest.get("lede") or "")
-            html = _mail_html(cs, kicker, ttl, led, [("Tento týden" if cs else "This week", items), ("Nejbližší termíny" if cs else "Next deadlines", dl),
-                                                     ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs))], unsub(sb))
+            subj, html = _mail_free(sb, latest, dls, ser, ref, unsub(sb))
             out.append((sb["email"], subj, html))
         state["brief_week"] = latest["week"]
-    # 2a. paid clients: a personal Monday edition (status, what it means, deadlines, what moved), once a week
+    edition = set()   # clients who got the Monday edition in this run: it already carries the news, so no alert on top
+    # 2a. paid clients: a personal Monday edition (in short, status, what it means, deadlines, what moved, data), once a week
     if latest and latest.get("week") and latest["week"] != state.get("paid_week") and TODAY.weekday() in (0, 1, 2) and active:
-        try:
-            import oreorbit_pages as _P
-            ser = _P.dependency_series(current("live-data/live/trade.json"))
-        except Exception:
-            ser = []
-        ref = current("data/reference.json") or {}
-        last = ser[-1] if ser else None
         pbudget = [8]
         for e in sorted(active):
+            edition.add(e)
             sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
-            cs, mins = sb.get("lang") == "cs", (sb.get("minerals") or list(MAT_NAME.keys()))
-            status, means = [], []
-            for m in mins:
-                if m not in MAT_NAME:
-                    continue
-                nm = MAT_NAME[m][1 if cs else 0]
-                wx = (((ref.get("materials") or {}).get(m) or {}).get("worst") or {}).get("x") or {}
-                WHO_CS = {"China": "Čína", "DR Congo": "DR Kongo", "Indonesia": "Indonésie", "South Africa": "Jižní Afrika", "Australia": "Austrálie", "Russia": "Rusko", "Turkey": "Turecko", "Japan": "Japonsko", "Chile": "Chile", "Argentina": "Argentina", "Mozambique": "Mosambik", "Brazil": "Brazílie"}
-                who = str(wx.get("who", "")); who = WHO_CS.get(who, who) if cs else who
-                pct = str(wx.get("pct", "")).strip()
-                if pct and not pct.endswith("%"): pct = (pct + " %") if cs else (pct + "%")
-                lead = ("%s %s" % (pct, who)).strip() if wx.get("pct") else ""
-                _sh = ((last or {}).get("per") or {}).get(m)
-                if _sh is None: _sh = ((last or {}).get("extra") or {}).get(m)
-                eu = round(_sh * 100) if _sh is not None else None
-                _w = int(((last or {}).get("win") or {}).get(m) or 3)       # index v3: a thin mineral adds up more months
-                status.append("<b>%s</b>%s%s" % (_esc(nm), (" · " + _esc(("nejužší fáze: " if cs else "tightest stage: ") + lead)) if lead else "",
-                              (" · " + _esc(("Čína dodala %d %% dovozu do EU za posledních %d %s" % (eu, _w, "měsíce" if _w < 5 else "měsíců")).replace("posledních 3 měsíce", "poslední 3 měsíce").replace("posledních 4 měsíce", "poslední 4 měsíce") if cs else ("China supplied %d%% of EU imports over the last %d months" % (eu, _w)))) if eu is not None else ""))
-                soon = [d for d in dls if m in (d.get("materials") or []) and (dt.date.fromisoformat(d["date"]) - TODAY).days <= 30]
-                if soon:
-                    k = (dt.date.fromisoformat(soon[0]["date"]) - TODAY).days
-                    means.append(_esc(("%s: termín %s. Ověřte, na kolik týdnů vám vystačí zásoby." % (nm, _in_days(k, True))) if cs else ("%s: a deadline %s. Check how many weeks your stock covers." % (nm, _in_days(k, False)))))
-                elif eu is not None and eu >= 50:
-                    means.append(_esc(("%s: víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." % nm) if cs else ("%s: more than half of EU imports come from China. Keep a second source in progress." % nm)))
-            dl = ['<b>%s</b> · %s · %s' % (_esc(_in_days((dt.date.fromisoformat(d["date"]) - TODAY).days, cs)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))) for d in dls if _mins_ok(d.get("materials"), mins)][:5]
-            wk = (TODAY - dt.timedelta(days=7)).isoformat()
-            moved = ['%s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in news if str(n.get("date") or n.get("addedAt") or "") >= wk and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
-            subj = ("OreOrbit · vaše pondělní vydání · " if cs else "OreOrbit · your Monday edition · ") + _day(latest["week"], cs)
-            html = _mail_html(cs, ("Monitoring · týden od " if cs else "Monitoring · week of ") + _day(latest["week"], cs),
-                              "Vaše suroviny tento týden" if cs else "Your minerals this week",
-                              ("Osobní vydání pro: " if cs else "Your personal edition for: ") + ", ".join(MAT_NAME[m][1 if cs else 0] for m in mins if m in MAT_NAME) + ".",
-                              [("Stav" if cs else "Where things stand", status), ("Co to znamená" if cs else "What it means", means),
-                               ("Termíny" if cs else "Deadlines", dl), ("Co se změnilo" if cs else "What moved", moved),
-                               ("Vaše lokality" if cs else "Your sites", _site_lines(sev, mins, cs)),
-                               ("Řeky v Evropě" if cs else "Europe's rivers", river_lines(cs, only_unusual=False)),
-                               ("Další suroviny" if cs else "Your other minerals", [x for t in _other_terms(sb) for x in (['<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(t, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")) for it in _other_news(state, t, pbudget)[:3]]
-                                                                                        or (['<b>%s</b> · %s' % (_esc(_other_label(t, cs)), _esc("za posledních 14 dní jsme nenašli žádnou zprávu" if cs else "no news found in the last 14 days"))] if _other_quiet(state, t) else []))]),
-                               ("Data" if cs else "Your data", [_esc("V příloze jsou data za tímto vydáním: sešit Excelu s přehledem a grafy (dovoz do EU po měsících, podíl Číny, satelitní signály u lokalit vašich surovin) a stejná data jako CSV." if cs else "Attached: the data behind this edition, as an Excel workbook with an overview and charts (EU imports by month, China's share, satellite signals at your minerals' sites) and as a CSV with the same data.")]),
-                               ("Vaše otázka" if cs else "Your question", [_esc("Jednou měsíčně se nás můžete na cokoli kolem vašich surovin nebo dodavatelů zeptat. Stačí odpovědět na tento e-mail; odpoví člověk do dvou pracovních dnů." if cs else "Once a month you can ask us anything about your minerals or suppliers. Just reply to this email; a person answers within two working days.")]),
-                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
-            try:
-                att = _data_files(mins, cs, latest["week"])
-            except Exception as ex:
-                log("mail      data file for one client failed: %s" % str(ex)[:100]); att = []
+            subj, html, att = _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub(sb))
             out.append((e, subj, html, att))
         state["paid_week"] = latest["week"]
     # 2b. paid monitoring: an alert only when something new happens for the client's minerals
     al = state.setdefault("alerts", {})
     budget = [8]   # at most eight news questions for other minerals per run
+    rivers = (current("live-data/live/hazards.json") or {}).get("rivers") or []
     for e in sorted(active):
         sb = next((x for x in subs if x.get("email") == e and x.get("plan") == "monitoring"), None) or next((x for x in subs if x.get("email") == e), None) or {"email": e, "minerals": [], "lang": "en", "token": ""}
-        cs, mins = sb.get("lang") == "cs", sb.get("minerals") or []
+        mins = sb.get("minerals") or []
         st = al.setdefault(e, {"since": TODAY.isoformat(), "dl": []})
-        fresh = [n for n in news if str(n.get("addedAt") or n.get("date") or "") > st.get("since", "") and _mins_ok(n.get("materials"), mins) and n.get("materials")]
-        items = ['%s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc((cs and n.get("title_cs")) or n.get("title")), _esc(n.get("url") or BASE), _esc(n.get("source") or "Source")) for n in fresh[:8]]
+        since = st.get("since", "")
+        fresh = [n for n in news if str(n.get("addedAt") or n.get("date") or "") > since and _mins_ok(n.get("materials"), mins) and n.get("materials")][:8]
         due = []
         for d in dls:
             left = (dt.date.fromisoformat(d["date"]) - TODAY).days
             k = "%s|%s|%d" % (d["date"], d.get("title", "")[:40], left)
             if left in (30, 14, 7, 1) and _mins_ok(d.get("materials"), mins) and k not in st["dl"]:
-                due.append('<b>%s</b> · %s · %s' % (_esc(_in_days(left, cs)), _esc(_day(d["date"], cs)), _esc((cs and d.get("title_cs")) or d.get("title"))))
+                due.append((d, left))
                 st["dl"] = (st["dl"] + [k])[-200:]
         oth = []
         for term in _other_terms(sb):
             seen = st.setdefault("ou", [])
+            new = []
             for it in _other_news(state, term, budget):
                 if it["u"] in seen:
                     continue
                 seen.append(it["u"])
-                if st.get("ofirst"):
-                    oth.append('<b>%s</b> · %s <a href="%s" style="color:#0f6b46">%s</a>' % (_esc(_other_label(term, cs)), _esc(it["t"]), _esc(it["u"]), _esc(it.get("s") or "Source")))
+                new.append(it)
+            if st.get("ofirst"):
+                oth += [(term, it) for it in _other_clean(term, new)]
             st["ou"] = seen[-400:]
         st["ofirst"] = True   # the first run only learns what already exists, so nobody gets a flood of old stories
-        items = items + oth[:6]
+        oth = oth[:6]
         mine = {k: v for k, v in sev.items() if not mins or v.get("m") in mins}
+        se_new = []
         if "se" in st:   # the first run only learns the current state, so nobody gets an alert for something old
-            items += [_esc(v["cs" if cs else "en"]) for k, v in sorted(mine.items()) if k not in st["se"]][:4]
+            se_new = [v for k, v in sorted(mine.items()) if k not in st["se"]][:4]
         st["se"] = sorted(mine)
-        rv_now = {r.get("id"): r.get("state") for r in ((current("live-data/live/hazards.json") or {}).get("rivers") or [])}
+        rv_now = {r.get("id"): r.get("state") for r in rivers}
         rv_was = st.get("riv") or {}
-        if rv_was:
-            items += [x for x in river_lines(cs) if any(rv_now.get(k) in ("low", "high") and rv_was.get(k) != rv_now.get(k) for k in rv_now)][:3]
+        riv = [r for r in rivers if rv_was and r.get("state") in ("low", "high") and rv_was.get(r.get("id")) != r.get("state")][:3]
         st["riv"] = rv_now
-        if items or due:
-            subj = ("OreOrbit · upozornění pro vaše suroviny" if cs else "OreOrbit · alert for your minerals")
-            html = _mail_html(cs, "Monitoring", ("Co se změnilo u vašich surovin" if cs else "What changed for your minerals"),
-                              ("Od posledního upozornění." if cs else "Since your last alert."),
-                              [("Nové zprávy" if cs else "New", items), ("Blíží se termín" if cs else "Deadline coming up", due),
-                               ("Vaše předplatné" if cs else "Your subscription", ['<a href="%s" style="color:#0f6b46">%s</a>' % (MANAGE, "Spravovat nebo zrušit předplatné" if cs else "Manage or cancel your subscription")])], unsub(sb))
+        if (fresh or due or oth or se_new or riv) and e not in edition:
+            subj, html = _mail_alert(sb, mins, since or TODAY.isoformat(), fresh, due, oth, se_new, riv, unsub(sb))
             out.append((e, subj, html))
         st["since"] = TODAY.isoformat()
     wk = (TODAY - dt.timedelta(days=TODAY.weekday())).isoformat()

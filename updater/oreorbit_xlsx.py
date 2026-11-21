@@ -1,6 +1,6 @@
 """The weekly Excel attachment for paying Monitoring clients, in the brand-book style.
 
-build(...) returns the .xlsx file as bytes. Sheets: overview (China's share of EU imports per mineral, 3-month window,
+build(...) returns the .xlsx file as bytes. Sheets: overview (China's share of EU imports per mineral as in the Dependency Index,
 top suppliers, 12-month trend chart), EU imports by month and product, satellite signals at the sites, the raw data
 (the same rows as the CSV attachment) and sources. The robot attaches it next to the CSV; if anything here fails,
 the client still gets the CSV (see _data_files in oreorbit_update.py).
@@ -85,9 +85,11 @@ def aggregate(trade, mins):
     return agg
 
 
-def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, trade_cs, cc_en, cc_cs, logo_path=LOGO):
+def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, trade_cs, cc_en, cc_cs, logo_path=LOGO, dep=None):
     """The workbook as bytes. trade = trade.json "materials"; hs_file / so_file = hotspots.json / so2.json; sites = config sites;
-    mins = the client's minerals (empty: all); week = the edition's Monday (ISO date); csv_text = the CSV attachment."""
+    mins = the client's minerals (empty: all); week = the edition's Monday (ISO date); csv_text = the CSV attachment;
+    dep = oreorbit_pages.dependency_series(...): when given, China's share, its change and trend are the index numbers, so the
+    workbook says what the email, the atlas and the library pages say."""
     CS = lang == "cs"
     MINS = [m for m in (mins or list(mat_name)) if m in mat_name]
     wk = dt.date.fromisoformat(str(week)[:10])
@@ -132,6 +134,19 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         y, mm = int(last[:4]), int(last[5:7])
         first = "%d-%02d" % (y + (mm - NM) // 12, (mm - NM) % 12 + 1)
         KS = months(first, NM)                              # the last 12 months, the same for every mineral
+    DEP = [x for x in (dep or []) if x.get("month")]
+    ilast = last
+    if DEP:
+        DI = {x["month"]: x for x in DEP}
+
+        def ish(rec, m):
+            v = ((rec or {}).get("per") or {}).get(m)
+            return ((rec or {}).get("extra") or {}).get(m) if v is None else v
+        dl, dp = DEP[-1], (DEP[-4] if len(DEP) >= 4 else None)
+        ilast = dl["month"]
+        for m in AM:
+            w = int((dl.get("win") or {}).get(m) or 3)
+            agg[m].update(s3=ish(dl, m), s3p=ish(dp, m), win=w, thin=w > 3, roll={k: ish(DI.get(k), m) for k in KS})
 
     buf = io.BytesIO()
     wb = xlsxwriter.Workbook(buf, {"in_memory": True})
@@ -185,7 +200,7 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
 
     def footer(ws, r):
         ws.write(r, 1, T("David Madali · Bohemia Defense · IČO 22229957 · bohemiadefense.com/atlas · Data pro vaši interní potřebu.",
-                         "David Madali · Bohemia Defense · bohemiadefense.com/atlas · Data for your internal use."), foot)
+                         "David Madali · Bohemia Defense · IČO 22229957 · bohemiadefense.com/atlas · Data for your internal use."), foot)
 
     def page(ws, tall=False):
         ws.set_landscape(); ws.set_paper(9); ws.set_margins(0.4, 0.4, 0.4, 0.4)
@@ -203,7 +218,7 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         ser.write_row(r, 0, vals)
         return r
 
-    win_txt = T("3 měsíce do %s" % mlabel(last, True), "3 months to %s" % mlabel(last)) if last else ""
+    win_txt = T("3 měsíce do %s" % mlabel(ilast, True), "3 months to %s" % mlabel(ilast)) if ilast else ""
 
     # ---------- sheet 1: overview ----------
     ws = wb.add_worksheet(T("Přehled", "Overview"))
@@ -214,7 +229,7 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
            + ((" · " + T("data Eurostatu do %s" % mlabel(last, True), "Eurostat data to %s" % mlabel(last))) if last else ""))
     nr = 8
     if AM:
-        ch = sorted(((m, agg[m]["s3"] - agg[m]["s3p"]) for m in AM if agg[m]["s3"] is not None and agg[m]["s3p"] is not None and not agg[m]["thin"]),
+        ch = sorted(((m, agg[m]["s3"] - agg[m]["s3p"]) for m in AM if agg[m]["s3"] is not None and agg[m]["s3p"] is not None and (DEP or not agg[m]["thin"])),
                     key=lambda x: -abs(x[1]))
         if ch and abs(ch[0][1]) >= 0.02:
             m, d = ch[0]
@@ -223,12 +238,17 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         else:
             lead = T("Podíly Číny se u vašich surovin za posledních %s výrazně nezměnily." % win_txt, "China's shares for your minerals did not change much over the %s." % win_txt)
         ws.set_row(5, 36); ws.merge_range(5, 1, 5, 9, lead, h_lead)
-        ws.write(6, 1, T("Okno: %s. Hodnota dovozu z celního původu mimo EU. Pruh ukazuje podíl Číny." % win_txt,
-                         "Window: %s. Value of imports by customs origin outside the EU. The bar shows China's share." % win_txt), lab)
+        if DEP:
+            ws.write(6, 1, T("Podíl Číny jako v Dependency Indexu: klíčové produkty, okno %s (při malém objemu delší). Sloupce dovozu sčítají všechny sledované produkty za 3 měsíce do %s." % (win_txt, mlabel(last, True)),
+                             "China's share as in the Dependency Index: key products, window %s (longer where trade is thin). The import columns add up all tracked products, 3 months to %s." % (win_txt, mlabel(last))), lab)
+        else:
+            ws.write(6, 1, T("Okno: %s. Hodnota dovozu z celního původu mimo EU. Pruh ukazuje podíl Číny." % win_txt,
+                             "Window: %s. Value of imports by customs origin outside the EU. The bar shows China's share." % win_txt), lab)
         r0 = 8
         ws.set_row(r0, 30)
-        heads = [T("Surovina", "Mineral"), T("Dovoz mimo EU", "Extra-EU imports"), T("Z Číny", "From China"), T("Podíl Číny", "China's share"),
-                 T("Předchozí 3 měsíce", "Previous 3 months"), T("Změna", "Change"), T("Největší dodavatelé (podíl na hodnotě)", "Biggest suppliers (share of value)"),
+        heads = [T("Surovina", "Mineral"), T("Dovoz mimo EU, všechny produkty", "Extra-EU imports, all products"), T("Z Číny, všechny produkty", "From China, all products"),
+                 T("Podíl Číny (index)", "China's share (index)") if DEP else T("Podíl Číny", "China's share"),
+                 T("O 3 měsíce dříve", "3 months earlier") if DEP else T("Předchozí 3 měsíce", "Previous 3 months"), T("Změna", "Change"), (T("Největší dodavatelé, všechny produkty", "Biggest suppliers, all products") if DEP else T("Největší dodavatelé (podíl na hodnotě)", "Biggest suppliers (share of value)")),
                  T("Trend podílu Číny, 12 měsíců", "China's share, 12-month trend")]
         ws.write(r0, 1, "", th)
         for i, h in enumerate(heads):
@@ -248,7 +268,9 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
             else:
                 ws.write(r, 6, "", td); ws.write(r, 7, "", td)
             tops = ", ".join("%s %s" % (cname(p), pct(s)) for p, s in v["top"])
-            if v["thin"]:
+            if v["thin"] and v.get("win"):
+                tops += T(" · delší okno (%d měsíců), malý objem obchodu" % v["win"], " · %d-month window, thin trade" % v["win"])
+            elif v["thin"]:
                 tops += T(" · nízký objem, podíly kolísají", " · thin month, shares swing")
             ws.write(r, 8, tops, td_m)
             ws.write(r, 9, "", td)
@@ -259,7 +281,8 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         ws.conditional_format(r0 + 1, 5, r - 1, 5, {"type": "data_bar", "bar_color": "#b9c2b5", "bar_solid": True, "min_type": "num", "min_value": 0,
                                                     "max_type": "num", "max_value": 1, "bar_no_border": True, "data_bar_2010": True})
         crow = r + 2
-        ws.write(crow, 1, T("Podíl Číny na dovozu do EU, klouzavé tříměsíční okno", "China's share of EU imports, rolling 3-month window"), sec)
+        ws.write(crow, 1, T("Podíl Číny na dovozu do EU podle Dependency Indexu, po měsících", "China's share of EU imports in the Dependency Index, month by month") if DEP else
+                 T("Podíl Číny na dovozu do EU, klouzavé tříměsíční okno", "China's share of EU imports, rolling 3-month window"), sec)
         for c in range(2, 10):
             ws.write(crow, c, "", sec)
         cat = series([mshort(k) for k in KS])
@@ -277,8 +300,8 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         chart.set_size({"width": 1010, "height": 300})
         ws.insert_chart(crow + 1, 1, chart, {"x_offset": 2, "y_offset": 6})
         nr = crow + 17
-        ws.merge_range(nr, 1, nr + 1, 9, T("Jak číst: podíl je hodnota dovozu z Číny dělená hodnotou veškerého dovozu dané suroviny z celního původu mimo EU. Měří přímý dovoz, ne těžbu ani rafinaci, takže zboží zpracované jinde se počítá zemi, odkud bylo dovezeno. Podrobná data po měsících a produktech jsou na dalších listech.",
-                                           "How to read it: the share is the value of imports from China divided by the value of all imports of that mineral by customs origin outside the EU. It measures direct imports, not mining or refining, so material processed elsewhere counts for the country it was shipped from. Monthly data by product is on the next sheets."), note)
+        ws.merge_range(nr, 1, nr + 1, 9, T("Jak číst: podíl je hodnota dovozu z Číny dělená hodnotou veškerého dovozu klíčových produktů dané suroviny z celního původu mimo EU. Měří přímý dovoz, ne těžbu ani rafinaci, takže zboží zpracované jinde se počítá zemi, odkud bylo dovezeno. Podrobná data po měsících a produktech jsou na dalších listech.",
+                                           "How to read it: the share is the value of imports from China divided by the value of all imports of that mineral's key products by customs origin outside the EU. It measures direct imports, not mining or refining, so material processed elsewhere counts for the country it was shipped from. Monthly data by product is on the next sheets."), note)
         nr += 3
     else:
         ws.set_row(5, 36)
