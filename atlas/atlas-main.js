@@ -341,7 +341,7 @@ const STAGES = {
   ni:  { mine: { pct: 67, who: "Indonesia", note: "2025, USGS" }, refine: { pct: 45, txt: "~45%", who: "Indonesia", what: "Refined nickel", note: "2024, IEA" } },
   gr:  { mine: { pct: 78, who: "China", note: "2025, USGS" }, refine: { pct: 94, who: "China", what: "Battery-grade graphite", note: "2025, IEA" } },
   mg: { refine: { pct: 86, who: "China", what: "Primary magnesium metal", note: "2025, USGS" } },
-  mn: { mine: { pct: 38, who: "South Africa", what: "Ore (manganese content)", note: "2025, USGS" }, refine: { pct: 95, who: "China", what: "Electrolytic manganese metal", note: "capacity, SMM 2026" } }
+  mn: { mine: { pct: 38, who: "South Africa", what: "Ore (manganese content)", note: "2025, USGS" }, refine: { pct: 95, txt: ">95%", who: "China", what: "Electrolytic manganese metal", note: "capacity, SMM 2026" } }
 };
 const STRATEGIC = { ree: true, ti: true, w: true, sb: false, ga: true, ge: true, li: true, co: true, ni: true, gr: true, mg: true, mn: true };
 function topStage(m) {
@@ -372,6 +372,7 @@ const SYSTEMS = {
       { m: "gr", role: "Battery anode" },
       { m: "co", role: "Battery cathode" },
       { m: "ni", role: "Battery cathode" },
+      { m: "ga", role: "Gallium nitride chips in the radio links" },
       { m: "ge", role: "Thermal-camera lenses" }
     ] },
   radar: { name: "AESA radar", blurb: "The active electronically scanned radar of modern fighters, ships and air defence.", choke: "ga",
@@ -419,6 +420,7 @@ SYSTEMS.ammo.parts.push({ m: "mg", role: "Magnesium in infrared decoy flares and
 SYSTEMS.battery.parts.push({ m: "mn", role: "Manganese in NMC and LMFP cathodes" });
 SYSTEMS.jet.parts.push({ m: "mg", role: "Magnesium turns titanium ore into titanium metal" });
 SYSTEMS.drone.parts.push({ m: "mn", role: "Manganese in the battery cathodes" });
+Object.assign(CS, { "Gallium nitride chips in the radio links": "Čipy z nitridu galia v rádiových spojeních" });   // build 76: the drone's radio links, as in the quick check
 const SYS_ICON = {
   satellite: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="6" height="6"/><path d="M2 8h6v8H2zM16 8h6v8h-6zM8 12h1M15 12h1M12 9V5M10 4h4"/></svg>`,
   drone: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/><rect x="10" y="10" width="4" height="4"/></svg>`,
@@ -4913,7 +4915,7 @@ function sitePortHtml(s) {
 }
 
 /* ---- 7. EU imports by origin (Eurostat Comext), live doc live/trade ---- */
-const TRADE_CS = { "Permanent magnets of metal": "Kovové permanentní magnety", "Rare-earth compounds": "Sloučeniny vzácných zemin", "Rare-earth metals": "Kovy vzácných zemin", "Unwrought gallium": "Surové galium", "Unwrought germanium": "Surové germanium", "Unwrought antimony": "Surový antimon", "Antimony oxides": "Oxidy antimonu", "Unwrought tungsten": "Surový wolfram", "Tungsten ores": "Wolframové rudy", "Unwrought titanium (sponge)": "Surový titan (houba)", "Titanium ores": "Titanové rudy", "Lithium carbonate": "Uhličitan lithný", "Lithium oxide and hydroxide": "Oxid a hydroxid lithný", "Cobalt mattes and unwrought cobalt": "Kobaltové kamínky a surový kobalt", "Cobalt oxides and hydroxides": "Oxidy a hydroxidy kobaltu", "Unwrought nickel": "Surový nikl", "Nickel mattes": "Niklové kamínky", "Artificial graphite": "Syntetický grafit", "Natural flake graphite": "Přírodní vločkový grafit",
+const TRADE_CS = { "Permanent magnets of metal": "Kovové permanentní magnety", "Rare-earth compounds": "Sloučeniny vzácných zemin", "Rare-earth metals": "Kovy vzácných zemin", "Unwrought gallium": "Surové galium", "Unwrought germanium": "Surové germanium", "Unwrought antimony": "Surový antimon", "Antimony oxides": "Oxidy antimonu", "Ammonium paratungstate": "Parawolframan amonný", "Tungsten carbide": "Karbid wolframu", "Unwrought tungsten": "Surový wolfram", "Tungsten ores": "Wolframové rudy", "Unwrought titanium (sponge)": "Surový titan (houba)", "Titanium ores": "Titanové rudy", "Lithium carbonate": "Uhličitan lithný", "Lithium oxide and hydroxide": "Oxid a hydroxid lithný", "Cobalt mattes and unwrought cobalt": "Kobaltové kamínky a surový kobalt", "Cobalt oxides and hydroxides": "Oxidy a hydroxidy kobaltu", "Unwrought nickel": "Surový nikl", "Nickel mattes": "Niklové kamínky", "Artificial graphite": "Syntetický grafit", "Natural flake graphite": "Přírodní vločkový grafit",
   /* build 56: magnesium and manganese (added Nov 2026) had no Czech labels */
   "Unwrought magnesium, 99.8% or more": "Neopracovaný hořčík, nejméně 99,8\u00a0%", "Other unwrought magnesium": "Ostatní neopracovaný hořčík", "Manganese metal and articles": "Kovový mangan a\u00a0výrobky z\u00a0něj", "Manganese ores": "Manganové rudy" };
 function tradeRows(m) {
@@ -5389,10 +5391,10 @@ const ctryGen = (c) => CTRY_GEN[c] || ctry(c), ctryAcc = (c) => CTRY_ACC[c] || c
 /* build 56: "in <country>" (Czech locative with v/ve/na); unknown countries fall back to "v zemi <name>" */
 const CTRY_LOC = { China: "v Číně", "DR Congo": "v DR Kongu", Indonesia: "v Indonésii", Australia: "v Austrálii", "South Africa": "v Jihoafrické republice", Chile: "v Chile", "United States": "v USA", Russia: "v Rusku", Brazil: "v Brazílii", Mozambique: "v Mosambiku", Turkey: "v Turecku", Kazakhstan: "v Kazachstánu", Gabon: "v Gabonu", India: "v Indii", Norway: "v Norsku", Tajikistan: "v Tádžikistánu", Ukraine: "na Ukrajině", Canada: "v Kanadě", Malaysia: "v Malajsii", Japan: "v Japonsku", Vietnam: "ve Vietnamu", Philippines: "na Filipínách", Madagascar: "na Madagaskaru", Senegal: "v Senegalu", Spain: "ve Španělsku", Sweden: "ve Švédsku", Finland: "ve Finsku", Germany: "v Německu", Austria: "v Rakousku", Portugal: "v Portugalsku", Greece: "v Řecku", Belgium: "v Belgii", Czechia: "v Česku", Serbia: "v Srbsku", Estonia: "v Estonsku", Argentina: "v Argentině", Zimbabwe: "v Zimbabwe", Ghana: "v Ghaně", Israel: "v Izraeli", "United Kingdom": "ve Spojeném království", Switzerland: "ve Švýcarsku", Azerbaijan: "v Ázerbájdžánu", Myanmar: "v Myanmaru", Bolivia: "v Bolívii", Peru: "v Peru", Rwanda: "ve Rwandě", Zambia: "v Zambii" };
 const inCtry = (c) => LANG === "cs" ? ooNb0(CTRY_LOC[c] || "v zemi " + ctry(c)) : "in " + c;
-function importShare(m) {
-  const rows = tradeRows(m);
-  const tp = rows.length ? tradeTop(rows[0]) : null;
-  return tp ? { tp, label: LANG === "cs" ? (TRADE_CS[rows[0].label] || rows[0].label) : rows[0].label } : null;
+function importShare(m, code) {   // build 76: an optional CN code picks that product (quick check: manganese ore for steel)
+  const all = tradeRows(m), r = (code && all.find((x) => x.code === code)) || all[0];
+  const tp = r ? tradeTop(r) : null;
+  return tp ? { tp, label: LANG === "cs" ? (TRADE_CS[r.label] || r.label) : r.label } : null;
 }
 
 /* ---------- drawer: time-lapse since 2017, radar and heat ---------- */
@@ -6165,6 +6167,10 @@ function buildPres() {
   const dls = allDeadlines().filter((w) => daysUntil(w.date) !== null && daysUntil(w.date) >= 0).slice(0, 3);
   const impOver = ORDER.filter((m) => { const i = importShare(m); return i && i.tp.pct > 65; }).length;
   const rec = ORDER.filter((m) => EOL_RIR[m] && EOL_RIR[m].v >= 25).map(mName);
+  const droneH = () => {   // build 76: counted from the drone's parts (eight since gallium joined), not typed
+    const n = new Set(SYSTEMS.drone.parts.map((x) => x.m)).size, i = n - 6;
+    return i >= 0 && i < 4 ? T(`A drone touches ${["six", "seven", "eight", "nine"][i]} of the twelve.`, `Dron se dotýká ${["šesti", "sedmi", "osmi", "devíti"][i]} z\u00a0dvanácti.`) : T(`A drone touches ${n} of the twelve.`, `Dron se dotýká ${n} z\u00a0dvanácti.`);
+  };
   const reset = () => { clearSelection(); filter = "all"; paintChips(); if (globe) { globe.setFlows([]); globe.setRedSea(false); globe.highlightRoute(null); globe.applyVisibility(); } };
   return [
     { k: T("OreOrbit · critical minerals from orbit", "OreOrbit · kritické suroviny z oběžné dráhy"), h: T("Europe's defence runs on twelve minerals.", "Obrana Evropy stojí na dvanácti surovinách."), big: T(`${over} of ${ORDER.length}`, `${over} z ${ORDER.length}`), bt: T("have a supply stage where one country makes more than 65% of world output.", "má fázi dodávek, ve které jedna země vyrábí víc než 65 % světové produkce."), src: "USGS 2026, IEA 2026", go: () => { reset(); globe && globe.home(); } },
@@ -6172,7 +6178,7 @@ function buildPres() {
     { k: T("Magnets", "Magnety"), h: T("Every motor needs a magnet.", "Každý motor potřebuje magnet."), big: "94%", bt: T("of sintered rare-earth magnets are made in China.", "slinutých magnetů ze vzácných zemin se vyrábí v Číně."), t: T("Europe's largest magnet plant opened in Narva, Estonia, in September 2025.", "Největší evropský závod na magnety se otevřel v září 2025 v estonské Narvě."), src: "IEA, October 2025; Government of Estonia", go: () => { reset(); filter = "ree"; paintChips(); globe && (globe.applyVisibility(), globe.flyToMaterials(["ree"])); } },
     { k: T("The sea route", "Námořní trasa"), h: T("If the Red Sea closes, Europe waits.", "Když se uzavře Rudé moře, Evropa čeká."), big: `+${REDSEA.capeDays - REDSEA.suezDays} ${T("days", "dní")}`, bt: T(`Shanghai to Rotterdam round the Cape: about ${REDSEA.capeDays} days instead of ${REDSEA.suezDays}, at 16 knots.`, `Šanghaj–Rotterdam kolem mysu: asi ${REDSEA.capeDays} dní místo ${REDSEA.suezDays}, při 16 uzlech.`), t: T("About 140,000 t of the tracked products reached the EU from China in 2025 (estimate from Eurostat).", "Asi 140 000 t sledovaných produktů dorazilo v roce 2025 z Číny do EU (odhad z Eurostatu)."), src: "Port Economics, Eurostat", go: () => { reset(); globe && (globe.setRedSea(true), globe.highlightRoute("cn-eu-cape", "cn-eu"), globe.flyToRoute("cn-eu-cape")); } },
     { k: T("Cobalt", "Kobalt"), h: T("Mined in Congo, refined in China.", "Těží se v Kongu, rafinuje v Číně."), big: "74%", bt: T("of the world's cobalt is mined in the DR Congo; over 75% of refined cobalt comes from China.", "světového kobaltu se těží v DR Kongu; přes 75 % rafinovaného kobaltu pochází z Číny."), t: T("The US-backed Lobito railway now offers a route west to the Atlantic.", "Železnice Lobito podporovaná USA nabízí cestu na západ k Atlantiku."), src: "USGS 2026, IEA 2026", go: () => { reset(); globe && (globe.highlightRoute("cd-co", "lobito"), globe.flyToRoute("cd-co")); } },
-    { k: T("Mine to missile", "Od dolu ke střele"), h: T("A drone touches seven of the twelve.", "Dron se dotýká sedmi z dvanácti."), big: sc ? `${sc.score}/100` : "", bt: T("concentration score: the average of each material's highest single-country share.", "skóre koncentrace: průměr nejvyššího podílu jedné země u každé suroviny."), t: sc ? T(`It breaks first at ${mName(sc.worst.m).toLowerCase()} ${stageTxt(sc.worst.k).toLowerCase()}: ${pctTxt(sc.worst.x)} in ${sc.worst.x.who}.`, `Láme se nejdřív u suroviny ${mName(sc.worst.m).toLowerCase()} (${stageTxt(sc.worst.k).toLowerCase()}): ${pctTxt(sc.worst.x)} ${inCtry(sc.worst.x.who)}.`) : "", src: "USGS, IEA", go: () => { reset(); filter = "sys:drone"; paintChips(); globe && (globe.applyVisibility(), globe.setFlows(flowsFor(SYSTEMS.drone.parts)), globe.flyTo(38, 62, 3.6, 1600)); } },
+    { k: T("Mine to missile", "Od dolu ke střele"), h: droneH(), big: sc ? `${sc.score}/100` : "", bt: T("concentration score: the average of each material's highest single-country share.", "skóre koncentrace: průměr nejvyššího podílu jedné země u každé suroviny."), t: sc ? T(`It breaks first at ${mName(sc.worst.m).toLowerCase()} ${stageTxt(sc.worst.k).toLowerCase()}: ${pctTxt(sc.worst.x)} in ${sc.worst.x.who}.`, `Láme se nejdřív u suroviny ${mName(sc.worst.m).toLowerCase()} (${stageTxt(sc.worst.k).toLowerCase()}): ${pctTxt(sc.worst.x)} ${inCtry(sc.worst.x.who)}.`) : "", src: "USGS, IEA", go: () => { reset(); filter = "sys:drone"; paintChips(); globe && (globe.applyVisibility(), globe.setFlows(flowsFor(SYSTEMS.drone.parts)), globe.flyTo(38, 62, 3.6, 1600)); } },
     { k: T("Deadlines", "Termíny"), h: T("Three dates in the next three months.", "Tři data v příštích třech měsících."), big: dls[0] ? `${daysUntil(dls[0].date)}` : "", bt: dls[0] ? T(`days until ${fmtDay(dls[0].date)}: ${localTitle(dls[0])}.`, `dní do ${fmtDay(dls[0].date)}: ${localTitle(dls[0])}.`) : "", t: dls.slice(1).map((w) => `${fmtDay(w.date)}: ${localTitle(w)}`).join(" · "), src: dls.map((w) => w.source).filter(Boolean).join(", "), go: () => { reset(); globe && globe.flyTo(30, 100, 3.4, 1600); } },
     { k: T("2030", "2030"), h: T("Europe's targets for 2030.", "Cíle Evropy pro rok 2030."), big: "10 · 40 · 25 · 65", bt: T("per cent: mined, processed and recycled in the EU, and the most from any one country.", "procent: těžba, zpracování a recyklace v EU a nejvýš od jedné země."), t: T(`For ${impOver} of the 10, one country still supplies more than 65% of EU imports, and only ${rec.map((x) => x.toLowerCase()).join(" and ")} meet the recycling goal.`, `U ${impOver} z 10 stále dodává jedna země víc než 65 % dovozu do EU a cíl recyklace splňuje jen ${rec.map((x) => x.toLowerCase()).join(" a ")}.`), src: T("European Commission, Eurostat, IEEP", "Evropská komise, Eurostat, IEEP"), go: () => { reset(); globe && globe.flyTo(48, 16, 2.7, 1600); } }
   ];
