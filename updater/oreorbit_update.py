@@ -2351,6 +2351,31 @@ def _share(rec, m):
     return ((rec or {}).get("extra") or {}).get(m) if v is None else v
 
 
+def _tshare(rec, m):
+    """China's share by tonnes for a mineral in a Dependency Index record, or None where quantities are missing."""
+    return ((rec or {}).get("tper") or {}).get(m)
+
+
+def _moves(last, prev, mins):
+    """Change in China's value share against `prev`, in points, per mineral, with whether the tonnes share agrees:
+    {m: (points, True | False | None)}. True: tonnes moved the same way; False: tonnes stayed or moved the other way,
+    so the change is prices or a single delivery; None: no tonnes to check."""
+    out = {}
+    for m in mins:
+        a, b = _share(last, m), _share(prev, m)
+        if a is None or b is None:
+            continue
+        d = round((a - b) * 100)
+        ta, tb = _tshare(last, m), _tshare(prev, m)
+        if ta is None or tb is None:
+            ok = None
+        else:
+            td = round((ta - tb) * 100)
+            ok = (td > 0) == (d > 0) and td != 0
+        out[m] = (d, ok)
+    return out
+
+
 def _names(ms, cs):
     """"Tungsten, gallium and germanium" / "Wolfram, gallium a germanium"."""
     n = [MAT_NAME[m][1 if cs else 0] for m in ms if m in MAT_NAME]
@@ -2736,7 +2761,7 @@ def _mail_free(sb, latest, dls, ser, ref, unsub_url):
                 _link(_page_url(m), "Dodavatelský řetězec (anglicky)" if cs else "Supply chain page"))
             right = ('<div style="font:600 18px %s;color:%s">%s</div>%s' % (_FONT, _INK, _pct(round(v * 100), cs), _mbar(v * 100, 90))) if v is not None else ""
             body += _mrow(_two(left, right, 96))
-        body += _mnote(("Podíl Číny na dovozu do EU, 3 měsíce do %s (Eurostat Comext)" if cs else "China's share of EU imports, 3 months to %s (Eurostat Comext)") % _month(last.get("month"), cs))
+        body += _mnote(("Podíl Číny na hodnotě dovozu do EU ze zemí mimo EU, 3 měsíce do %s (Eurostat Comext)" if cs else "China's share of the value of EU imports from outside the EU, 3 months to %s (Eurostat Comext)") % _month(last.get("month"), cs))
     dl = [d for d in dls if _mins_ok(d.get("materials"), mins)][:4]
     if dl:
         body += _mhead("Nejbližší termíny" if cs else "Next deadlines") + "".join(_mrow(_dl_row(d, mins, cs)) for d in dl)
@@ -2769,11 +2794,9 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
     last = ser[-1] if ser else None
     prev = ser[-4] if len(ser) >= 4 else None
     sh = {m: _share(last, m) for m in mins}
-    dpp = {}
-    for m in mins:
-        p = _share(prev, m)
-        if sh[m] is not None and p is not None:
-            dpp[m] = round((sh[m] - p) * 100)
+    mv = _moves(last, prev, mins)
+    dpp = {m: d for m, (d, ok) in mv.items()}
+    sure = {m for m, (d, ok) in mv.items() if ok}           # the tonnes share moved the same way: a real shift in supply
     mydl = [d for d in dls if _mins_ok(d.get("materials"), mins)]
     left_of = lambda d: (dt.date.fromisoformat(d["date"]) - TODAY).days
     affects = lambda d: [m for m in mins if m in (d.get("materials") or [])] or [m for m in (d.get("materials") or []) if m in MAT_NAME]
@@ -2787,8 +2810,18 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
         m = max(dpp, key=lambda k: abs(dpp[k]))
         if abs(dpp[m]) >= 5:
             up = dpp[m] > 0
-            short.append(("<b>%s</b>: podíl Číny na dovozu do EU %s o %d p. b. na %s." % (_esc(MAT_NAME[m][1]), "vzrostl" if up else "klesl", abs(dpp[m]), _pct(round(sh[m] * 100), True))) if cs else
-                         ("<b>%s</b>: China's share of EU imports %s %d points to %s." % (_esc(MAT_NAME[m][0]), "rose" if up else "fell", abs(dpp[m]), _pct(round(sh[m] * 100), False))))
+            ok = mv[m][1]
+            if cs:
+                t = "<b>%s</b>: podíl Číny na dovozu do EU ze zemí mimo EU %s o %d p. b. na %s" % (_esc(MAT_NAME[m][1]), "vzrostl" if up else "klesl", abs(dpp[m]), _pct(round(sh[m] * 100), True))
+                t += (", podle hodnoty i podle tun." if ok else
+                      " podle hodnoty, podle tun ne. Jde spíš o ceny nebo jednu dodávku než o změnu dodavatelů." if ok is False else
+                      " podle hodnoty (data v tunách nejsou úplná).")
+            else:
+                t = "<b>%s</b>: China's share of EU imports from outside the EU %s %d points to %s" % (_esc(MAT_NAME[m][0]), "rose" if up else "fell", abs(dpp[m]), _pct(round(sh[m] * 100), False))
+                t += (", by value and by tonnes." if ok else
+                      " by value but not by tonnes. More likely prices or a single delivery than a change of suppliers." if ok is False else
+                      " by value (tonnes data incomplete).")
+            short.append(t)
     if mydl:
         d = mydl[0]
         short.append("<b>%s</b> (%s): %s. %s %s." % (_esc(_cap(_in_days(left_of(d), cs))), _esc(_day(d["date"], cs)), _esc(((cs and d.get("title_cs")) or d.get("title") or "").rstrip(".")),
@@ -2813,7 +2846,7 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
                       "".join('<div style="margin:4px 0">%s</div>' % x for x in short)))
     # where things stand
     if last:
-        body += _mhead(("Stav · dovoz do EU z Číny, 3 měsíce do %s" if cs else "Where things stand · EU imports from China, 3 months to %s") % _month(last.get("month"), cs))
+        body += _mhead(("Stav · podíl Číny na dovozu do EU ze zemí mimo EU, 3 měsíce do %s" if cs else "Where things stand · China's share of EU imports from outside the EU, 3 months to %s") % _month(last.get("month"), cs))
         for m in mins:
             w = int(((last.get("win") or {}).get(m)) or 3)
             left = '%s<b>%s</b><br><span style="font-size:13px;color:%s">%s%s</span><br>%s' % (
@@ -2823,11 +2856,14 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
             if sh[m] is not None:
                 arrow = ""
                 if m in dpp and dpp[m]:
-                    arrow = ' <span style="font:600 12px %s;color:%s">%s%d</span>' % (_MONO, _MUTE, "▲" if dpp[m] > 0 else "▼", abs(dpp[m]))
+                    arrow = ' <span style="font:600 12px %s;color:%s">%s%d%s</span>' % (_MONO, _MUTE, "▲" if dpp[m] > 0 else "▼", abs(dpp[m]), "" if m in sure else "*")
                 right = '<div style="font:600 20px %s;color:%s">%s%s</div>%s' % (_FONT, _INK, _pct(round(sh[m] * 100), cs), arrow, _mbar(sh[m] * 100, 110))
             body += _mrow(_two(left, right, 120))
-        body += _mnote(("Šipka: změna proti stavu o tři měsíce dříve, v procentních bodech. Nejužší fáze: USGS 2026, IEA 2026%s." if cs else
-                        "Arrow: change against three months earlier, in percentage points. Tightest stage: USGS 2026, IEA 2026%s.") % (", SMM" if "mn" in mins else ""))
+        star = any(m not in sure and dpp.get(m) for m in mins)
+        body += _mnote(("Podíl podle hodnoty. Šipka: změna proti stavu o tři měsíce dříve, v procentních bodech%s. Nejužší fáze: USGS 2026, IEA 2026%s." if cs else
+                        "Share by value. Arrow: change against three months earlier, in percentage points%s. Tightest stage: USGS 2026, IEA 2026%s.") % (
+                        ((" (* podíl podle tun se tak nepohnul nebo chybí: spíš ceny nebo jedna dodávka)" if cs else " (* the share by tonnes did not move the same way or is missing: more likely prices or a single delivery)") if star else ""),
+                        ", SMM" if "mn" in mins else ""))
     # what it means for you
     means, used = [], set()
     for d in [d for d in mydl if left_of(d) <= 30][:2]:
@@ -2838,9 +2874,9 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
     high = [m for m in mins if m not in used and sh[m] is not None and sh[m] >= 0.5]
     if high:
         used |= set(high)
-        means.append("%s<br><b>%s</b>: %s" % (_chips(high), _esc(_names(high, cs)), _esc("víc než polovina dovozu do EU je z Číny. Mějte rozpracovaný druhý zdroj." if cs else
-                                                                                        "more than half of EU imports come from China. Keep a second source in progress.")))
-    rising = [m for m in mins if m not in used and dpp.get(m, 0) >= 5]
+        means.append("%s<br><b>%s</b>: %s" % (_chips(high), _esc(_names(high, cs)), _esc("víc než polovina dovozu do EU ze zemí mimo EU je z Číny. Mějte rozpracovaný druhý zdroj." if cs else
+                                                                                        "more than half of EU imports from outside the EU come from China. Keep a second source in progress.")))
+    rising = [m for m in mins if m not in used and dpp.get(m, 0) >= 5 and m in sure]   # advice only for a shift confirmed by tonnes
     if rising:
         means.append("%s<br><b>%s</b>: %s" % (_chips(rising), _esc(_names(rising, cs)), _esc("podíl Číny roste. Zeptejte se dodavatele, odkud materiál pochází." if cs else
                                                                                             "China's share is rising. Ask your supplier where their material comes from.")))
