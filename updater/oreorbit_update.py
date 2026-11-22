@@ -2708,6 +2708,24 @@ def _link(url, txt):
     return '<a href="%s" style="color:%s">%s</a>' % (_esc(url), _GREEN, _esc(txt))
 
 
+def _mindex(ser, cs):
+    """One row with the OreOrbit Dependency Index in plain words, its move against a year earlier and a link to the index page."""
+    last = ser[-1] if ser else None
+    if not last or last.get("value") is None:
+        return ""
+    v = round(last["value"] * 100)
+    ya = next((x for x in ser if x.get("month") == "%d%s" % (int(last["month"][:4]) - 1, last["month"][4:])), None)
+    mv = ""
+    if ya and ya.get("value") is not None:
+        d = v - round(ya["value"] * 100)
+        mv = ((" (o %d %s %s než loni)" % (abs(d), "bod" if abs(d) == 1 else ("body" if abs(d) < 5 else "bodů"), "víc" if d > 0 else "méně")) if cs else
+              (" (%s %d point%s on a year earlier)" % ("up" if d > 0 else "down", abs(d), "" if abs(d) == 1 else "s"))) if d else (" (stejně jako loni)" if cs else " (same as a year earlier)")
+    url = BASE + ("p/dependency-index-cs.html" if cs else "p/dependency-index.html")
+    txt = (("<b>Index závislosti OreOrbit: %s</b>%s<br>Kolik z toho, co EU dováží ze zemí mimo EU u dvanácti kritických surovin, pochází z Číny. Stav za %s. " % (_pct(v, True), mv, _month(last["month"], True))) if cs else
+           ("<b>OreOrbit Dependency Index: %s</b>%s<br>How much of what the EU imports from outside the EU for twelve critical minerals comes from China. Data to %s. " % (_pct(v, False), mv, _month(last["month"], False))))
+    return _mrow(txt + _link(url, "Jak se index vyvíjí" if cs else "See how it moves"))
+
+
 def _two(left, right, rw=110):
     """A row with text on the left and a number + bar on the right (a table, so mail apps keep it side by side)."""
     return ('<table role="presentation" width="100%%" cellpadding="0" cellspacing="0"><tr><td valign="top" style="font:15px/1.5 %s;color:%s;padding-right:10px">%s</td>'
@@ -2762,6 +2780,7 @@ def _mail_free(sb, latest, dls, ser, ref, unsub_url):
             right = ('<div style="font:600 18px %s;color:%s">%s</div>%s' % (_FONT, _INK, _pct(round(v * 100), cs), _mbar(v * 100, 90))) if v is not None else ""
             body += _mrow(_two(left, right, 96))
         body += _mnote(("Podíl Číny na hodnotě dovozu do EU ze zemí mimo EU, 3 měsíce do %s (Eurostat Comext)" if cs else "China's share of the value of EU imports from outside the EU, 3 months to %s (Eurostat Comext)") % _month(last.get("month"), cs))
+        body += _mindex(ser, cs)
     dl = [d for d in dls if _mins_ok(d.get("materials"), mins)][:4]
     if dl:
         body += _mhead("Nejbližší termíny" if cs else "Next deadlines") + "".join(_mrow(_dl_row(d, mins, cs)) for d in dl)
@@ -2864,6 +2883,7 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
                         "Share by value. Arrow: change against three months earlier, in percentage points%s. Tightest stage: USGS 2026, IEA 2026%s.") % (
                         ((" (* podíl podle tun se tak nepohnul nebo chybí: spíš ceny nebo jedna dodávka)" if cs else " (* the share by tonnes did not move the same way or is missing: more likely prices or a single delivery)") if star else ""),
                         ", SMM" if "mn" in mins else ""))
+        body += _mindex(ser, cs)
     # what it means for you
     means, used = [], set()
     for d in [d for d in mydl if left_of(d) <= 30][:2]:

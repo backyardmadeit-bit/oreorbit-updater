@@ -95,3 +95,19 @@ ul.idx .pc em{font-style:normal;font-weight:400;font-size:13px;color:var(--faint
 .monthnav{line-height:2}.monthnav a{white-space:nowrap}
 .guides{margin:8px 0 28px}
 ul.brief li{padding:6px 0 6px 14px;border-left:3px solid var(--c,#3ddc97);margin:8px 0}
+.figs.hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.figs.hero dt{font-size:clamp(40px,6vw,64px)}
+ul.key{margin-top:22px}
+ul.key b{color:var(--paper);font-weight:600}
+.method h3{font-size:18px;margin:28px 0 8px}
+figure.ix{margin:0}
+.chart[tabindex]{touch-action:pan-y;outline:none;cursor:crosshair}
+.chart[tabindex]:focus-visible{outline:1px solid #3ddc97;outline-offset:4px;border-radius:6px}
+.ix-read{min-height:1.5em;margin:0 0 10px;color:var(--paper);font-variant-numeric:tabular-nums}
+.ix-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.ix-chips button{font:500 13px "Hanken Grotesk",sans-serif;color:var(--dim);background:transparent;border:1px solid var(--rule);border-radius:999px;height:30px;padding:0 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.ix-chips button[data-m]::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.ix-chips button[aria-pressed="true"]{color:var(--paper);border-color:rgba(236,238,233,.55);background:rgba(236,238,233,.06)}
+ul.idx li[data-m][role=button]{cursor:pointer;border-radius:8px}
+ul.idx li[data-m][role=button]:hover,ul.idx li[data-m].on{background:rgba(236,238,233,.05)}
+ul.idx li[data-m][role=button]:focus-visible{outline:1px solid #3ddc97;outline-offset:2px}
