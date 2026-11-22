@@ -614,7 +614,8 @@ def dependency_series(trade):
     Per record: "value", "n", "over50", "per" (shares), "win" (window length per mineral, magnesium and manganese
     included), "eur" (extra-EU value in the window), "thin" (index minerals whose window had to grow), "from" (start of
     the three-month window), "t_value" (the same index by tonnes) and "w_value" (shares weighted by import value) as
-    checks, "m1"/"per1" (the single month of version 1), "top" (three biggest suppliers in the window) and "extra"
+    checks, "tper" (China's share by tonnes per mineral, magnesium and manganese included, where every month has
+    quantities), "m1"/"per1" (the single month of version 1), "top" (three biggest suppliers in the window) and "extra"
     (magnesium and manganese: next to the index, never in it)."""
     per = _trade_months(trade)
     ks = sorted(per)
@@ -655,7 +656,8 @@ def dependency_series(trade):
         extra = {m: x for m, x in every.items() if m not in INDEX_TEN}       # magnesium, manganese and any later additions
         if len(shares) < 8:
             continue
-        tsh = {m: tot[m][3] / tot[m][4] for m in shares if tot[m][3] is not None and tot[m][4]}
+        tall = {m: t[3] / t[4] for m, t in tot.items() if t[3] is not None and t[4]}
+        tsh = {m: x for m, x in tall.items() if m in shares}
         top = {m: [[pt, v / t[1]] for pt, v in sorted(t[2].items(), key=lambda kv: -kv[1])[:3] if v > 0]
                for m, t in tot.items() if t[2]}
         out.append({"month": k, "from": _month_add(k, 1 - INDEX_WINDOW), "value": sum(shares.values()) / len(shares), "n": len(shares),
@@ -664,7 +666,7 @@ def dependency_series(trade):
                     "thin": sorted(m for m in shares if wins[m] > INDEX_WINDOW),
                     "t_value": (sum(tsh.values()) / len(tsh)) if len(tsh) == len(shares) else None,
                     "w_value": sum(shares[m] * tot[m][1] for m in shares) / sum(tot[m][1] for m in shares),
-                    "m1": m1, "per1": one, **({"top": top} if top else {}), **({"extra": extra} if extra else {})})
+                    "tper": tall, "m1": m1, "per1": one, **({"top": top} if top else {}), **({"extra": extra} if extra else {})})
     return out
 
 
