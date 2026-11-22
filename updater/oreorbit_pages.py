@@ -535,10 +535,12 @@ INDEX_BASKET = {"ree": ("850511", "284690", "280530"), "ti": ("810820", "810890"
                 "w": ("810194", "261100", "284180", "28499030", "810110", "810199", "28259040"),
                 "sb": ("811010", "282580"), "ga": ("81129289",), "ge": ("81129295",), "li": ("283691", "282520"),
                 "co": ("810520", "282200"), "ni": ("750210", "750110", "750220"), "gr": ("380110", "250410")}
-INDEX_CHANGELOG = [("21 November 2026", "Version 3: wider product basket (tungsten APT, carbide, powder, oxides and articles; wrought titanium; nickel alloys), a window that grows from three to up to twelve months until a mineral reaches EUR 10 million of imports, monthly history from January 2022, first-published values kept next to revisions, a tonnes and a value-weighted check, supplier concentration and a CSV download."),
+INDEX_CHANGELOG = [("22 November 2026", "No change to the numbers. The page now states what the index leaves out, and flags any month where the equal-weighted, tonnes and value-weighted versions move in opposite directions against a year earlier."),
+                   ("21 November 2026", "Version 3: wider product basket (tungsten APT, carbide, powder, oxides and articles; wrought titanium; nickel alloys), a window that grows from three to up to twelve months until a mineral reaches EUR 10 million of imports, monthly history from January 2022, first-published values kept next to revisions, a tonnes and a value-weighted check, supplier concentration and a CSV download."),
                    ("November 2026", "Version 2: three months added up per mineral instead of a single month; top three suppliers per mineral."),
                    ("2026", "Version 1: a single month per mineral, equal weight across the ten index minerals.")]
-INDEX_CHANGELOG_CS = [("21. listopadu 2026", "Verze 3: širší koš produktů (u wolframu parawolframan amonný, karbid, prášek, oxidy a výrobky, tvářený titan, slitiny niklu), okno, které se prodlužuje ze tří až na dvanáct měsíců, dokud dovoz suroviny nedosáhne 10 mil. €, měsíční řada od ledna 2022, první zveřejněné hodnoty vedle revizí, kontrola podle tun a podle hodnoty, koncentrace dodavatelů a soubor CSV."),
+INDEX_CHANGELOG_CS = [("22. listopadu 2026", "Čísla beze změny. Stránka nově říká, co index nezahrnuje, a upozorní na každý měsíc, kdy se verze se stejnými vahami, podle tun a vážená hodnotou pohnou proti loňsku opačným směrem."),
+                      ("21. listopadu 2026", "Verze 3: širší koš produktů (u wolframu parawolframan amonný, karbid, prášek, oxidy a výrobky, tvářený titan, slitiny niklu), okno, které se prodlužuje ze tří až na dvanáct měsíců, dokud dovoz suroviny nedosáhne 10 mil. €, měsíční řada od ledna 2022, první zveřejněné hodnoty vedle revizí, kontrola podle tun a podle hodnoty, koncentrace dodavatelů a soubor CSV."),
                       ("listopad 2026", "Verze 2: tři měsíce sečtené pro každou surovinu místo jediného měsíce; tři největší dodavatelé každé suroviny."),
                       ("2026", "Verze 1: jediný měsíc pro každou surovinu, stejná váha pro deset surovin indexu.")]
 CC_EN = {"AR": "Argentina", "AU": "Australia", "BA": "Bosnia and Herzegovina", "BI": "Burundi", "BO": "Bolivia", "BR": "Brazil", "CA": "Canada", "CD": "DR Congo",
@@ -913,6 +915,29 @@ def _drivers_txt(rec, before, names, cs=False):
     return ", ".join([first] + rest)
 
 
+def _disagree_txt(last, before, names, cs=False):
+    """When the equal-weighted, tonnes and value-weighted versions move in opposite directions against a year earlier:
+    a warning sentence naming the mineral behind the equal-weighted move, else ''."""
+    if not before:
+        return ""
+    pts = lambda a, b: None if a is None or b is None else round(a * 100) - round(b * 100)
+    ver = [("eq", pts(last.get("value"), before.get("value"))), ("t", pts(last.get("t_value"), before.get("t_value"))),
+           ("w", pts(last.get("w_value"), before.get("w_value")))]
+    ver = [(k, d) for k, d in ver if d is not None]
+    if not (any(d > 0 for _, d in ver) and any(d < 0 for _, d in ver)):
+        return ""
+    lab = {"eq": "stejné váhy", "t": "podle tun", "w": "váženo hodnotou"} if cs else {"eq": "equal weight", "t": "by tonnes", "w": "value-weighted"}
+    unit = (lambda d: "%+d b." % d) if cs else (lambda d: "%+d pts" % d)
+    parts = ", ".join("%s %s" % (lab[k], unit(d).replace("-", "\u2212")) for k, d in ver)
+    dr = [m for m, c in drivers(last, before) if abs(c) >= 0.1][:1]
+    who = ""
+    if dr:
+        nm = MAT_CS.get(dr[0], dr[0]).lower() if cs else (names.get(dr[0], dr[0]).lower() if dr[0] != "ree" else "rare earths")
+        who = (" Pohyb indexu táhne hlavně %s, takže změnu nečtěte jako celkový trend." % nm) if cs else (" The move in the index comes mostly from %s, so do not read it as a general trend." % nm)
+    return (("Verze se proti loňsku rozcházejí ve směru (%s).%s" % (parts, who)) if cs
+            else ("The versions disagree on the direction against a year earlier: %s.%s" % (parts, who)))
+
+
 def _conc_rows(conc, last, names, cs=False):
     cc = CC_CS if cs else CC_EN
     order = [m for m in sorted(conc, key=lambda m: -conc[m]["top"][1]) if m in last["per"] or m in (last.get("extra") or {})]
@@ -964,6 +989,9 @@ def dependency_page(ref, live, today):
     thin_note = (" Where a mineral's imports from outside the EU stay under %s in three months, its window grows a month at a time, up to twelve months (marked), so one delivery cannot swing it." % _eur_txt(INDEX_MIN_EUR)) if last.get("thin") else ""
     dr = _drivers_txt(last, yago, names)
     drivers_p = ('<p class="small">What moved it against a year earlier: %s. Each mineral\'s change in share divided by ten, so the moves add up to the change of the index.</p>' % e(dr)) if dr else ""
+    dg = _disagree_txt(last, yago, names)
+    if dg:
+        drivers_p += '<p class="small"><b>%s</b> See <a href="#checks">how robust it is</a>.</p>' % e(dg)
     rv = revision(live, last["month"])
     rev_p = ('<p class="small">First published as %d%% on %s; revised since with later Eurostat data.</p>' % (round(rv[0] * 100), e(day(rv[1])))) if rv else ""
     sw, p90 = _swing_stats(series)
@@ -1006,9 +1034,13 @@ def dependency_page(ref, live, today):
 %(supply)s
 %(conc)s
 %(outside)s
-<section><h2>What the index measures</h2><ul class="plain">
-<li>Where the EU's direct imports come from: the customs origin of each shipment, the country where the product was made or last processed.</li>
-<li>Not who mined the ore. A magnet made in Japan from rare earths refined in China counts as Japanese, and nickel refined in Norway from imported ore counts as Norwegian. China's grip on mining and refining is often larger than its share of EU imports.</li>
+<section id="limits"><h2>What the index measures, and what it leaves out</h2><ul class="plain">
+<li>Where the EU's direct imports from outside the EU come from: the customs origin of each shipment, the country where the product was made or last processed. It shows how concentrated that import supply is, not the EU's whole dependency.</li>
+<li>It leaves out what the EU mines, refines and recycles itself, trade between EU countries, and stocks.</li>
+<li>Not who mined the ore or owns the plant. A magnet made in Japan from rare earths refined in China counts as Japanese, nickel refined in Norway from imported ore counts as Norwegian, and nickel from Indonesian plants, many of them Chinese-owned, counts as Indonesian. China's grip on mining and refining is often larger than its share of EU imports.</li>
+<li>Shares are by value, so they move with prices: a price jump from one supplier changes the share even when no more tonnes arrive. The tonnes version is the check.</li>
+<li>Equal weight is a choice. It keeps small, critical markets such as gallium and germanium in view, but lets a market of a few million euros a month move the index as much as nickel. When the equal-weighted, tonnes and value-weighted versions move in opposite directions, this page says so and names the mineral behind the move.</li>
+<li>The basket covers raw materials, intermediates and some parts (magnets, carbide, alloys), not finished products such as motors, batteries or electronics that contain the minerals.</li>
 <li>For who controls each stage, from mine to refinery to finished part, see <a href="../">the live atlas</a> and the <a href="index.html">mineral pages</a>.</li></ul></section>
 <section><h2>How it is made</h2><ul class="plain">
 <li>For each of the ten index minerals, OreOrbit adds up the value of the EU's imports from outside the EU of a fixed basket of products (for rare earths: permanent magnets, compounds and metals; for tungsten: ores, APT, oxides, carbide, powder, metal and articles) and takes China's share.</li>
@@ -1171,6 +1203,9 @@ def dependency_page_cs(ref, live, today):
     thin_note = (" Když dovoz suroviny ze zemí mimo EU za tři měsíce nedosáhne %s, okno se prodlužuje po měsíci až na dvanáct měsíců (označeno), aby podílem nepohnula jediná dodávka." % _eur_txt(INDEX_MIN_EUR, cs=True)) if last.get("thin") else ""
     dr = _drivers_txt(last, yago, {}, cs=True)
     drivers_p = ('<p class="small">Co index proti loňsku pohnulo: %s. Změna podílu každé suroviny dělená deseti, takže se pohyby sčítají na změnu indexu.</p>' % e(dr)) if dr else ""
+    dg = _disagree_txt(last, yago, {}, cs=True)
+    if dg:
+        drivers_p += '<p class="small"><b>%s</b> Viz <a href="#checks">jak je index robustní</a>.</p>' % e(dg)
     rv = revision(live, last["month"])
     rev_p = ('<p class="small">Poprvé zveřejněno %s jako %d %%; od té doby upraveno podle novějších dat Eurostatu.</p>' % (e(day_cs(rv[1])), round(rv[0] * 100))) if rv else ""
     swx, p90 = _swing_stats(series)
@@ -1216,9 +1251,13 @@ def dependency_page_cs(ref, live, today):
 %(supply)s
 %(conc)s
 %(outside)s
-<section><h2>Co index měří</h2><ul class="plain">
-<li>Odkud EU přímo dováží: celní původ každé zásilky, tedy zemi, kde byl výrobek vyroben nebo naposledy zpracován.</li>
-<li>Ne to, kdo vytěžil rudu. Magnet vyrobený v Japonsku ze vzácných zemin rafinovaných v Číně se počítá jako japonský a nikl rafinovaný v Norsku z dovezené rudy jako norský. Vliv Číny na těžbu a rafinaci bývá větší než její podíl na dovozu do EU.</li>
+<section id="limits"><h2>Co index měří a co nezahrnuje</h2><ul class="plain">
+<li>Odkud EU přímo dováží ze zemí mimo EU: celní původ každé zásilky, tedy zemi, kde byl výrobek vyroben nebo naposledy zpracován. Ukazuje, jak soustředěné jsou tyto dodávky, ne celkovou závislost EU.</li>
+<li>Nezahrnuje, co EU sama vytěží, zpracuje a recykluje, obchod mezi zeměmi EU ani zásoby.</li>
+<li>Ne to, kdo vytěžil rudu nebo vlastní závod. Magnet vyrobený v Japonsku ze vzácných zemin rafinovaných v Číně se počítá jako japonský, nikl rafinovaný v Norsku z dovezené rudy jako norský a nikl z indonéských závodů, z nichž mnohé vlastní čínské firmy, jako indonéský. Vliv Číny na těžbu a rafinaci bývá větší než její podíl na dovozu do EU.</li>
+<li>Podíly jsou podle hodnoty, takže se hýbou s cenami: když jednomu dodavateli vyskočí cena, podíl se změní, i když nepřibude ani tuna. Kontrolou je verze podle tun.</li>
+<li>Stejná váha je volba. Drží na očích malé, ale kritické trhy jako galium a germanium, jenže trh za pár milionů eur měsíčně pak pohne indexem stejně jako nikl. Když se verze se stejnými vahami, podle tun a vážená hodnotou pohnou opačným směrem, stránka to řekne a uvede surovinu, která pohyb táhne.</li>
+<li>Koš zahrnuje suroviny, meziprodukty a některé díly (magnety, karbid, slitiny), ne hotové výrobky jako motory, baterie nebo elektroniku, v nichž suroviny jsou.</li>
 <li>Kdo ovládá jednotlivé fáze od dolu přes rafinerii po hotový díl, ukazuje <a href="../?lang=cs">živý atlas</a> a <a href="index.html">stránky surovin</a>.</li></ul></section>
 <section><h2>Jak index vzniká</h2><ul class="plain">
 <li>U každé z deseti surovin indexu OreOrbit sečte hodnotu dovozu pevného koše produktů do EU ze zemí mimo EU (u vzácných zemin permanentní magnety, sloučeniny a kovy, u wolframu rudy, parawolframan amonný, oxidy, karbid, prášek, kov a výrobky) a spočítá podíl Číny.</li>
