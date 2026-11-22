@@ -973,11 +973,139 @@ def _changelog(cs=False):
     return "".join("<li><b>%s</b> · %s</li>" % (e(d), e(t)) for d, t in (INDEX_CHANGELOG_CS if cs else INDEX_CHANGELOG))
 
 
+MON_CS_SHORT = ["led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"]
+
+
+def _ix_names(ref, cs=False):
+    if cs:
+        return {m: MAT_CS.get(m, m) for m in INDEX_MINERALS}
+    return {m: ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m) for m in INDEX_MINERALS}
+
+
+def _ix_list(ref, cs=False):
+    """'rare earths, titanium, …, cobalt, nickel and graphite' in index order."""
+    nm = [x.lower() for x in _ix_names(ref, cs).values()]
+    return "%s %s %s" % (", ".join(nm[:-1]), "a" if cs else "and", nm[-1])
+
+
+def _ix_data(series, names, cs=False):
+    """JSON for the interactive chart in library.js: months, the index, single months and each mineral's own China share, in %."""
+    pc = lambda x: None if x is None else round(x * 100, 1)
+    d = {"m": [x["month"] for x in series], "v": [pc(x["value"]) for x in series], "m1": [pc(x.get("m1")) for x in series],
+         "per": {m: [pc((x.get("per") or {}).get(m)) for x in series] for m in INDEX_MINERALS},
+         "nm": {m: names.get(m, m) for m in INDEX_MINERALS}, "col": {m: COL.get(m, "#eceee9") for m in INDEX_MINERALS},
+         "mon": MONTH_CS_NOM if cs else MONTH, "ms": MON_CS_SHORT if cs else MON, "lang": "cs" if cs else "en"}
+    return e(json.dumps(d, separators=(",", ":"), ensure_ascii=False))
+
+
+def _ix_hero(v, yago, cs=False):
+    """Second top figure: the change against a year earlier, with an arrow."""
+    if not yago:
+        return ""
+    yv = round(yago["value"] * 100)
+    d = v - yv
+    arrow = "▲" if d > 0 else "▼" if d < 0 else "="
+    if cs:
+        return '<div><dt>%s %d %s</dt><dd>proti stejnému období před rokem (%d %%)</dd></div>' % (arrow, abs(d), _body_cs(abs(d)), yv)
+    return '<div><dt>%s %d %s</dt><dd>against a year earlier (%d%%)</dd></div>' % (arrow, abs(d), "point" if abs(d) == 1 else "points", yv)
+
+
+def _ix_qas(ref, last, yago, win, cs=False):
+    """Visible questions and answers on the index page, also sent as FAQPage structured data."""
+    v = round(last["value"] * 100)
+    yv = round(yago["value"] * 100) if yago else None
+    nm = _ix_names(ref, cs)
+    top = sorted(last["per"].items(), key=lambda kv: -kv[1])[:3]
+    c = counts(ref)
+    if cs:
+        tops = ", ".join("%s %d %%" % (nm.get(m, m).lower(), round(x * 100)) for m, x in top)
+        return [
+            ("Co je Index závislosti OreOrbit?",
+             "Měsíční číslo, které říká, kolik z toho, co EU dováží ze zemí mimo EU u dvanácti kritických surovin pro obranu, pochází z Číny. "
+             "Za %s to bylo %d %%. Vydává ho Bohemia Defense z celních dat Eurostatu." % (win, v)),
+            ("Jak moc je EU závislá na Číně u kritických surovin?",
+             "Za %s dodala Čína v průměru %d %% hodnoty dovozu do EU ze zemí mimo EU u dvanácti sledovaných surovin%s. "
+             "Víc než polovinu dodala u %d z %d surovin; nejvíc: %s." % (win, v, (", před rokem %d %%" % yv) if yv is not None else "", last["over50"], last["n"], tops)),
+            ("Proč je číslo nižší než podíl Číny na světové těžbě?",
+             "Index sleduje celní původ toho, co do EU skutečně dorazí. Surovina rafinovaná ve Vietnamu, Turecku, Norsku nebo Indonésii se počítá těmto zemím, i když ruda nebo majitel závodu jsou čínští. "
+             "Podíl Číny na světové těžbě a rafinaci je proto u většiny těchto surovin vyšší."),
+            ("Které suroviny index zahrnuje?",
+             "%s. Každá má stejnou váhu, takže malý, ale kritický trh jako galium váží stejně jako lithium. Hotové výrobky jako motory, baterie a elektronika v indexu nejsou." % _ix_list(ref, True).capitalize()),
+            ("Jak často se index obnovuje a odkud jsou data?",
+             "Každý měsíc, jakmile Eurostat zveřejní nová celní data (Comext), obvykle zhruba šest týdnů po konci měsíce. Celá měsíční řada od ledna 2022 je zdarma ke stažení jako CSV."),
+            ("Mohu index citovat nebo převzít graf?",
+             "Ano. Uveďte „Index závislosti OreOrbit (Bohemia Defense)“ a odkaz na tuto stránku."),
+            ("Kde uvidím celý dodavatelský řetězec?",
+             "Živý atlas OreOrbit ukazuje u stejných %s surovin %d lokalit a %d obchodních tras a to, kdo ovládá těžbu, rafinaci a díly." % (w_cs(c["minerals"], True), c["sites"], c["routes"]))]
+    tops = ", ".join("%s %d%%" % (nm.get(m, m).lower(), round(x * 100)) for m, x in top)
+    return [
+        ("What is the OreOrbit Dependency Index?",
+         "A monthly number that shows how much of what the EU imports from outside the EU in twelve critical minerals for defence comes from China. "
+         "In the %s it was %d%%. It is published by Bohemia Defense from Eurostat customs data." % (win, v)),
+        ("How dependent is the EU on China for critical minerals?",
+         "In the %s, China supplied on average %d%% of the value of the EU's imports from outside the EU across the twelve minerals%s. "
+         "It supplied more than half for %d of the %d; the highest were %s." % (win, v, (", against %d%% a year earlier" % yv) if yv is not None else "", last["over50"], last["n"], tops)),
+        ("Why is it lower than China's share of world production?",
+         "The index follows the customs origin of what actually reaches the EU. A mineral refined in Vietnam, Turkey, Norway or Indonesia counts for that country even when the ore or the plant's owner is Chinese. "
+         "China's share of world mining and refining is therefore higher for most of these minerals."),
+        ("Which minerals does it cover?",
+         "%s. Each counts equally, so a small but critical market such as gallium weighs as much as lithium. Finished products such as motors, batteries and electronics are not included." % _ix_list(ref).capitalize()),
+        ("How often is it updated, and where does the data come from?",
+         "Every month, when Eurostat publishes new customs data (Comext), usually about six weeks after the month ends. The full monthly series from January 2022 is a free CSV download."),
+        ("Can I quote the index or reuse the chart?",
+         "Yes. Credit “OreOrbit Dependency Index (Bohemia Defense)” and link to this page. The chart can be embedded with a code that updates itself every month."),
+        ("Where can I see the whole supply chain?",
+         "The live OreOrbit atlas maps the same %s minerals: %d sites and %d trade routes, and who controls mining, refining and parts." % (w_en(c["minerals"]), c["sites"], c["routes"]))]
+
+
+def _ix_dataset(ref, path, series, last, today, cs=False):
+    """Dataset structured data for the index page, so search engines and assistants can find, describe and cite it."""
+    v = round(last["value"] * 100)
+    nm = _ix_names(ref, cs)
+    per = [{"@type": "PropertyValue", "name": ("Podíl Číny na dovozu do EU ze zemí mimo EU: %s" if cs else "China's share of extra-EU imports: %s") % nm.get(m, m),
+            "value": round(x * 100), "unitText": "percent"} for m, x in sorted(last["per"].items(), key=lambda kv: -kv[1])]
+    main = {"@type": "PropertyValue", "name": "Index závislosti OreOrbit" if cs else "OreOrbit Dependency Index", "value": v, "unitText": "percent",
+            "description": ("Průměr podílů Číny na hodnotě dovozu do EU ze zemí mimo EU, stejná váha pro každou z dvanácti surovin" if cs
+                            else "Equal-weighted average of China's share of the value of extra-EU imports across the twelve minerals")}
+    kw = (["kritické suroviny", "závislost EU na Číně", "dovoz do EU", "obranný průmysl", "dodavatelský řetězec", "Akt o kritických surovinách", "strategické suroviny"] if cs
+          else ["critical raw materials", "critical minerals", "EU dependence on China", "EU imports", "defence industry", "supply chain", "Critical Raw Materials Act", "strategic autonomy"])
+    return {"@type": "Dataset", "@id": BASE + path + "#dataset",
+            "name": "Index závislosti OreOrbit" if cs else "OreOrbit Dependency Index",
+            "alternateName": (["Index závislosti EU na Číně u kritických surovin", "OreOrbit Dependency Index"] if cs
+                              else ["EU dependence on China for critical minerals", "Index závislosti OreOrbit"]),
+            "inLanguage": "cs" if cs else "en",
+            "description": (("Měsíční index: kolik z toho, co EU dováží ze zemí mimo EU u dvanácti kritických surovin pro obranu (%s), pochází z Číny. "
+                             "Průměr podílů Číny na hodnotě dovozu, stejná váha pro každou surovinu, nejméně tři měsíce na surovinu. Verze %d, řada od ledna 2022. Zdroj: Eurostat Comext.") if cs else
+                            ("Monthly index of how much of what the EU imports from outside the EU in twelve critical minerals for defence (%s) comes from China. "
+                             "Equal-weighted average of China's share of import value, at least three months per mineral. Version %d, series from January 2022. Source: Eurostat Comext.")) % (_ix_list(ref, cs), INDEX_VERSION),
+            "url": BASE + path, "sameAs": BASE + ("p/dependency-index.html" if cs else "p/dependency-index-cs.html"),
+            "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]},
+            "creditText": "Index závislosti OreOrbit (Bohemia Defense)" if cs else "OreOrbit Dependency Index (Bohemia Defense)",
+            "isAccessibleForFree": True, "dateModified": today, "version": str(INDEX_VERSION),
+            "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]),
+            "spatialCoverage": {"@type": "Place", "name": "Evropská unie" if cs else "European Union"},
+            "measurementTechnique": ("Celní původ dovozu do EU ze zemí mimo EU (Eurostat Comext), pevný koš produktů na surovinu, prostý průměr podílů" if cs
+                                     else "Customs origin of extra-EU imports (Eurostat Comext), fixed product basket per mineral, plain average of shares"),
+            "variableMeasured": [main] + per,
+            "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + "p/dependency-index.csv"}],
+            "isBasedOn": "https://ec.europa.eu/eurostat/comext/newxtweb/",
+            "keywords": kw + [x.lower() for x in nm.values()]}
+
+
+def _method_block(body):
+    """Analyst sections between the method markers go one heading level down, under 'Method and checks'."""
+    a, b = body.find("<!--method-->"), body.find("<!--/method-->")
+    if a < 0 or b < 0:
+        return body
+    mid = body[a:b].replace("<h2>", "<h3>").replace("</h2>", "</h3>").replace("<h2 ", "<h3 ")
+    return body[:a] + mid + body[b + len("<!--/method-->"):]
+
+
 def dependency_page(ref, live, today):
     path = "p/dependency-index.html"
     trade = live.get("trade")
     series = dependency_series(trade)
-    title = "OreOrbit Dependency Index: China's share of Europe's defence-mineral imports"
+    title = "EU dependence on China for critical minerals: OreOrbit Dependency Index"
     if not series:
         return path, page(path, title, "Monthly index of China's share of EU imports of the twelve critical minerals behind Europe's defence.", "<h1>OreOrbit Dependency Index</h1><p class=\"lede\">The index appears once the monthly trade data is available.</p>", [], today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
     last = series[-1]
@@ -992,13 +1120,15 @@ def dependency_page(ref, live, today):
     win = window_txt(last)
     quote = "China supplied %d%% of the EU's imports of the twelve critical minerals behind Europe's defence industry in the %s, according to the OreOrbit Dependency Index by Bohemia Defense%s." % (
         v, win, (", %s from %d%% a year earlier" % ("up" if d_y > 0 else "down" if d_y < 0 else "unchanged", round(yago["value"] * 100))) if yago else "")
-    desc = quote
+    desc = ("China supplies %d%% of what the EU imports from outside the EU in twelve critical minerals for defence (%s%s). "
+            "Monthly OreOrbit Dependency Index from Eurostat data, free CSV.") % (
+        v, win, (", %d%% a year earlier" % round(yago["value"] * 100)) if yago else "")
     rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
     wins = last.get("win") or {}
     def li(m, x, before):
         wn = int(wins.get(m) or INDEX_WINDOW)
-        return '<li style="--c:%s"><span>%s%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d%%%s</span></li>' % (
-            COL.get(m, "#eceee9"), e(names[m]), (' <span class="small">· %s</span>' % months_txt(wn, short=True)) if wn > INDEX_WINDOW else "", x * 100, round(x * 100),
+        return '<li style="--c:%s" data-m="%s"><span>%s%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d%%%s</span></li>' % (
+            COL.get(m, "#eceee9"), m, e(names[m]), (' <span class="small">· %s</span>' % months_txt(wn, short=True)) if wn > INDEX_WINDOW else "", x * 100, round(x * 100),
             ("" if m not in before else ' <em>%s</em>' % e(chg(round(x * 100) - round(before[m] * 100)).replace(" points", " pts").replace(" point", " pt"))))
     trs = "".join(li(m, x, (yago or {}).get("per") or {}) for m, x in rows)
     thin_note = (" Where a mineral's imports from outside the EU stay under %s in three months, its window grows a month at a time, up to twelve months (marked), so one delivery cannot swing it." % _eur_txt(INDEX_MIN_EUR)) if last.get("thin") else ""
@@ -1035,20 +1165,27 @@ def dependency_page(ref, live, today):
             ("Suppliers: full year %s, the latest annual data, until the monthly breakdown is available." % sup_year) if sup_year else ("Suppliers: the %s, all tracked products added up." % e(win)),
             e(win))
     m1 = last.get("m1")
-    body = """<article style="--c:#3ddc97">
+    qas = _ix_qas(ref, last, yago, win)
+    body = _method_block("""<article style="--c:#3ddc97">
 <p class="kicker"><i></i>Monthly · Eurostat data to %(month)s</p>
 <h1>OreOrbit Dependency Index</h1>
-<p class="lede">China's share of what the EU imports from outside the EU across the twelve critical minerals behind Europe's defence industry, over the latest three months, longer for thin markets. Each mineral counts equally.</p>
-%(rev)s<dl class="figs"><div><dt>%(v)d%%</dt><dd>China's share of EU imports from outside the EU, %(win)s</dd></div><div><dt>%(dm)s</dt><dd>change from a month earlier</dd></div><div><dt>%(dy)s</dt><dd>change from a year earlier</dd></div><div><dt>%(over)d of %(n)d</dt><dd>minerals where China supplied more than half</dd></div></dl>
-<p class="small">Why lower than China's share of world output: the index follows the customs origin of what reaches the EU. Antimony refined in Vietnam or Turkey, or nickel from Indonesian and Norwegian plants, counts for those countries even when the ore or the owner is Chinese. <a href="#limits">What it leaves out</a>.</p>
-%(drivers)s
-<section><h2>Month by month</h2>%(chart)s<p class="small">Green line: the index, at least three months at a time. Dotted line: single months, which swing when few shipments arrive. Equal-weighted average of China's share of the value of extra-EU imports, per mineral. Source: Eurostat Comext, via OreOrbit.</p><p class="small"><a href="dependency-index.csv" download>Download the full monthly series (CSV)</a>, with each mineral's share, window and import value and the first published value of every month.</p><button type="button" class="dl" hidden>Download chart (SVG)</button></section>
-<section><h2>Quote it</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" hidden>Copy the sentence</button><p class="small">Journalists and analysts may quote the index and reuse the chart with credit to “OreOrbit Dependency Index (Bohemia Defense)” and a link to this page.</p></section>
-<section><h2>By mineral, %(win)s</h2><ul class="idx">%(trs)s</ul><p class="small">China's share of the value of extra-EU imports, all index products and all months of each mineral's window added up; change against the same window a year earlier.%(thin)s</p></section>
-%(robust)s
-%(supply)s
-%(conc)s
+<p class="lede">How much of what the EU imports from outside the EU in twelve critical minerals for defence comes from China.</p>
+<dl class="figs hero"><div><dt>%(v)d%%</dt><dd>from China, %(win)s</dd></div>%(fig2)s</dl>
+<ul class="plain key">
+<li><b>What it tracks.</b> China's share of the value of the EU's imports from outside the EU of %(list)s.</li>
+<li><b>How it is calculated.</b> For each mineral, China's share over the latest three months, longer when few shipments arrive. Then a plain average, so every mineral counts equally. Eurostat customs data, updated every month.</li>
+<li><b>How to read it.</b> Higher means more dependent on China. %(v)d%% means that, on average across the twelve minerals, China supplies %(v)d%% of what the EU buys from outside the EU.</li></ul>
+<p class="small">It is not China's share of world mining or refining, which is higher for most of these minerals, and it leaves out finished products such as motors, batteries and electronics. <a href="#limits">What it leaves out</a> · <a href="#method">Method and checks</a> · <a href="#faq">Questions</a></p>
+%(rev)s%(drivers)s
+<section id="chart"><h2>Month by month</h2><figure class="ix" data-ix="%(ixd)s">%(chart)s<div class="ix-chips" hidden></div><p class="ix-read small" aria-live="polite"></p></figure><p class="small">Green line: the index. Dotted line: single months, which swing when few shipments arrive. Source: Eurostat Comext, via OreOrbit.</p><p class="small"><a href="dependency-index.csv" download>Download the full monthly series (CSV)</a>, with each mineral's share, window and import value and the first published value of every month.</p><button type="button" class="dl" hidden>Download chart (SVG)</button></section>
+<section id="minerals"><h2>By mineral, %(win)s</h2><ul class="idx">%(trs)s</ul><p class="small">China's share of the value of each mineral's imports from outside the EU; change against the same window a year earlier. China supplied more than half for %(over)d of the %(n)d. Change of the index from a month earlier: %(dm)s.%(thin)s</p></section>
 %(outside)s
+%(supply)s
+<section><h2>Quote it</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" hidden>Copy the sentence</button><p class="small">Journalists and analysts may quote the index and reuse the chart with credit to “OreOrbit Dependency Index (Bohemia Defense)” and a link to this page.</p></section>
+%(faq)s
+<section id="method" class="method"><h2>Method and checks</h2><p class="small">For analysts who want to check the number: how robust it is, how concentrated supply is, what it leaves out, how it is made and how it has changed.</p>
+<!--method-->%(robust)s
+%(conc)s
 <section id="limits"><h2>What the index measures, and what it leaves out</h2><ul class="plain">
 <li>Where the EU's direct imports from outside the EU come from: the customs origin of each shipment, the country where the product was made or last processed. It shows how concentrated that import supply is, not the EU's whole dependency.</li>
 <li>It leaves out what the EU mines, refines and recycles itself, trade between EU countries, and stocks.</li>
@@ -1068,6 +1205,7 @@ def dependency_page(ref, live, today):
 <section><h2>Version 2, %(v2)s</h2><p>Until %(v2)s the headline was a single month. Single months swung by up to %(swing)d points from one month to the next when few shipments arrived, so version 2 added up three months.%(m1)s</p></section>
 <section><h2>Embed this chart</h2><p>Paste this code into an article or a blog post. The chart updates itself every month and credits OreOrbit.</p>
 <p class="cite-text" style="font-family:monospace;font-size:13px;word-break:break-all">%(embed)s</p><button type="button" class="copy" data-copy="%(embed)s" data-label="Copy the embed code" data-done="Embed code copied" hidden>Copy the embed code</button></section>
+<!--/method--></section>
 %(cite)s
 <p class="open"><a class="cta" href="../">See the minerals on the live atlas</a></p></article>""" % {
         "embed": e('<iframe src="' + BASE + 'p/embed-index.html" width="100%" height="420" style="border:0;max-width:760px" title="OreOrbit Dependency Index" loading="lazy"></iframe>'),
@@ -1076,12 +1214,9 @@ def dependency_page(ref, live, today):
         "v2": INDEX_V2_FROM, "v3": INDEX_V3_FROM, "v4": INDEX_V4_FROM, "swing": _max_swing(series), "minv": e(_eur_txt(INDEX_MIN_EUR)), "log": _changelog(),
         "rev": rev_p, "drivers": drivers_p, "robust": robust, "conc": conc_s,
         "m1": (" Under the single-month method, %s reads %d%%." % (e(month_txt(last["month"])), round(m1 * 100))) if m1 is not None else "",
-        "cite": cite_box(title, path, today)}
-    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for the twelve critical materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, magnesium, manganese, gallium, germanium, lithium, cobalt, nickel, graphite), over at least the latest three months and up to twelve for thin markets. Version 4 since 22 November 2026, series from January 2022. Source: Eurostat Comext.",
-           "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": str(INDEX_VERSION),
-           "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]), "variableMeasured": "China's share of extra-EU import value, at least three months per material, equal-weighted across the twelve materials",
-           "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + "p/dependency-index.csv"}],
-           "isBasedOn": "https://ec.europa.eu/eurostat/comext/newxtweb/", "keywords": ["critical raw materials", "defence industry", "EU imports", "China", "supply chain"]}]
+        "cite": cite_box(title, path, today),
+        "fig2": _ix_hero(v, yago), "list": e(_ix_list(ref)), "ixd": _ix_data(series, _ix_names(ref)), "faq": qa_section(qas, sid="faq")})
+    ld = [_ix_dataset(ref, path, series, last, today), faq_ld(path, qas)]
     return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)], alt="p/dependency-index-cs.html")
 
 
@@ -1190,7 +1325,7 @@ def dependency_page_cs(ref, live, today):
     path = "p/dependency-index-cs.html"
     trade = live.get("trade")
     series = dependency_series(trade)
-    title = "Index závislosti OreOrbit: podíl Číny na dovozu surovin pro evropskou obranu"
+    title = "Závislost EU na Číně u kritických surovin: Index závislosti OreOrbit"
     if not series:
         return path, page(path, title, "Měsíční index podílu Číny na dovozu dvanácti kritických surovin do EU.", "<h1>Index závislosti OreOrbit</h1><p class=\"lede\">Index se zobrazí, jakmile budou k dispozici měsíční obchodní data.</p>", [], today, [("Atlas", ""), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
     last = series[-1]
@@ -1212,8 +1347,8 @@ def dependency_page_cs(ref, live, today):
     wins = last.get("win") or {}
     def li(m, x, before):
         wn = int(wins.get(m) or INDEX_WINDOW)
-        return '<li style="--c:%s"><span>%s%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d %%%s</span></li>' % (
-            COL.get(m, "#eceee9"), e(MAT_CS.get(m, m)), (' <span class="small">· %s</span>' % months_txt(wn, True, short=True)) if wn > INDEX_WINDOW else "", x * 100, round(x * 100),
+        return '<li style="--c:%s" data-m="%s"><span>%s%s</span><span class="pc"><span class="qbar"><span style="width:%.0f%%"></span></span>%d %%%s</span></li>' % (
+            COL.get(m, "#eceee9"), m, e(MAT_CS.get(m, m)), (' <span class="small">· %s</span>' % months_txt(wn, True, short=True)) if wn > INDEX_WINDOW else "", x * 100, round(x * 100),
             ("" if m not in before else ' <em>%s</em>' % e(chg(round(x * 100) - round(before[m] * 100)))))
     trs = "".join(li(m, x, (yago or {}).get("per") or {}) for m, x in rows)
     thin_note = (" Když dovoz suroviny ze zemí mimo EU za tři měsíce nedosáhne %s, okno se prodlužuje po měsíci až na dvanáct měsíců (označeno), aby podílem nepohnula jediná dodávka." % _eur_txt(INDEX_MIN_EUR, cs=True)) if last.get("thin") else ""
@@ -1253,20 +1388,30 @@ def dependency_page_cs(ref, live, today):
             e(win))
     m1 = last.get("m1")
     sw = _max_swing(series)
-    body = """<article style="--c:#3ddc97">
+    qas = _ix_qas(ref, last, yago, win, cs=True)
+    desc = ("Čína dodává %d %% toho, co EU dováží ze zemí mimo EU u dvanácti kritických surovin pro obranu (%s%s). "
+            "Měsíční Index závislosti OreOrbit z dat Eurostatu, CSV zdarma.") % (
+        v, win, (", před rokem %d %%" % round(yago["value"] * 100)) if yago else "")
+    body = _method_block("""<article style="--c:#3ddc97">
 <p class="kicker"><i></i>Měsíčně · data Eurostatu do %(gen)s</p>
 <h1>Index závislosti OreOrbit</h1>
-<p class="lede">Podíl Číny na tom, co EU dováží ze zemí mimo EU, napříč dvanácti kritickými surovinami, na kterých stojí evropský obranný průmysl, za poslední tři měsíce, u slabých trhů za delší dobu. Každá surovina má stejnou váhu.</p>
-%(rev)s<dl class="figs"><div><dt>%(v)d %%</dt><dd>podíl Číny na dovozu do EU ze zemí mimo EU za %(win)s</dd></div><div><dt>%(dm)s</dt><dd>změna proti předchozímu měsíci</dd></div><div><dt>%(dy)s</dt><dd>změna proti stejnému období před rokem</dd></div><div><dt>%(over)d z %(n)d</dt><dd>surovin, u kterých Čína dodala víc než polovinu</dd></div></dl>
-<p class="small">Proč méně, než je podíl Číny na světové produkci: index sleduje celní původ toho, co do EU dorazí. Antimon rafinovaný ve Vietnamu nebo Turecku či nikl z indonéských a norských závodů se počítá těmto zemím, i když ruda nebo majitel jsou čínští. <a href="#limits">Co index nezahrnuje</a>.</p>
-%(drivers)s
-<section><h2>Měsíc po měsíci</h2>%(chart)s<p class="small">Zelená čára: index, vždy nejméně za tři měsíce. Tečkovaná čára: jednotlivé měsíce, které kolísají, když dorazí málo zásilek. Průměr podílů Číny na hodnotě dovozu do EU ze zemí mimo EU, se stejnou vahou pro každou surovinu. Zdroj: Eurostat Comext, přes OreOrbit.</p><p class="small"><a href="dependency-index.csv" download>Stáhnout celou měsíční řadu (CSV)</a> s podílem, oknem a hodnotou dovozu každé suroviny a s první zveřejněnou hodnotou každého měsíce.</p><button type="button" class="dl" data-label="Stáhnout graf (SVG)" hidden>Stáhnout graf (SVG)</button></section>
-<section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
-<section><h2>Podle surovin, %(win)s</h2><ul class="idx">%(trs)s</ul><p class="small">Podíl Číny na hodnotě dovozu do EU ze zemí mimo EU, všechny produkty indexu a všechny měsíce okna dané suroviny dohromady; změna proti stejnému období před rokem.%(thin)s</p></section>
-%(robust)s
-%(supply)s
-%(conc)s
+<p class="lede">Kolik z toho, co EU dováží ze zemí mimo EU u dvanácti kritických surovin pro obranu, pochází z Číny.</p>
+<dl class="figs hero"><div><dt>%(v)d %%</dt><dd>z Číny, za %(win)s</dd></div>%(fig2)s</dl>
+<ul class="plain key">
+<li><b>Co sleduje.</b> Podíl Číny na hodnotě dovozu do EU ze zemí mimo EU u těchto surovin: %(list)s.</li>
+<li><b>Jak se počítá.</b> U každé suroviny podíl Číny za poslední tři měsíce, a když dorazí málo zásilek, tak za delší dobu. Pak prostý průměr, takže každá surovina váží stejně. Celní data Eurostatu, obnova každý měsíc.</li>
+<li><b>Jak ho číst.</b> Vyšší číslo znamená větší závislost na Číně. %(v)d %% znamená, že Čína v průměru za dvanáct surovin dodává %(v)d %% toho, co EU nakupuje mimo EU.</li></ul>
+<p class="small">Není to podíl Číny na světové těžbě nebo rafinaci, který je u většiny těchto surovin vyšší, a nezahrnuje hotové výrobky jako motory, baterie a elektroniku. <a href="#limits">Co index nezahrnuje</a> · <a href="#method">Metodika a kontroly</a> · <a href="#faq">Otázky</a></p>
+%(rev)s%(drivers)s
+<section id="chart"><h2>Měsíc po měsíci</h2><figure class="ix" data-ix="%(ixd)s">%(chart)s<div class="ix-chips" hidden></div><p class="ix-read small" aria-live="polite"></p></figure><p class="small">Zelená čára: index. Tečkovaná čára: jednotlivé měsíce, které kolísají, když dorazí málo zásilek. Zdroj: Eurostat Comext, přes OreOrbit.</p><p class="small"><a href="dependency-index.csv" download>Stáhnout celou měsíční řadu (CSV)</a> s podílem, oknem a hodnotou dovozu každé suroviny a s první zveřejněnou hodnotou každého měsíce.</p><button type="button" class="dl" data-label="Stáhnout graf (SVG)" hidden>Stáhnout graf (SVG)</button></section>
+<section id="minerals"><h2>Podle surovin, %(win)s</h2><ul class="idx">%(trs)s</ul><p class="small">Podíl Číny na hodnotě dovozu každé suroviny do EU ze zemí mimo EU; změna proti stejnému období před rokem. Víc než polovinu dodala Čína u %(over)d z %(n)d. Změna indexu proti předchozímu měsíci: %(dm)s.%(thin)s</p></section>
 %(outside)s
+%(supply)s
+<section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
+%(faq)s
+<section id="method" class="method"><h2>Metodika a kontroly</h2><p class="small">Pro analytiky, kteří chtějí číslo ověřit: jak je robustní, jak koncentrované jsou dodávky, co nezahrnuje, jak vzniká a jak se měnil.</p>
+<!--method-->%(robust)s
+%(conc)s
 <section id="limits"><h2>Co index měří a co nezahrnuje</h2><ul class="plain">
 <li>Odkud EU přímo dováží ze zemí mimo EU: celní původ každé zásilky, tedy zemi, kde byl výrobek vyroben nebo naposledy zpracován. Ukazuje, jak soustředěné jsou tyto dodávky, ne celkovou závislost EU.</li>
 <li>Nezahrnuje, co EU sama vytěží, zpracuje a recykluje, obchod mezi zeměmi EU ani zásoby.</li>
@@ -1284,6 +1429,7 @@ def dependency_page_cs(ref, live, today):
 <section id="versions"><h2>Verze 4, od 22. listopadu 2026</h2><p>Verze 4 přidává hořčík (surový kov) a mangan (kov a rudu), takže index pokrývá všech dvanáct surovin atlasu. Každý měsíc od ledna 2022 je přepočítaný, takže řada zůstává srovnatelná; hodnoty zveřejněné podle verze 3 se už jako revize neukazují.</p><ul class="plain">%(log)s</ul></section>
 <section><h2>Verze 3, od 21. listopadu 2026</h2><p>Verze 3 sleduje podoby, které průmysl skutečně nakupuje: wolfram jako parawolframan amonný, karbid a prášek, nejen rudu, titan jako tvářený kov, nikl jako slitiny. Vypouští titanové rudy, které z většiny končí v bílém pigmentu, ne v kovu. Surovina, jejíž dovoz ze zemí mimo EU za tři měsíce nedosáhne %(minv)s, se měří za delší okno, aby s ní nepohnula jediná dodávka. Celá řada od ledna 2022 počítá verzí 3; každá měsíční stránka (anglicky) uchovává hodnotu, která byla pro daný měsíc zveřejněna jako první.</p></section>
 <section><h2>Verze 2, listopad 2026</h2><p>Do listopadu 2026 byl titulním číslem jediný měsíc. Když dorazilo málo zásilek, skočil podíl z měsíce na měsíc až o %(sw)d %(swb)s, a proto verze 2 sečetla tři měsíce.%(m1)s</p></section>
+<!--/method--></section>
 %(cite)s
 <p class="open"><a class="cta" href="../?lang=cs">Suroviny na živém atlasu</a></p></article>""" % {
         "gen": e(mon_gen), "win": e(win), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
@@ -1291,12 +1437,11 @@ def dependency_page_cs(ref, live, today):
         "sw": sw, "swb": _body_cs(sw), "minv": e(_eur_txt(INDEX_MIN_EUR, cs=True)), "log": _changelog(cs=True),
         "rev": rev_p, "drivers": drivers_p, "robust": robust, "conc": conc_s,
         "m1": (" Podle metody jednoho měsíce vychází %s na %d %%." % (e(mon_nom), round(m1 * 100))) if m1 is not None else "",
-        "cite": cite_box_cs(title, path, today)}
-    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "Index závislosti OreOrbit", "inLanguage": "cs", "description": quote, "url": BASE + path,
-           "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": str(INDEX_VERSION),
-           "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]),
-           "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + "p/dependency-index.csv"}]}]
-    return path, page(path, title, quote[:300], body, ld, today, [("Atlas", ""), ("Knihovna", "p/index.html"), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
+        "cite": cite_box_cs(title, path, today),
+        "fig2": _ix_hero(v, yago, cs=True), "list": e(_ix_list(ref, True)), "ixd": _ix_data(series, _ix_names(ref, True), cs=True),
+        "faq": qa_section(qas, "Časté otázky", sid="faq")})
+    ld = [_ix_dataset(ref, path, series, last, today, cs=True), faq_ld(path, qas)]
+    return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Knihovna", "p/index.html"), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
 
 
 # ---------------------------------------------------------------- the weekly LinkedIn cards and the embeddable chart
@@ -1444,8 +1589,8 @@ def embed_page(live, today):
 
 # ---------------------------------------------------------------- v3.9: questions, guides and archives
 
-def qa_section(qas):
-    return '<section class="faq"><h2>Key questions</h2>%s</section>' % "".join('<h3>%s</h3><p>%s</p>' % (e(q), e(a)) for q, a in qas)
+def qa_section(qas, heading="Key questions", sid=None):
+    return '<section class="faq"%s><h2>%s</h2>%s</section>' % ((' id="%s"' % sid) if sid else "", heading, "".join('<h3>%s</h3><p>%s</p>' % (e(q), e(a)) for q, a in qas))
 
 
 def faq_ld(path, qas):
