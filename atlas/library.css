@@ -43,8 +43,8 @@ section p{margin:0 0 12px;max-width:64ch}
 .chart .c-n{fill:#697176;font-size:13px}
 .chart .c-x{fill:#697176;font-size:11px}
 .chart .c-track{fill:rgba(236,238,233,.08)}
-.key{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--k);margin:0 6px 0 0;vertical-align:-1px}
-.key.k-rest{background:rgba(236,238,233,.18);margin-left:10px}
+span.key{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--k);margin:0 6px 0 0;vertical-align:-1px}
+span.key.k-rest{background:rgba(236,238,233,.18);margin-left:10px}
 button.dl,button.copy{font:600 13px "Hanken Grotesk",sans-serif;color:var(--paper);background:transparent;border:1px solid var(--rule);border-radius:999px;height:32px;padding:0 14px;cursor:pointer}
 button.dl:hover,button.copy:hover{border-color:rgba(236,238,233,.4)}
 ul.stats,ul.plain,ul.news,ul.dates,ul.sites{list-style:none;margin:0;padding:0}
