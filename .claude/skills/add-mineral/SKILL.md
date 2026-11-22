@@ -113,7 +113,7 @@ To remove a mineral, run it with the mineral as `--like` and a dummy new id (`to
   - `SLUG`, `COL`, `MAT_CS`, `PRODUCTS`, `WHAT_CS`
   - the `T("…")` order lists and `czs`
   - `KNOWS`: the Wikidata id and Wikipedia title of the element
-  - **`INDEX_TEN` stays on the original ten.** Like Mg and Mn, the new mineral goes into `extra` beside the Dependency Index. Changing the index itself is David's decision.
+  - **Dependency Index:** a new mineral lands in `extra` beside the index until David decides to add it to `INDEX_MINERALS` (with its `INDEX_BASKET` codes). Adding it is a new index version: bump `INDEX_VERSION`, archive the old `depindex.json` and add a changelog entry (see version 4, 22 Nov 2026).
 
 **Docs:**
 - `docs/sales/build_manual.py` `WHAT_CS`. Then rebuild the sales guide in EN and CS; the build fails if a page overflows A4.

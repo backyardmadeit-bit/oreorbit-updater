@@ -2346,7 +2346,7 @@ def _pct(x, cs):
 
 
 def _share(rec, m):
-    """China's share for a mineral in a Dependency Index record: the ten index minerals, then magnesium and manganese."""
+    """China's share for a mineral in a Dependency Index record: the twelve index minerals (version 4), then any mineral outside it."""
     v = ((rec or {}).get("per") or {}).get(m)
     return ((rec or {}).get("extra") or {}).get(m) if v is None else v
 

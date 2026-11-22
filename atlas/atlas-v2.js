@@ -1794,7 +1794,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 78"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 79"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1845,7 +1845,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 78 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 79 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2187,7 +2187,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     /* build 75: the window line says what the index really used. Version 3 gives each mineral at least three months and up
        to twelve where imports are thin (gallium), so the badge reads "3–12 months" and its tooltip names the longer windows */
     const IDX_NAMES = { ree: ["rare earths", "vzácné zeminy"], ti: ["titanium", "titan"], w: ["tungsten", "wolfram"], sb: ["antimony", "antimon"],
-      ga: ["gallium", "galium"], ge: ["germanium", "germanium"], li: ["lithium", "lithium"], co: ["cobalt", "kobalt"], ni: ["nickel", "nikl"], gr: ["graphite", "grafit"] };
+      ga: ["gallium", "galium"], ge: ["germanium", "germanium"], li: ["lithium", "lithium"], co: ["cobalt", "kobalt"], ni: ["nickel", "nikl"], gr: ["graphite", "grafit"],
+      mg: ["magnesium", "hořčík"], mn: ["manganese", "mangan"] };
     const show = (k, v, wins) => {
       const cs = O.LANG === "cs", mi = +k.slice(5, 7) - 1, yr = k.slice(0, 4);
       const GEN = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
@@ -2211,8 +2212,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const calc = () => {
       if (pub) return true;
       const mats = (O.LIVE.trade && O.LIVE.trade.materials) || null; if (!mats) return false;
-      /* the index keeps its original ten (INDEX_TEN in updater/oreorbit_pages.py); magnesium and manganese sit outside it */
-      const TEN = ["ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr"], per = {};
+      /* build 79: version 4 averages all twelve minerals (INDEX_MINERALS in updater/oreorbit_pages.py) */
+      const TEN = ["ree", "ti", "w", "sb", "mg", "mn", "ga", "ge", "li", "co", "ni", "gr"], per = {};
       Object.keys(mats).filter((m) => TEN.includes(m)).forEach((m) => (mats[m] || []).forEach((r) => {
         const mo = r.monthly || {}, f = mo.from, cn = mo.cn || [], ext = mo.ext || []; if (!f) return;
         const y0 = +f.slice(0, 4), m0 = +f.slice(5, 7);
@@ -2229,7 +2230,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         const win = [add(key, -2), add(key, -1), key]; if (!win.every((w) => per[w])) return;
         const tot = {}; win.forEach((w) => Object.entries(per[w]).forEach(([m, a]) => { const t = (tot[m] = tot[m] || [0, 0]); t[0] += a[0]; t[1] += a[1]; }));
         const sh = Object.values(tot).filter((t) => t[1] > 0).map((t) => t[0] / t[1]);
-        if (sh.length >= 8) { k = key; v = Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length); }
+        if (sh.length >= 10) { k = key; v = Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length); }
       });
       if (pub) return true;
       if (k === null) return false;

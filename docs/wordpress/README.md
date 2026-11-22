@@ -1,5 +1,11 @@
 # WordPress (bohemiadefense.com)
 
+## 22. 11. 2026: Dependency Index na dvanácti surovinách
+
+1. **`llms.txt`**: přes WebFTP do `/www/domains/bohemiadefense.com/` přepiš soubor obsahem [`llms.txt`](llms.txt).
+
+Co se mění: index od verze 4 počítá všech dvanáct surovin (přibyl hořčík a mangan), takže dva řádky už neříkají „ten index minerals“ ani „tracked separately“. Stránky v WordPressu se nemění.
+
 ## 21. 11. 2026: podmínky Monitoringu a GDPR pro platící klienty
 
 Právní stránky jsou nově v repu: [`legal-en.html`](legal-en.html) a [`legal-cs.html`](legal-cs.html). Starší kopie v `06 Weby/bohemiadefense.com (WordPress)/legal-page-*.txt` tím přestávají platit.

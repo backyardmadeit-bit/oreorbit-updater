@@ -520,7 +520,10 @@ def services_page(cfg, today):
     return path, page(path, title, desc, body, ld, today, [("Atlas", ""), ("Services", path)], alt="p/services-cs.html")
 
 
-INDEX_TEN = ("ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr")
+INDEX_MINERALS = ("ree", "ti", "w", "sb", "mg", "mn", "ga", "ge", "li", "co", "ni", "gr")   # v4 (22 Nov 2026): all twelve
+INDEX_TEN = ("ree", "ti", "w", "sb", "ga", "ge", "li", "co", "ni", "gr")   # the original ten, kept as a check series
+INDEX_MIN_N = 10            # a month needs shares for at least this many index minerals
+INDEX_VERSION = 4
 
 
 INDEX_WINDOW = 3            # every mineral adds up at least the latest three months (v2, Nov 2026)
@@ -528,18 +531,22 @@ INDEX_MIN_EUR = 10_000_000  # v3: a mineral's window grows month by month until 
 INDEX_MAX_WINDOW = 12       # ...or twelve months, so one delivery cannot swing a thin market
 INDEX_V2_FROM = "November 2026"
 INDEX_V3_FROM = "21 November 2026"
+INDEX_V4_FROM = "22 November 2026"
 # v3 (21 Nov 2026): the products counted for each index mineral, from the atlas trade table ("materials") and the extra
 # index products the robot stores under "basket". Titanium ores (261400) feed the atlas card but not the index:
 # most titanium ore goes into white pigment, not metal.
 INDEX_BASKET = {"ree": ("850511", "284690", "280530"), "ti": ("810820", "810890"),
                 "w": ("810194", "261100", "284180", "28499030", "810110", "810199", "28259040"),
                 "sb": ("811010", "282580"), "ga": ("81129289",), "ge": ("81129295",), "li": ("283691", "282520"),
-                "co": ("810520", "282200"), "ni": ("750210", "750110", "750220"), "gr": ("380110", "250410")}
-INDEX_CHANGELOG = [("22 November 2026", "No change to the numbers. The page now states what the index leaves out, and flags any month where the equal-weighted, tonnes and value-weighted versions move in opposite directions against a year earlier."),
+                "co": ("810520", "282200"), "ni": ("750210", "750110", "750220"), "gr": ("380110", "250410"),
+                "mg": ("810411", "810419"), "mn": ("811100", "260200")}   # v4: unwrought magnesium; manganese metal and ore
+INDEX_CHANGELOG = [("22 November 2026", "Version 4: magnesium and manganese join the index, so it covers all twelve minerals OreOrbit tracks. The whole series back to January 2022 was recomputed; the average of the original ten stays as a check."),
+                   ("22 November 2026", "No change to the numbers. The page now states what the index leaves out, and flags any month where the equal-weighted, tonnes and value-weighted versions move in opposite directions against a year earlier."),
                    ("21 November 2026", "Version 3: wider product basket (tungsten APT, carbide, powder, oxides and articles; wrought titanium; nickel alloys), a window that grows from three to up to twelve months until a mineral reaches EUR 10 million of imports, monthly history from January 2022, first-published values kept next to revisions, a tonnes and a value-weighted check, supplier concentration and a CSV download."),
                    ("November 2026", "Version 2: three months added up per mineral instead of a single month; top three suppliers per mineral."),
                    ("2026", "Version 1: a single month per mineral, equal weight across the ten index minerals.")]
-INDEX_CHANGELOG_CS = [("22. listopadu 2026", "Čísla beze změny. Stránka nově říká, co index nezahrnuje, a upozorní na každý měsíc, kdy se verze se stejnými vahami, podle tun a vážená hodnotou pohnou proti loňsku opačným směrem."),
+INDEX_CHANGELOG_CS = [("22. listopadu 2026", "Verze 4: do indexu přibyl hořčík a mangan, takže pokrývá všech dvanáct surovin, které OreOrbit sleduje. Celá řada od ledna 2022 je přepočítaná; průměr původních deseti zůstává jako kontrola."),
+                      ("22. listopadu 2026", "Čísla beze změny. Stránka nově říká, co index nezahrnuje, a upozorní na každý měsíc, kdy se verze se stejnými vahami, podle tun a vážená hodnotou pohnou proti loňsku opačným směrem."),
                       ("21. listopadu 2026", "Verze 3: širší koš produktů (u wolframu parawolframan amonný, karbid, prášek, oxidy a výrobky, tvářený titan, slitiny niklu), okno, které se prodlužuje ze tří až na dvanáct měsíců, dokud dovoz suroviny nedosáhne 10 mil. €, měsíční řada od ledna 2022, první zveřejněné hodnoty vedle revizí, kontrola podle tun a podle hodnoty, koncentrace dodavatelů a soubor CSV."),
                       ("listopad 2026", "Verze 2: tři měsíce sečtené pro každou surovinu místo jediného měsíce; tři největší dodavatelé každé suroviny."),
                       ("2026", "Verze 1: jediný měsíc pro každou surovinu, stejná váha pro deset surovin indexu.")]
@@ -604,26 +611,25 @@ def _trade_months(trade):
 
 
 def dependency_series(trade):
-    """The OreOrbit Dependency Index (version 3, from 21 November 2026), month by month.
+    """The OreOrbit Dependency Index (version 4, from 22 November 2026), month by month.
 
-    For each of the ten index minerals, China's share of the value of EU imports from outside the EU of the products in
+    For each of the twelve index minerals (INDEX_MINERALS), China's share of the value of EU imports from outside the EU of the products in
     INDEX_BASKET, over a window that ends with the month: at least three months, extended one month at a time (up to
     twelve) until the mineral's extra-EU imports reach INDEX_MIN_EUR, so a thin market is measured over enough deliveries.
-    The index is the plain average of the ten shares. A record is keyed by the last month of its window.
+    The index is the plain average of the twelve shares. A record is keyed by the last month of its window.
 
-    Per record: "value", "n", "over50", "per" (shares), "win" (window length per mineral, magnesium and manganese
-    included), "eur" (extra-EU value in the window), "thin" (index minerals whose window had to grow), "from" (start of
+    Per record: "value", "n", "over50", "per" (shares), "win" (window length per mineral), "eur" (extra-EU value in the window), "thin" (index minerals whose window had to grow), "from" (start of
     the three-month window), "t_value" (the same index by tonnes) and "w_value" (shares weighted by import value) as
-    checks, "tper" (China's share by tonnes per mineral, magnesium and manganese included, where every month has
-    quantities), "m1"/"per1" (the single month of version 1), "top" (three biggest suppliers in the window) and "extra"
-    (magnesium and manganese: next to the index, never in it)."""
+    checks, "tper" (China's share by tonnes per mineral, where every month has
+    quantities), "m1"/"per1" (the single month of version 1), "top" (three biggest suppliers in the window), "ten_value"
+    (the average of the original ten, a check) and "extra" (any tracked mineral outside INDEX_MINERALS)."""
     per = _trade_months(trade)
     ks = sorted(per)
     mats = sorted({m for k in ks for m in per[k]})
     out = []
     for j, k in enumerate(ks):
-        one = {m: v[0] / v[1] for m, v in per[k].items() if v[1] > 0 and m in INDEX_TEN}
-        m1 = sum(one.values()) / len(one) if len(one) >= 8 else None
+        one = {m: v[0] / v[1] for m, v in per[k].items() if v[1] > 0 and m in INDEX_MINERALS}
+        m1 = sum(one.values()) / len(one) if len(one) >= INDEX_MIN_N else None
         if j < INDEX_WINDOW - 1 or ks[j - INDEX_WINDOW + 1] != _month_add(k, 1 - INDEX_WINDOW):
             continue
         tot, wins = {}, {}
@@ -652,10 +658,11 @@ def dependency_series(trade):
             if n >= INDEX_WINDOW and t[1] > 0:
                 tot[m], wins[m] = t, n
         every = {m: t[0] / t[1] for m, t in tot.items()}
-        shares = {m: x for m, x in every.items() if m in INDEX_TEN}           # the index keeps its original ten, so months stay comparable
-        extra = {m: x for m, x in every.items() if m not in INDEX_TEN}       # magnesium, manganese and any later additions
-        if len(shares) < 8:
+        shares = {m: x for m, x in every.items() if m in INDEX_MINERALS}
+        extra = {m: x for m, x in every.items() if m not in INDEX_MINERALS}  # a mineral added later, until it joins the index
+        if len(shares) < INDEX_MIN_N:
             continue
+        ten = [x for m, x in shares.items() if m in INDEX_TEN]
         tall = {m: t[3] / t[4] for m, t in tot.items() if t[3] is not None and t[4]}
         tsh = {m: x for m, x in tall.items() if m in shares}
         top = {m: [[pt, v / t[1]] for pt, v in sorted(t[2].items(), key=lambda kv: -kv[1])[:3] if v > 0]
@@ -666,7 +673,7 @@ def dependency_series(trade):
                     "thin": sorted(m for m in shares if wins[m] > INDEX_WINDOW),
                     "t_value": (sum(tsh.values()) / len(tsh)) if len(tsh) == len(shares) else None,
                     "w_value": sum(shares[m] * tot[m][1] for m in shares) / sum(tot[m][1] for m in shares),
-                    "tper": tall, "m1": m1, "per1": one, **({"top": top} if top else {}), **({"extra": extra} if extra else {})})
+                    "tper": tall, "m1": m1, "per1": one, "ten_value": (sum(ten) / len(ten)) if len(ten) >= 8 else None, **({"top": top} if top else {}), **({"extra": extra} if extra else {})})
     return out
 
 
@@ -714,20 +721,25 @@ def drivers(rec, before):
 def vintages(series, prev, today):
     """The record kept in live-data/live/depindex.json: every month with its current value and the value first
     published for it, so later revisions (new Eurostat data, a longer window) stay visible."""
-    old = {r.get("month"): r for r in ((prev or {}).get("series") or []) if isinstance(r, dict) and r.get("month")}
+    same = isinstance(prev, dict) and prev.get("version") == INDEX_VERSION    # a new version starts its own first-published values
+    old = {r.get("month"): r for r in ((prev if same else {}).get("series") or []) if isinstance(r, dict) and r.get("month")}
     rows = []
     for x in series:
         o = old.get(x["month"]) or {}
         first = o.get("first") if isinstance(o.get("first"), (int, float)) else round(x["value"], 4)
         rows.append({"month": x["month"], "value": round(x["value"], 4), "first": first, "first_at": o.get("first_at") or today,
                      "t": None if x.get("t_value") is None else round(x["t_value"], 4), "w": round(x["w_value"], 4),
+                     "ten": None if x.get("ten_value") is None else round(x["ten_value"], 4),
                      "per": {m: round(v, 4) for m, v in x["per"].items()}, "win": x["win"]})
-    return {"version": 3, "updated": today, "series": rows}
+    return {"version": INDEX_VERSION, "updated": today, "series": rows}
 
 
 def revision(live, month):
     """(first published value, date) for a month when it differs from today's by more than half a point, else None."""
-    for r in ((live or {}).get("depindex") or {}).get("series") or []:
+    dep = (live or {}).get("depindex") or {}
+    if dep.get("version") != INDEX_VERSION:
+        return None
+    for r in dep.get("series") or []:
         if isinstance(r, dict) and r.get("month") == month and isinstance(r.get("first"), (int, float)) and isinstance(r.get("value"), (int, float)):
             if abs(r["first"] - r["value"]) > 0.005:
                 return r["first"], r.get("first_at")
@@ -736,15 +748,16 @@ def revision(live, month):
 
 def index_csv(series, live):
     """p/dependency-index.csv: one row per month, plain numbers, no formulas."""
-    first = {r.get("month"): r for r in ((live or {}).get("depindex") or {}).get("series") or [] if isinstance(r, dict)}
-    head = ["month", "window_from", "index_pct", "first_published_pct", "by_tonnes_pct", "value_weighted_pct", "minerals_over_50pct"]
-    head += ["%s_china_pct" % m for m in INDEX_TEN] + ["%s_window_months" % m for m in INDEX_TEN] + ["%s_extra_eu_eur" % m for m in INDEX_TEN]
+    dep = (live or {}).get("depindex") or {}
+    first = {r.get("month"): r for r in (dep.get("series") or []) if isinstance(r, dict)} if dep.get("version") == INDEX_VERSION else {}
+    head = ["month", "window_from", "index_pct", "first_published_pct", "by_tonnes_pct", "value_weighted_pct", "original_ten_pct", "minerals_over_50pct"]
+    head += ["%s_china_pct" % m for m in INDEX_MINERALS] + ["%s_window_months" % m for m in INDEX_MINERALS] + ["%s_extra_eu_eur" % m for m in INDEX_MINERALS]
     lines = [",".join(head)]
     f = lambda v: "" if v is None else ("%.1f" % (v * 100))
     for x in series:
         fp = (first.get(x["month"]) or {}).get("first")
-        row = [x["month"], x["from"], f(x["value"]), f(fp if isinstance(fp, (int, float)) else x["value"]), f(x.get("t_value")), f(x.get("w_value")), str(x["over50"])]
-        row += [f(x["per"].get(m)) for m in INDEX_TEN] + [str(x["win"].get(m, "")) for m in INDEX_TEN] + [str(x["eur"].get(m, "")) for m in INDEX_TEN]
+        row = [x["month"], x["from"], f(x["value"]), f(fp if isinstance(fp, (int, float)) else x["value"]), f(x.get("t_value")), f(x.get("w_value")), f(x.get("ten_value")), str(x["over50"])]
+        row += [f(x["per"].get(m)) for m in INDEX_MINERALS] + [str(x["win"].get(m, "")) for m in INDEX_MINERALS] + [str(x["eur"].get(m, "")) for m in INDEX_MINERALS]
         lines.append(",".join(row))
     return "\n".join(lines) + "\n"
 
@@ -966,7 +979,7 @@ def dependency_page(ref, live, today):
     series = dependency_series(trade)
     title = "OreOrbit Dependency Index: China's share of Europe's defence-mineral imports"
     if not series:
-        return path, page(path, title, "Monthly index of China's share of EU imports of the ten index minerals behind Europe's defence.", "<h1>OreOrbit Dependency Index</h1><p class=\"lede\">The index appears once the monthly trade data is available.</p>", [], today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
+        return path, page(path, title, "Monthly index of China's share of EU imports of the twelve critical minerals behind Europe's defence.", "<h1>OreOrbit Dependency Index</h1><p class=\"lede\">The index appears once the monthly trade data is available.</p>", [], today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)])
     last = series[-1]
     v = round(last["value"] * 100)
     prev_m = series[-2] if len(series) > 1 else None
@@ -977,7 +990,7 @@ def dependency_page(ref, live, today):
     extra = last.get("extra") or {}
     names = {m: ((ref["materials"].get(m) or {}).get("info") or {}).get("name", m) for m in list(last["per"]) + list(extra)}
     win = window_txt(last)
-    quote = "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in the %s, according to the OreOrbit Dependency Index by Bohemia Defense%s." % (
+    quote = "China supplied %d%% of the EU's imports of the twelve critical minerals behind Europe's defence industry in the %s, according to the OreOrbit Dependency Index by Bohemia Defense%s." % (
         v, win, (", %s from %d%% a year earlier" % ("up" if d_y > 0 else "down" if d_y < 0 else "unchanged", round(yago["value"] * 100))) if yago else "")
     desc = quote
     rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
@@ -990,7 +1003,7 @@ def dependency_page(ref, live, today):
     trs = "".join(li(m, x, (yago or {}).get("per") or {}) for m, x in rows)
     thin_note = (" Where a mineral's imports from outside the EU stay under %s in three months, its window grows a month at a time, up to twelve months (marked), so one delivery cannot swing it." % _eur_txt(INDEX_MIN_EUR)) if last.get("thin") else ""
     dr = _drivers_txt(last, yago, names)
-    drivers_p = ('<p class="small">What moved it against a year earlier: %s. Each mineral\'s change in share divided by ten, so the moves add up to the change of the index.</p>' % e(dr)) if dr else ""
+    drivers_p = ('<p class="small">What moved it against a year earlier: %s. Each mineral\'s change in share divided by %d, so the moves add up to the change of the index.</p>' % (e(dr), last["n"])) if dr else ""
     dg = _disagree_txt(last, yago, names)
     if dg:
         drivers_p += '<p class="small"><b>%s</b> See <a href="#checks">how robust it is</a>.</p>' % e(dg)
@@ -1000,6 +1013,8 @@ def dependency_page(ref, live, today):
     checks = ['<li>Weighted by import value instead of equally: %d%%. Big markets such as nickel and lithium then dominate; equal weight keeps a small but critical mineral such as gallium in view.</li>' % round(last["w_value"] * 100)]
     if last.get("t_value") is not None:
         checks.insert(0, '<li>By tonnes instead of value: %d%%.</li>' % round(last["t_value"] * 100))
+    if last.get("ten_value") is not None:
+        checks.append('<li>The original ten minerals, without magnesium and manganese: %d%%.</li>' % round(last["ten_value"] * 100))
     checks.append('<li>Stability: since %s the index has moved by at most %.1f points from one month to the next; nine months in ten by less than %.1f.</li>' % (e(month_txt(series[0]["month"])), sw, p90))
     robust = '<section id="checks"><h2>How robust it is</h2><ul class="plain">%s</ul></section>' % "".join(checks)
     conc = concentration(trade, last["month"])
@@ -1008,12 +1023,9 @@ def dependency_page(ref, live, today):
               '<p class="small">Twelve months to %s, share of the value of imports from outside the EU. HHI: Herfindahl-Hirschman index, 0 to 10,000; above 2,500 is commonly read as highly concentrated. '
               'It is built from the eight biggest suppliers of each product, so it is slightly understated. Bold: one country above 65%%. Source: Eurostat Comext, via OreOrbit.</p></section>') % (crows, e(month_txt(last["month"]))) if crows else ""
     outside = ""
-    if extra:      # magnesium, manganese: shown next to the index, never counted in it
-        every = list(last["per"].values()) + list(extra.values())
-        outside = ('<section><h2>Outside the index, %s</h2><ul class="idx">%s</ul><p class="small">Tracked separately and not counted in the index, so months stay comparable. '
-                   'Across all %d tracked minerals, China\'s share was %d%% in the %s.</p></section>') % (
-            e(win), "".join(li(m, x, (yago or {}).get("extra") or {}) for m, x in sorted(extra.items(), key=lambda kv: -kv[1])),
-            len(every), round(100 * sum(every) / len(every)), e(win))
+    if extra:      # a newly tracked mineral, shown next to the index until it joins it
+        outside = ('<section><h2>Outside the index, %s</h2><ul class="idx">%s</ul><p class="small">Tracked, but not yet counted in the index.</p></section>') % (
+            e(win), "".join(li(m, x, (yago or {}).get("extra") or {}) for m, x in sorted(extra.items(), key=lambda kv: -kv[1])))
     sup_rows, sup_year = _supplier_rows(trade, last, names)
     supply = ""
     if sup_rows:
@@ -1026,8 +1038,9 @@ def dependency_page(ref, live, today):
     body = """<article style="--c:#3ddc97">
 <p class="kicker"><i></i>Monthly · Eurostat data to %(month)s</p>
 <h1>OreOrbit Dependency Index</h1>
-<p class="lede">China's share of what the EU imports from outside the EU across the ten index minerals behind Europe's defence industry, over the latest three months, longer for thin markets. Each mineral counts equally.</p>
-%(rev)s<dl class="figs"><div><dt>%(v)d%%</dt><dd>China's share in the %(win)s</dd></div><div><dt>%(dm)s</dt><dd>change from a month earlier</dd></div><div><dt>%(dy)s</dt><dd>change from a year earlier</dd></div><div><dt>%(over)d of %(n)d</dt><dd>minerals where China supplied more than half</dd></div></dl>
+<p class="lede">China's share of what the EU imports from outside the EU across the twelve critical minerals behind Europe's defence industry, over the latest three months, longer for thin markets. Each mineral counts equally.</p>
+%(rev)s<dl class="figs"><div><dt>%(v)d%%</dt><dd>China's share of EU imports from outside the EU, %(win)s</dd></div><div><dt>%(dm)s</dt><dd>change from a month earlier</dd></div><div><dt>%(dy)s</dt><dd>change from a year earlier</dd></div><div><dt>%(over)d of %(n)d</dt><dd>minerals where China supplied more than half</dd></div></dl>
+<p class="small">Why lower than China's share of world output: the index follows the customs origin of what reaches the EU. Antimony refined in Vietnam or Turkey, or nickel from Indonesian and Norwegian plants, counts for those countries even when the ore or the owner is Chinese. <a href="#limits">What it leaves out</a>.</p>
 %(drivers)s
 <section><h2>Month by month</h2>%(chart)s<p class="small">Green line: the index, at least three months at a time. Dotted line: single months, which swing when few shipments arrive. Equal-weighted average of China's share of the value of extra-EU imports, per mineral. Source: Eurostat Comext, via OreOrbit.</p><p class="small"><a href="dependency-index.csv" download>Download the full monthly series (CSV)</a>, with each mineral's share, window and import value and the first published value of every month.</p><button type="button" class="dl" hidden>Download chart (SVG)</button></section>
 <section><h2>Quote it</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" hidden>Copy the sentence</button><p class="small">Journalists and analysts may quote the index and reuse the chart with credit to “OreOrbit Dependency Index (Bohemia Defense)” and a link to this page.</p></section>
@@ -1045,12 +1058,13 @@ def dependency_page(ref, live, today):
 <li>The basket covers raw materials, intermediates and some parts (magnets, carbide, alloys), not finished products such as motors, batteries or electronics that contain the minerals.</li>
 <li>For who controls each stage, from mine to refinery to finished part, see <a href="../">the live atlas</a> and the <a href="index.html">mineral pages</a>.</li></ul></section>
 <section><h2>How it is made</h2><ul class="plain">
-<li>For each of the ten index minerals, OreOrbit adds up the value of the EU's imports from outside the EU of a fixed basket of products (for rare earths: permanent magnets, compounds and metals; for tungsten: ores, APT, oxides, carbide, powder, metal and articles) and takes China's share.</li>
+<li>For each of the twelve minerals, OreOrbit adds up the value of the EU's imports from outside the EU of a fixed basket of products (for rare earths: permanent magnets, compounds and metals; for tungsten: ores, APT, oxides, carbide, powder, metal and articles) and takes China's share.</li>
 <li>The window ends with the latest month Eurostat has published. It covers at least three months and grows one month at a time, up to twelve, until the mineral's imports reach %(minv)s, so a market with few shipments is measured over enough deliveries. A month weighs only what it is worth.</li>
-<li>The index is the plain average of the ten shares, so a small but critical mineral such as gallium counts as much as lithium.</li>
-<li>Magnesium and manganese, added in November 2026, are tracked separately so the index stays comparable over time.</li>
+<li>The index is the plain average of the twelve shares, so a small but critical mineral such as gallium counts as much as lithium.</li>
+<li>Magnesium and manganese, added to the atlas in November 2026, joined the index on %(v4)s; the whole series was recomputed with all twelve, and the average of the original ten is shown as a check.</li>
 <li>Values, imports from outside the EU only; a tonnes version and a value-weighted version are shown as checks. Updated automatically when Eurostat publishes a new month, usually about six weeks after the month ends. Eurostat revises recent months; the value first published for each month is kept next to the current one.</li></ul></section>
-<section id="versions"><h2>Version 3, from %(v3)s</h2><p>Version 3 follows the forms industry actually buys: tungsten as APT, carbide and powder as well as ore, titanium as wrought metal, nickel as alloys. It drops titanium ores, most of which go into white pigment rather than metal. A mineral whose imports from outside the EU stay under %(minv)s in three months is measured over a longer window, so one delivery cannot swing it. The whole series back to January 2022 uses version 3; every <a href="#months">monthly page</a> keeps the value first published for that month.</p><ul class="plain">%(log)s</ul></section>
+<section id="versions"><h2>Version 4, from %(v4)s</h2><p>Version 4 adds magnesium (unwrought metal) and manganese (metal and ore), so the index covers all twelve minerals in the atlas. Every month back to January 2022 was recomputed, so the series stays comparable; values first published under version 3 are no longer shown as revisions.</p><ul class="plain">%(log)s</ul></section>
+<section><h2>Version 3, from %(v3)s</h2><p>Version 3 follows the forms industry actually buys: tungsten as APT, carbide and powder as well as ore, titanium as wrought metal, nickel as alloys. It drops titanium ores, most of which go into white pigment rather than metal. A mineral whose imports from outside the EU stay under %(minv)s in three months is measured over a longer window, so one delivery cannot swing it. The whole series back to January 2022 uses version 3; every <a href="#months">monthly page</a> keeps the value first published for that month.</p></section>
 <section><h2>Version 2, %(v2)s</h2><p>Until %(v2)s the headline was a single month. Single months swung by up to %(swing)d points from one month to the next when few shipments arrived, so version 2 added up three months.%(m1)s</p></section>
 <section><h2>Embed this chart</h2><p>Paste this code into an article or a blog post. The chart updates itself every month and credits OreOrbit.</p>
 <p class="cite-text" style="font-family:monospace;font-size:13px;word-break:break-all">%(embed)s</p><button type="button" class="copy" data-copy="%(embed)s" data-label="Copy the embed code" data-done="Embed code copied" hidden>Copy the embed code</button></section>
@@ -1059,13 +1073,13 @@ def dependency_page(ref, live, today):
         "embed": e('<iframe src="' + BASE + 'p/embed-index.html" width="100%" height="420" style="border:0;max-width:760px" title="OreOrbit Dependency Index" loading="lazy"></iframe>'),
         "month": e(month_txt(last["month"])), "win": e(win), "v": v, "dm": e(chg(d_m)), "dy": e(chg(d_y)), "over": last["over50"], "n": last["n"],
         "chart": index_chart(series, single=True), "quote": e(quote), "trs": trs, "thin": e(thin_note), "supply": supply, "outside": outside,
-        "v2": INDEX_V2_FROM, "v3": INDEX_V3_FROM, "swing": _max_swing(series), "minv": e(_eur_txt(INDEX_MIN_EUR)), "log": _changelog(),
+        "v2": INDEX_V2_FROM, "v3": INDEX_V3_FROM, "v4": INDEX_V4_FROM, "swing": _max_swing(series), "minv": e(_eur_txt(INDEX_MIN_EUR)), "log": _changelog(),
         "rev": rev_p, "drivers": drivers_p, "robust": robust, "conc": conc_s,
         "m1": (" Under the single-month method, %s reads %d%%." % (e(month_txt(last["month"])), round(m1 * 100))) if m1 is not None else "",
         "cite": cite_box(title, path, today)}
-    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for the ten index materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel, graphite), over at least the latest three months and up to twelve for thin markets. Version 3 since 21 November 2026, series from January 2022. Source: Eurostat Comext.",
-           "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": "3",
-           "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]), "variableMeasured": "China's share of extra-EU import value, at least three months per material, equal-weighted across the ten index materials",
+    ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "OreOrbit Dependency Index", "description": "Monthly equal-weighted average of China's share of the value of extra-EU imports for the twelve critical materials used by Europe's defence industry (rare earths, titanium, tungsten, antimony, magnesium, manganese, gallium, germanium, lithium, cobalt, nickel, graphite), over at least the latest three months and up to twelve for thin markets. Version 4 since 22 November 2026, series from January 2022. Source: Eurostat Comext.",
+           "url": BASE + path, "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": str(INDEX_VERSION),
+           "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]), "variableMeasured": "China's share of extra-EU import value, at least three months per material, equal-weighted across the twelve materials",
            "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + "p/dependency-index.csv"}],
            "isBasedOn": "https://ec.europa.eu/eurostat/comext/newxtweb/", "keywords": ["critical raw materials", "defence industry", "EU imports", "China", "supply chain"]}]
     return path, page(path, title, desc[:300], body, ld, today, [("Atlas", ""), ("Library", "p/index.html"), ("Dependency Index", path)], alt="p/dependency-index-cs.html")
@@ -1178,7 +1192,7 @@ def dependency_page_cs(ref, live, today):
     series = dependency_series(trade)
     title = "Index závislosti OreOrbit: podíl Číny na dovozu surovin pro evropskou obranu"
     if not series:
-        return path, page(path, title, "Měsíční index podílu Číny na dovozu deseti surovin indexu do EU.", "<h1>Index závislosti OreOrbit</h1><p class=\"lede\">Index se zobrazí, jakmile budou k dispozici měsíční obchodní data.</p>", [], today, [("Atlas", ""), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
+        return path, page(path, title, "Měsíční index podílu Číny na dovozu dvanácti kritických surovin do EU.", "<h1>Index závislosti OreOrbit</h1><p class=\"lede\">Index se zobrazí, jakmile budou k dispozici měsíční obchodní data.</p>", [], today, [("Atlas", ""), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
     last = series[-1]
     v = round(last["value"] * 100)
     mi = int(last["month"][5:7]) - 1
@@ -1192,7 +1206,7 @@ def dependency_page_cs(ref, live, today):
         return ("+%d" % d if d > 0 else "%d" % d) + " " + _body_cs(d)
     d_m = (v - round(prev_m["value"] * 100)) if prev_m else None
     d_y = (v - round(yago["value"] * 100)) if yago else None
-    quote = "Podle Indexu závislosti OreOrbit od Bohemia Defense dodala Čína za %s do EU %d %% dovozu deseti surovin indexu, na kterých stojí evropský obranný průmysl%s." % (
+    quote = "Podle Indexu závislosti OreOrbit od Bohemia Defense dodala Čína za %s do EU %d %% dovozu dvanácti kritických surovin, na kterých stojí evropský obranný průmysl%s." % (
         win, v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else "")
     rows = sorted(last["per"].items(), key=lambda kv: -kv[1])
     wins = last.get("win") or {}
@@ -1204,7 +1218,7 @@ def dependency_page_cs(ref, live, today):
     trs = "".join(li(m, x, (yago or {}).get("per") or {}) for m, x in rows)
     thin_note = (" Když dovoz suroviny ze zemí mimo EU za tři měsíce nedosáhne %s, okno se prodlužuje po měsíci až na dvanáct měsíců (označeno), aby podílem nepohnula jediná dodávka." % _eur_txt(INDEX_MIN_EUR, cs=True)) if last.get("thin") else ""
     dr = _drivers_txt(last, yago, {}, cs=True)
-    drivers_p = ('<p class="small">Co index proti loňsku pohnulo: %s. Změna podílu každé suroviny dělená deseti, takže se pohyby sčítají na změnu indexu.</p>' % e(dr)) if dr else ""
+    drivers_p = ('<p class="small">Co index proti loňsku pohnulo: %s. Změna podílu každé suroviny dělená %s, takže se pohyby sčítají na změnu indexu.</p>' % (e(dr), _CS_W.get(last["n"], ("", str(last["n"])))[1])) if dr else ""
     dg = _disagree_txt(last, yago, {}, cs=True)
     if dg:
         drivers_p += '<p class="small"><b>%s</b> Viz <a href="#checks">jak je index robustní</a>.</p>' % e(dg)
@@ -1215,6 +1229,8 @@ def dependency_page_cs(ref, live, today):
     checks = ['<li>Váženo hodnotou dovozu místo stejné váhy: %d %%. Převáží pak velké trhy jako nikl a lithium; stejná váha drží na očích i malou, ale kritickou surovinu jako galium.</li>' % round(last["w_value"] * 100)]
     if last.get("t_value") is not None:
         checks.insert(0, '<li>Podle tun místo hodnoty: %d %%.</li>' % round(last["t_value"] * 100))
+    if last.get("ten_value") is not None:
+        checks.append('<li>Původních deset surovin, bez hořčíku a manganu: %d %%.</li>' % round(last["ten_value"] * 100))
     m0 = int(series[0]["month"][5:7]) - 1
     checks.append('<li>Stabilita: od %s %s se index z měsíce na měsíc pohnul nejvýš o %s bodu, v devíti měsících z deseti o méně než %s bodu.</li>' % (MON_CS[m0], series[0]["month"][:4], f1(swx), f1(p90)))
     robust = '<section id="checks"><h2>Jak je index robustní</h2><ul class="plain">%s</ul></section>' % "".join(checks)
@@ -1224,12 +1240,9 @@ def dependency_page_cs(ref, live, today):
               '<p class="small">Dvanáct měsíců do %s, podíl na hodnotě dovozu ze zemí mimo EU. HHI: Herfindahlův-Hirschmanův index, 0 až 10&nbsp;000; nad 2&nbsp;500 se trh obvykle považuje za vysoce koncentrovaný. '
               'Počítá se z osmi největších dodavatelů každého produktu, takže je mírně podhodnocený. Tučně: jedna země nad 65 %%. Zdroj: Eurostat Comext, přes OreOrbit.</p></section>') % (crows, e(mon_gen)) if crows else ""
     extra, outside = last.get("extra") or {}, ""
-    if extra:      # hořčík, mangan: vedle indexu, nikdy v něm
-        every = list(last["per"].values()) + list(extra.values())
-        outside = ('<section><h2>Mimo index, %s</h2><ul class="idx">%s</ul><p class="small">Sledujeme je zvlášť a do indexu je nepočítáme, aby měsíce zůstaly srovnatelné. '
-                   'Napříč všemi %d sledovanými surovinami dodala Čína za %s %d %% dovozu.</p></section>') % (
-            e(win), "".join(li(m, x, (yago or {}).get("extra") or {}) for m, x in sorted(extra.items(), key=lambda kv: -kv[1])),
-            len(every), e(win), round(100 * sum(every) / len(every)))
+    if extra:      # nově sledovaná surovina, vedle indexu, dokud do něj nepřibude
+        outside = ('<section><h2>Mimo index, %s</h2><ul class="idx">%s</ul><p class="small">Sledujeme, ale zatím do indexu nepočítáme.</p></section>') % (
+            e(win), "".join(li(m, x, (yago or {}).get("extra") or {}) for m, x in sorted(extra.items(), key=lambda kv: -kv[1])))
     sup_rows, sup_year = _supplier_rows(trade, last, {}, cs=True)
     supply = ""
     if sup_rows:
@@ -1243,8 +1256,9 @@ def dependency_page_cs(ref, live, today):
     body = """<article style="--c:#3ddc97">
 <p class="kicker"><i></i>Měsíčně · data Eurostatu do %(gen)s</p>
 <h1>Index závislosti OreOrbit</h1>
-<p class="lede">Podíl Číny na tom, co EU dováží ze zemí mimo EU, napříč deseti surovinami indexu, na kterých stojí evropský obranný průmysl, za poslední tři měsíce, u slabých trhů za delší dobu. Každá surovina má stejnou váhu.</p>
-%(rev)s<dl class="figs"><div><dt>%(v)d %%</dt><dd>podíl Číny za %(win)s</dd></div><div><dt>%(dm)s</dt><dd>změna proti předchozímu měsíci</dd></div><div><dt>%(dy)s</dt><dd>změna proti stejnému období před rokem</dd></div><div><dt>%(over)d z %(n)d</dt><dd>surovin, u kterých Čína dodala víc než polovinu</dd></div></dl>
+<p class="lede">Podíl Číny na tom, co EU dováží ze zemí mimo EU, napříč dvanácti kritickými surovinami, na kterých stojí evropský obranný průmysl, za poslední tři měsíce, u slabých trhů za delší dobu. Každá surovina má stejnou váhu.</p>
+%(rev)s<dl class="figs"><div><dt>%(v)d %%</dt><dd>podíl Číny na dovozu do EU ze zemí mimo EU za %(win)s</dd></div><div><dt>%(dm)s</dt><dd>změna proti předchozímu měsíci</dd></div><div><dt>%(dy)s</dt><dd>změna proti stejnému období před rokem</dd></div><div><dt>%(over)d z %(n)d</dt><dd>surovin, u kterých Čína dodala víc než polovinu</dd></div></dl>
+<p class="small">Proč méně, než je podíl Číny na světové produkci: index sleduje celní původ toho, co do EU dorazí. Antimon rafinovaný ve Vietnamu nebo Turecku či nikl z indonéských a norských závodů se počítá těmto zemím, i když ruda nebo majitel jsou čínští. <a href="#limits">Co index nezahrnuje</a>.</p>
 %(drivers)s
 <section><h2>Měsíc po měsíci</h2>%(chart)s<p class="small">Zelená čára: index, vždy nejméně za tři měsíce. Tečkovaná čára: jednotlivé měsíce, které kolísají, když dorazí málo zásilek. Průměr podílů Číny na hodnotě dovozu do EU ze zemí mimo EU, se stejnou vahou pro každou surovinu. Zdroj: Eurostat Comext, přes OreOrbit.</p><p class="small"><a href="dependency-index.csv" download>Stáhnout celou měsíční řadu (CSV)</a> s podílem, oknem a hodnotou dovozu každé suroviny a s první zveřejněnou hodnotou každého měsíce.</p><button type="button" class="dl" data-label="Stáhnout graf (SVG)" hidden>Stáhnout graf (SVG)</button></section>
 <section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
@@ -1262,12 +1276,13 @@ def dependency_page_cs(ref, live, today):
 <li>Koš zahrnuje suroviny, meziprodukty a některé díly (magnety, karbid, slitiny), ne hotové výrobky jako motory, baterie nebo elektroniku, v nichž suroviny jsou.</li>
 <li>Kdo ovládá jednotlivé fáze od dolu přes rafinerii po hotový díl, ukazuje <a href="../?lang=cs">živý atlas</a> a <a href="index.html">stránky surovin</a>.</li></ul></section>
 <section><h2>Jak index vzniká</h2><ul class="plain">
-<li>U každé z deseti surovin indexu OreOrbit sečte hodnotu dovozu pevného koše produktů do EU ze zemí mimo EU (u vzácných zemin permanentní magnety, sloučeniny a kovy, u wolframu rudy, parawolframan amonný, oxidy, karbid, prášek, kov a výrobky) a spočítá podíl Číny.</li>
+<li>U každé z dvanácti surovin OreOrbit sečte hodnotu dovozu pevného koše produktů do EU ze zemí mimo EU (u vzácných zemin permanentní magnety, sloučeniny a kovy, u wolframu rudy, parawolframan amonný, oxidy, karbid, prášek, kov a výrobky) a spočítá podíl Číny.</li>
 <li>Okno končí posledním měsícem, který Eurostat zveřejnil. Má nejméně tři měsíce a prodlužuje se po jednom měsíci, nejvýš na dvanáct, dokud dovoz suroviny nedosáhne %(minv)s, takže trh s málo zásilkami se měří přes dost dodávek. Měsíc s málo zásilkami váží jen tolik, kolik v něm skutečně dorazilo.</li>
-<li>Index je prostý průměr deseti podílů, takže malá, ale kritická surovina jako galium váží stejně jako lithium.</li>
-<li>Hořčík a mangan, přidané v listopadu 2026, sledujeme zvlášť, aby index zůstal srovnatelný v čase.</li>
+<li>Index je prostý průměr dvanácti podílů, takže malá, ale kritická surovina jako galium váží stejně jako lithium.</li>
+<li>Hořčík a mangan, přidané do atlasu v listopadu 2026, jsou v indexu od 22. listopadu 2026; celá řada je přepočítaná se všemi dvanácti a průměr původních deseti ukazujeme jako kontrolu.</li>
 <li>Hodnoty, jen dovoz ze zemí mimo EU; verzi podle tun a verzi váženou hodnotou ukazujeme jako kontrolu. Obnovuje se automaticky, jakmile Eurostat zveřejní nový měsíc, obvykle zhruba šest týdnů po jeho konci. Eurostat poslední měsíce zpřesňuje; první zveřejněnou hodnotu každého měsíce uchováváme vedle současné.</li></ul></section>
-<section id="versions"><h2>Verze 3, od 21. listopadu 2026</h2><p>Verze 3 sleduje podoby, které průmysl skutečně nakupuje: wolfram jako parawolframan amonný, karbid a prášek, nejen rudu, titan jako tvářený kov, nikl jako slitiny. Vypouští titanové rudy, které z většiny končí v bílém pigmentu, ne v kovu. Surovina, jejíž dovoz ze zemí mimo EU za tři měsíce nedosáhne %(minv)s, se měří za delší okno, aby s ní nepohnula jediná dodávka. Celá řada od ledna 2022 počítá verzí 3; každá měsíční stránka (anglicky) uchovává hodnotu, která byla pro daný měsíc zveřejněna jako první.</p><ul class="plain">%(log)s</ul></section>
+<section id="versions"><h2>Verze 4, od 22. listopadu 2026</h2><p>Verze 4 přidává hořčík (surový kov) a mangan (kov a rudu), takže index pokrývá všech dvanáct surovin atlasu. Každý měsíc od ledna 2022 je přepočítaný, takže řada zůstává srovnatelná; hodnoty zveřejněné podle verze 3 se už jako revize neukazují.</p><ul class="plain">%(log)s</ul></section>
+<section><h2>Verze 3, od 21. listopadu 2026</h2><p>Verze 3 sleduje podoby, které průmysl skutečně nakupuje: wolfram jako parawolframan amonný, karbid a prášek, nejen rudu, titan jako tvářený kov, nikl jako slitiny. Vypouští titanové rudy, které z většiny končí v bílém pigmentu, ne v kovu. Surovina, jejíž dovoz ze zemí mimo EU za tři měsíce nedosáhne %(minv)s, se měří za delší okno, aby s ní nepohnula jediná dodávka. Celá řada od ledna 2022 počítá verzí 3; každá měsíční stránka (anglicky) uchovává hodnotu, která byla pro daný měsíc zveřejněna jako první.</p></section>
 <section><h2>Verze 2, listopad 2026</h2><p>Do listopadu 2026 byl titulním číslem jediný měsíc. Když dorazilo málo zásilek, skočil podíl z měsíce na měsíc až o %(sw)d %(swb)s, a proto verze 2 sečetla tři měsíce.%(m1)s</p></section>
 %(cite)s
 <p class="open"><a class="cta" href="../?lang=cs">Suroviny na živém atlasu</a></p></article>""" % {
@@ -1278,7 +1293,7 @@ def dependency_page_cs(ref, live, today):
         "m1": (" Podle metody jednoho měsíce vychází %s na %d %%." % (e(mon_nom), round(m1 * 100))) if m1 is not None else "",
         "cite": cite_box_cs(title, path, today)}
     ld = [{"@type": "Dataset", "@id": BASE + path + "#dataset", "name": "Index závislosti OreOrbit", "inLanguage": "cs", "description": quote, "url": BASE + path,
-           "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": "3",
+           "creator": {"@id": PERSON["@id"]}, "publisher": {"@id": ORG["@id"]}, "isAccessibleForFree": True, "dateModified": today, "version": str(INDEX_VERSION),
            "temporalCoverage": "%s/%s" % (series[0]["from"], last["month"]),
            "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + "p/dependency-index.csv"}]}]
     return path, page(path, title, quote[:300], body, ld, today, [("Atlas", ""), ("Knihovna", "p/index.html"), ("Index závislosti", path)], lang="cs", alt="p/dependency-index.html")
@@ -1339,12 +1354,12 @@ def social_cards(ref, live, today):
         svg = index_chart(series).replace('class="chart"', 'style="width:100%;height:100%"').replace('class="c-x"', 'font-size="13" fill="#697176" font-family="DM, monospace"')
         inner = ('<div class="main"><div class="k">OreOrbit Dependency Index · %s</div><h1 style="font-size:74px">China\'s share of Europe\'s <b>defence-mineral imports</b></h1>'
                  '<div class="big">%d%%</div><div class="sub">%s</div><div class="chart">%s</div></div>'
-                 '<div class="src">Extra-EU import value, at least 3 months, ten index minerals, equal weight · Eurostat Comext via OreOrbit</div>') % (
+                 '<div class="src">Extra-EU import value, at least 3 months, twelve minerals, equal weight · Eurostat Comext via OreOrbit</div>') % (
             window_txt(last).replace("three months to ", "3 months to "), v, ("<b>%+d points</b> from a year earlier" % dy) if dy is not None else "", svg)
         cards.append({"slug": "index", "title": "Dependency Index, %s" % month_txt(last["month"]), "html": card_doc((inner, "The monthly number, with the method")),
-                      "en": "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in the %s%s.\n\nThat's the OreOrbit Dependency Index: each mineral counts equally, so gallium matters as much as lithium. Full breakdown and method in the first comment.\n\n#CriticalRawMaterials #DefenceIndustry #SupplyChain #Europe" % (
+                      "en": "China supplied %d%% of the EU's imports of the twelve critical minerals behind Europe's defence industry in the %s%s.\n\nThat's the OreOrbit Dependency Index: each mineral counts equally, so gallium matters as much as lithium. Full breakdown and method in the first comment.\n\n#CriticalRawMaterials #DefenceIndustry #SupplyChain #Europe" % (
                           v, window_txt(last), (", %s from %d%% a year earlier" % ("up" if dy > 0 else "down" if dy < 0 else "unchanged", round(yago["value"] * 100))) if yago else ""),
-                      "cs": "Čína za %s dodala do EU %d %% dovozu deseti surovin indexu, na kterých stojí evropský obranný průmysl%s.\n\nTo je Index závislosti OreOrbit: každá surovina má stejnou váhu, takže galium se počítá stejně jako lithium. Rozpad a metodika v prvním komentáři." % (
+                      "cs": "Čína za %s dodala do EU %d %% dovozu dvanácti kritických surovin, na kterých stojí evropský obranný průmysl%s.\n\nTo je Index závislosti OreOrbit: každá surovina má stejnou váhu, takže galium se počítá stejně jako lithium. Rozpad a metodika v prvním komentáři." % (
                           window_txt(last, cs=True), v, ("; před rokem to bylo %d %%" % round(yago["value"] * 100)) if yago else ""),
                       "link": BASE + "p/dependency-index.html"})
     # Biggest move: year to date against the same months a year earlier, never one month against one month.
@@ -1420,7 +1435,7 @@ def embed_page(live, today):
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OreOrbit Dependency Index</title>
 <meta name="robots" content="noindex"><link rel="canonical" href="%(base)sp/dependency-index.html"><link rel="stylesheet" href="../fonts/fonts.css"><link rel="stylesheet" href="../library.css">
 <style>body{margin:0;padding:18px 20px 14px;background:#050607}.e-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.e-n{font-weight:300;font-size:44px;letter-spacing:-.04em;line-height:1}.e-t{color:#a3aaae;font-size:14px;max-width:46ch}.e-s{margin-top:6px;font-size:12px;color:#697176}.e-s a{color:#a3aaae}</style></head>
-<body><div class="e-top"><div class="e-n">%(v)d%%</div><div class="e-t">China's share of EU imports of the ten index minerals behind Europe's defence, %(month)s</div></div>
+<body><div class="e-top"><div class="e-n">%(v)d%%</div><div class="e-t">China's share of EU imports of the twelve critical minerals behind Europe's defence, %(month)s</div></div>
 %(chart)s
 <div class="e-s">OreOrbit Dependency Index · Eurostat Comext · <a href="%(base)sp/dependency-index.html" target="_blank" rel="noopener">OreOrbit by Bohemia Defense</a></div><script src="../library.js" defer></script></body></html>
 """ % {"base": BASE, "v": v, "month": e(window_txt(last)), "chart": index_chart(series)}
@@ -1493,8 +1508,8 @@ def index_snapshots(ref, live, today):
     for k in sorted(per):
         if series and k >= series[0]["month"]:
             break
-        one = {m: a[0] / a[1] for m, a in per[k].items() if a[1] > 0 and m in INDEX_TEN}
-        if len(one) >= 8 and k not in have:
+        one = {m: a[0] / a[1] for m, a in per[k].items() if a[1] > 0 and m in INDEX_MINERALS}
+        if len(one) >= INDEX_MIN_N and k not in have:
             early.append({"month": k, "m1": sum(one.values()) / len(one), "per1": one})
     allm = [x["month"] for x in early] + [x["month"] for x in series]
     def link(k):
@@ -1514,7 +1529,7 @@ def index_snapshots(ref, live, today):
             v = round(x["value"] * 100)
             yago = year_ago(series, x)
             title = "OreOrbit Dependency Index, %s: %d%%" % (month_txt(k), v)
-            quote = "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in the %s, according to the OreOrbit Dependency Index (Bohemia Defense)%s." % (
+            quote = "China supplied %d%% of the EU's imports of the twelve critical minerals behind Europe's defence industry in the %s, according to the OreOrbit Dependency Index (Bohemia Defense)%s." % (
                 v, window_txt(x), (", against %d%% a year earlier" % round(yago["value"] * 100)) if yago else "")
             v1 = ("<p>Under the single-month method used until %s, %s read %d%%.</p>" % (INDEX_V2_FROM, e(month_txt(k)), round(x["m1"] * 100))) if x.get("m1") is not None else ""
             rv = revision(live, k)
@@ -1522,13 +1537,13 @@ def index_snapshots(ref, live, today):
                 v1 = "<p>First published as %d%% on %s; revised since with later Eurostat data.</p>" % (round(rv[0] * 100), e(day(rv[1]))) + v1
             thin = x.get("thin") or []
             main = ('<section><h2>By mineral, %s</h2><ul class="idx">%s</ul><p class="small">China\'s share of the value of extra-EU imports, all index products and all months of each mineral\'s window added up.%s Source: Eurostat Comext, via OreOrbit.</p></section>'
-                    '<section><h2>Method</h2>%s<p class="small">Version 3 of the index adds up at least three months per mineral, longer for thin markets; <a href="dependency-index.html#versions">method and versions</a>.</p></section>') % (
+                    '<section><h2>Method</h2>%s<p class="small">Version 4 of the index adds up at least three months per mineral, longer for thin markets; <a href="dependency-index.html#versions">method and versions</a>.</p></section>') % (
                 e(window_txt(x)), bars(x["per"]), (" Longer window: %s." % e(", ".join("%s %s" % (names.get(m, m), months_txt(x["win"][m], short=True)) for m in thin))) if thin else "", v1)
         else:
             rec = next(y for y in early if y["month"] == k)
             v = round(rec["m1"] * 100)
             title = "OreOrbit Dependency Index, %s: %d%% (single month)" % (month_txt(k), v)
-            quote = "China supplied %d%% of the EU's imports of the ten index minerals behind Europe's defence industry in %s, under the single-month method of the OreOrbit Dependency Index (Bohemia Defense) used until %s." % (
+            quote = "China supplied %d%% of the EU's imports of the twelve critical minerals behind Europe's defence industry in %s, under the single-month method of the OreOrbit Dependency Index (Bohemia Defense) used until %s." % (
                 v, month_txt(k), INDEX_V2_FROM)
             main = ('<section><h2>By mineral, %s</h2><ul class="idx">%s</ul><p class="small">China\'s share of the value of extra-EU imports in this month alone. Source: Eurostat Comext, via OreOrbit.</p></section>'
                     '<section><h2>Method</h2><p>This month comes before the first full three-month window, so it has only the single-month figure. Single months swing when few shipments arrive; <a href="dependency-index.html#versions">the index</a> adds up at least three months.</p></section>') % (
@@ -1564,7 +1579,7 @@ def space_page(ref, live, today):
             "Gallium arsenide is used in the high-efficiency solar cells that power most satellites." + ((" %s %s (%s)." % (ga_stat.get("num"), ga_stat.get("what"), ga_stat.get("src"))) if ga_stat else ""))]
     if last:
         qas.append(("How dependent is Europe on China for these minerals?",
-                    "Across the ten index minerals OreOrbit tracks, China supplied %d%% of the value of the EU's imports from outside the EU in the %s (OreOrbit Dependency Index, Eurostat data). The share varies widely by mineral; see the table above." % (round(last["value"] * 100), window_txt(last))))
+                    "Across the twelve minerals OreOrbit tracks, China supplied %d%% of the value of the EU's imports from outside the EU in the %s (OreOrbit Dependency Index, Eurostat data). The share varies widely by mineral; see the table above." % (round(last["value"] * 100), window_txt(last))))
     qas.append(("How can a space company check its exposure?",
                 "OreOrbit's free quick check includes 'Aircraft and space' as a product type (bohemiadefense.com/atlas/#check). For a specific product line, Bohemia Defense offers a readiness review that maps the actual parts."))
     body = ('<article style="--c:#22d3ee"><p class="kicker"><i></i>Space economy · critical raw materials</p><h1>Critical minerals for the space industry</h1>'
@@ -1751,7 +1766,7 @@ def faq_qas(ref, live, cfg, today, cs=False):
         q.append(("cina", "Které čínské vývozní kontroly dopadají na Evropu a co je pozastaveno?", cn, [("Časová osa (anglicky)", "china-export-controls.html")]))
         if last:
             q.append(("index", "Co je Index závislosti OreOrbit?",
-                      "Index závislosti OreOrbit je podíl Číny na hodnotě dovozu deseti surovin indexu do EU ze zemí mimo EU (vzácné zeminy, titan, wolfram, antimon, galium, germanium, lithium, kobalt, nikl a grafit) za poslední tři měsíce (u surovin s tenkým obchodem až dvanáct), každá surovina má stejnou váhu. Počítá se každý měsíc z dat Eurostat Comext. Za %s byl %d %%. Měří celní původ dovozu, ne to, kdo surovinu vytěžil. Hořčík a mangan OreOrbit sleduje zvlášť." % (
+                      "Index závislosti OreOrbit je podíl Číny na hodnotě dovozu dvanácti kritických surovin do EU ze zemí mimo EU (vzácné zeminy, titan, wolfram, antimon, hořčík, mangan, galium, germanium, lithium, kobalt, nikl a grafit) za poslední tři měsíce (u surovin s tenkým obchodem až dvanáct), každá surovina má stejnou váhu. Počítá se každý měsíc z dat Eurostat Comext. Za %s byl %d %%. Měří celní původ dovozu, ne to, kdo surovinu vytěžil." % (
                           window_txt(last, cs=True), round(last["value"] * 100)), [("Index závislosti", "dependency-index-cs.html")]))
         if cz:
             czs = {"cinovec": "Cínovec v Krušných horách (lithium; Geomet, skupina ČEZ 51 %, European Metals 49 %) je popisován jako největší evropské ložisko lithia, v březnu 2025 se stal strategickým projektem EU a má ročně vyrábět asi 37 500 t ekvivalentu uhličitanu lithného pro baterie se zpracováním v Prunéřově",
@@ -1797,7 +1812,7 @@ def faq_qas(ref, live, cfg, today, cs=False):
     q.append(("china", "Which Chinese export controls affect Europe, and what is paused?", cn, [("China's export controls: timeline", "china-export-controls.html")]))
     if last:
         q.append(("index", "What is the OreOrbit Dependency Index?",
-                  "The OreOrbit Dependency Index is China's share of the value of the EU's imports from outside the EU of the ten index minerals (rare earths, titanium, tungsten, antimony, gallium, germanium, lithium, cobalt, nickel and graphite) over the latest three months (up to twelve for thinly traded minerals), each mineral weighted equally, updated monthly from Eurostat Comext data. In the %s it was %d%%. It measures the customs origin of imports, not who mined the mineral. Magnesium and manganese are tracked separately." % (
+                  "The OreOrbit Dependency Index is China's share of the value of the EU's imports from outside the EU of the twelve critical minerals (rare earths, titanium, tungsten, antimony, magnesium, manganese, gallium, germanium, lithium, cobalt, nickel and graphite) over the latest three months (up to twelve for thinly traded minerals), each mineral weighted equally, updated monthly from Eurostat Comext data. In the %s it was %d%%. It measures the customs origin of imports, not who mined the mineral." % (
                       window_txt(last), round(last["value"] * 100)), [("Dependency Index", "dependency-index.html")]))
     if cz:
         low1 = lambda t: t[0].lower() + t[1:] if len(t) > 1 and t[1].islower() else t
@@ -1927,6 +1942,9 @@ def build(ref, live, cfg, today):
         out[ep] = eh
     if ser:
         out["p/dependency-index.csv"] = index_csv(ser, live)
-        out["live-data/live/depindex.json"] = json.dumps(vintages(ser, (live or {}).get("depindex"), today), ensure_ascii=False, separators=(",", ":"))
+        prev = (live or {}).get("depindex")
+        if isinstance(prev, dict) and prev.get("version") == 3:      # once, on the switch to version 4: keep the old vintages
+            out["live-data/live/depindex3.json"] = json.dumps(prev, ensure_ascii=False, separators=(",", ":"))
+        out["live-data/live/depindex.json"] = json.dumps(vintages(ser, prev, today), ensure_ascii=False, separators=(",", ":"))
     out["sitemap.xml"] = sitemap(sorted(k for k in out.keys() if k.endswith(".html") and k not in ("p/embed-index.html",)), today)
     return out
