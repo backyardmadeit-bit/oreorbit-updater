@@ -1065,3 +1065,35 @@ html.oo-sheet-open, html.oo-sheet-open body { overflow: hidden; }
 .oo-nudge-x:hover { color: var(--text, #eceee9); }
 @media (max-width: 1023px) { .oo-nudge { right: var(--gutter-r, 16px); width: auto; padding: 14px 14px 10px; } .oo-nudge b { font-size: 15px; } .oo-nudge > p { font-size: 13px; margin-bottom: 10px; } }
 @media (prefers-reduced-motion: reduce) { .oo-nudge { transition: none; } }
+
+/* ================= build 80: a plainer page =================
+   No pulsing dots, glows, dotted textures, coloured left edges, fade-ins on scroll or one bold phrase per heading.
+   Section labels stay only where they help find your way (This week, Plans). The live dot stays, but it sits still. */
+.idx-badge > i:first-child, .live-dot.on, .oo-live::before, .tm2-tag i, .wx-free i, .wx-badge i, .wx-pin::after,
+.hero-next i, .qc-follow i, .pl-badge i, .wk3-k > i { animation: none !important; box-shadow: none !important; }
+.oo-rise { opacity: 1 !important; transform: none !important; transition: none !important; }
+#mon-body .mon-card, .brf-main, .brf-side > div, .sig-tile, #sig-body.sig-tiled > .sig-panel.sig-show, .wk2-feed li,
+.wk2-st, .mon-card, .as-card { animation: none !important; }
+.oo-tex, #teams.wx-sec::before, .wx-band::before { background-image: none !important; }
+.wk2-dl, .sig-gate, .wx-band { background: transparent !important; }
+.wx-steps ol::before, .wx-steps ol::after, .tm2-steps ol::after { background: rgba(236,238,233,.22) !important; transition: none !important; }
+.wx-steps ol::after, .tm2-steps ol::after { display: none !important; }
+.wx-steps li span, .wx-steps.oo-in li span { box-shadow: none !important; border-color: rgba(236,238,233,.35) !important; color: inherit !important; }
+.sig-tile::before { display: none !important; }
+.sig-tile:hover { transform: none !important; }
+.hero-copy h1 b, .sec-head h2 b, .wx-sec .sec-head h2 b { font-weight: inherit !important; color: inherit !important; }
+.sec-head h2, .wx-sec .sec-head h2 { font-weight: 500 !important; }
+.section:not(#monday):not(#teams) .sec-head .label { display: none !important; }
+.hero-cta .btn svg, .hero-next .hn-a { display: none !important; }
+.pl3-n { display: none !important; }
+/* the index figure: a plain line under the buttons, not a pill above the headline */
+.idx-badge { order: 9; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; font-size: 14px; color: var(--dim, #a3aaae); text-decoration: underline; text-decoration-color: rgba(236,238,233,.3); text-underline-offset: 3px; }
+.idx-badge b { color: var(--text, #eceee9); }
+.hero-copy > .label, .hero-copy > h1 { order: 1; } .hero-copy > p { order: 2; } .hero-copy > .hero-cta { order: 3; }
+/* build 80: live evidence as ruled rows, not boxed cards */
+.sig-tiles { gap: 0 32px !important; border-top: 1px solid rgba(236,238,233,.12); }
+.sig-tile { border: 0 !important; border-bottom: 1px solid rgba(236,238,233,.12) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 18px 0 16px !important; }
+.sig-tile:hover { transform: none !important; }
+.sig-tile:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.sig-tile .st-dot { box-shadow: none !important; }

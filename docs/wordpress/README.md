@@ -1,5 +1,17 @@
 # WordPress (bohemiadefense.com)
 
+## 27. 11. 2026: střídmější úvodní stránka
+
+Úvodní stránka bez úvodní animace, tečkové mapy, postupného zobrazování sekcí, pulzujících teček a září. Plány jsou řádky místo tří karet, bez čísel. Hero ukazuje jen 43 lokalit a 12 surovin (bez počítání). Nový nadpis plánů: „Start free, then add alerts or a review.“ / „Začněte zdarma, pak přidejte upozornění nebo posouzení.“
+
+1. Elementor, stránka 5581 (EN): widget HTML → Cmd+A → vložit celý `home-en.html` → Aktualizovat.
+2. Elementor, stránka 6312 (CS): totéž s `home-cs.html`.
+3. W3 Total Cache → Purge All Caches.
+4. Elementor → Nástroje → „Regenerovat soubory a data“.
+5. Zkontrolovat živou stránku EN i CS (nahoře žádná mapa, plány jako tři řádky).
+
+Stránky zakladatele (`founder-*.txt`) se nemění.
+
 ## 22. 11. 2026: Dependency Index na dvanácti surovinách
 
 1. **`llms.txt`**: přes WebFTP do `/www/domains/bohemiadefense.com/` přepiš soubor obsahem [`llms.txt`](llms.txt).
