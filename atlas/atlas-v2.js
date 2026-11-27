@@ -1629,16 +1629,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const bb = document.querySelector(".wx-btns .btn:not(.ghost)");
     if (bb) { bb.href = BOOK; bb.textContent = T("Pick a date", "Vybrat termín"); if (ext) { bb.target = "_blank"; bb.rel = "noopener"; } }
     /* headings: shorter, tighter */
-    const tr = document.querySelector("#trust .sec-head h2"); if (tr) tr.innerHTML = esc(T("How we", "Jak to")) + " <b>" + esc(T("know.", "víme.")) + "</b>";
-    /* no method section in the page; credits live on the legal page */
-    ["method"].forEach((id) => { const s = $i(id); if (s) { s.hidden = true; s.style.display = "none"; } });
-    const trs = $i("trust");
-    if (trs) {
-      trs.querySelectorAll(".dd-tabs").forEach((e) => e.remove());
-      const p = trs.querySelector(".sec-head p");
-      if (p) p.textContent = T("Every figure comes from public data, satellite imagery or verified news, and shows its date. Licensed data are credited on the legal page.", "Každé číslo pochází z veřejných dat, satelitních snímků nebo ověřených zpráv a uvádí své datum. Licencovaná data uvádíme na právní stránce.");
-      if (p && !trs.querySelector(".tr-legal")) { const a = document.createElement("a"); a.className = "tr-legal"; a.href = "p/legal.html"; a.textContent = T("Data credits and terms", "Zdroje dat a podmínky"); p.after(a); }
-    }
+    /* build 82: no data-and-method block in the page; credits stay in the footer and on the legal page */
+    ["trust", "method"].forEach((id) => { const s = $i(id); if (s) { s.hidden = true; s.style.display = "none"; } });
     /* the Sections menu: no "Present" entry */
     const menu = $i("sec-list");
     const dropPresent = () => { if (menu) menu.querySelectorAll("li").forEach((li) => { if (/Present|Prezent|full screen|celá obrazovka/i.test(li.textContent)) li.remove(); }); };
@@ -1794,7 +1786,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 81"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 82"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1819,7 +1811,6 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       head("monday", T("This week", "Tento týden"), T("What's moving<br><b>this week.</b>", "Co se tento týden<br><b>děje.</b>"), null);
       head("signals", T("Live evidence", "Živá data"), T("What the open data<br><b>says now.</b>", "Co říkají otevřená data<br><b>právě teď.</b>"), T("Seven live signals from open data and satellites. Open any of them for the full data.", "Sedm průběžně aktualizovaných ukazatelů z otevřených dat a družic. Kliknutím zobrazíte plná data."));
       head("teams", T("Plans", "Ceník"), T("Start free,<br><b>then add alerts or a review.</b>", "Začněte zdarma,<br><b>pak přidejte upozornění nebo posouzení.</b>"), T("Three levels: the free atlas, monitoring for your minerals, and a readiness review for your board.", "Tři úrovně: atlas zdarma, monitoring vašich surovin a posouzení připravenosti pro vaše vedení."));
-      head("trust", T("Data & method", "Data a metoda"), T("How we <b>know.</b>", "Jak to <b>víme.</b>"), T("Every figure comes from public data, satellite imagery or verified news, and shows its date. Licensed data are credited on the legal page.", "Každé číslo pochází z veřejných dat, družicových snímků nebo ověřených zpráv a u každého je uvedeno datum. Licencovaná data uvádíme na právní stránce."));
       pin(q(".wk3-h"), CS ? "Každé pondělí do e-mailu, <b>zdarma.</b>" : "Get this every Monday, <b>free.</b>");
       const d = q(".wk3-d"); if (d) pin(d, CS ? 'Chcete o změnách vědět hned? Monitoring vás upozorní ještě týž den. <a href="#teams">Ceník</a>' : 'Want to know the same day? Monitoring alerts you when something changes for your minerals. <a href="#teams">See plans</a>');
       if (CS) {
@@ -1845,7 +1836,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 81 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 82 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

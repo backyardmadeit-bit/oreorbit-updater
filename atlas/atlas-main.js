@@ -6586,7 +6586,7 @@ function v14OnLive(k) {
 }
 
 /* ---------- sections menu with reading progress ---------- */
-const SECTIONS14 = [["top", "Atlas", "Atlas"], ["check", "Quick check", "Rychlá kontrola"], ["deepdive", "Go deeper", "Do hloubky"], ["trust", "Data & method", "Data a metoda"], ["monday", "This week", "Tento týden"], ["exposure", "The twelve minerals", "Dvanáct surovin"], ["scenarios", "Stress test", "Zátěžový test"], ["assess", "Your parts list", "Vlastní díly"], ["briefing", "Briefing", "Briefing"], ["chokepoints", "2030 targets", "Cíle 2030"], ["signals", "Live evidence", "Živá data"], ["rules", "Rules & funding", "Pravidla a financování"], ["teams", "Monitoring", "Monitoring"], ["quiz", "Quiz", "Kvíz"], ["method", "Method", "Metoda"], ["health", "Data health", "Stav dat"]];
+const SECTIONS14 = [["top", "Atlas", "Atlas"], ["check", "Quick check", "Rychlá kontrola"], ["deepdive", "Go deeper", "Do hloubky"], ["monday", "This week", "Tento týden"], ["exposure", "The twelve minerals", "Dvanáct surovin"], ["scenarios", "Stress test", "Zátěžový test"], ["assess", "Your parts list", "Vlastní díly"], ["briefing", "Briefing", "Briefing"], ["chokepoints", "2030 targets", "Cíle 2030"], ["signals", "Live evidence", "Živá data"], ["rules", "Rules & funding", "Pravidla a financování"], ["teams", "Monitoring", "Monitoring"], ["quiz", "Quiz", "Kvíz"], ["method", "Method", "Metoda"], ["health", "Data health", "Stav dat"]];
 const secBtn = document.getElementById("sec-btn"), secPop = document.getElementById("sec-pop"), secList = document.getElementById("sec-list"), secCur = document.getElementById("sec-cur"), navProg = document.getElementById("nav-prog");
 let secNow = "top";
 function renderSecList() {
