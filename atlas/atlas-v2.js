@@ -1630,7 +1630,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (bb) { bb.href = BOOK; bb.textContent = T("Pick a date", "Vybrat termín"); if (ext) { bb.target = "_blank"; bb.rel = "noopener"; } }
     /* headings: shorter, tighter */
     const tr = document.querySelector("#trust .sec-head h2"); if (tr) tr.innerHTML = esc(T("How we", "Jak to")) + " <b>" + esc(T("know.", "víme.")) + "</b>";
-    /* the method stays short and hidden; credits live on the legal page */
+    /* no method section in the page; credits live on the legal page */
     ["method"].forEach((id) => { const s = $i(id); if (s) { s.hidden = true; s.style.display = "none"; } });
     const trs = $i("trust");
     if (trs) {
