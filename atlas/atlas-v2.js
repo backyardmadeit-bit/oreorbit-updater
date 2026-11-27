@@ -3,7 +3,7 @@ window.ooErrs = window.ooErrs || [];
 window.addEventListener("error", (e) => { const m = String((e && e.message) || "error") + (e && e.filename ? " @" + String(e.filename).split("/").pop() + ":" + e.lineno : ""); window.ooErrs.push(m); try { if (navigator.doNotTrack !== "1" && navigator.sendBeacon) navigator.sendBeacon("https://bohemiadefense.com/atlas/count.php?e=" + encodeURIComponent(("err:" + (document.documentElement.lang || "x") + ":" + m.toLowerCase().replace(/[^a-z0-9]+/g, "-")).slice(0, 40).replace(/-+$/, ""))); } catch (x) {} });
 window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promise: " + String((e && e.reason && e.reason.message) || e.reason).slice(0, 120)); });
 /* OreOrbit v15: your supply chain, assessed.
-   A register of products, parts, material origins and stock, rated part by part, stress-tested against real
+   A register of products, parts, material origins and stock, rated part by part, stress-tested against current
    export controls and mapped back to the mines and refineries on the atlas. It runs entirely in this browser:
    the register is kept in this browser's local storage and in files the user saves; nothing is sent anywhere.
    Reads the atlas through window.OO, which the main script sets up at the end. */
@@ -22,7 +22,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const set = (sel, txt) => { const el = $(sel); if (el) el.textContent = txt; };
     set("#assess .sec-head .label", "Posouzení");
     set("#as-h", "Váš dodavatelský řetězec, posouzený.");
-    set("#assess .sec-head p", "Zapište výrobky, které vyrábíte, a díly, ve kterých je těchto dvanáct surovin, odkud pocházejí a na kolik týdnů máte zásoby. Dostanete hodnocení rizika každého dílu, zátěžový test proti skutečným vývozním kontrolám a mapování, které můžete předložit vedení. Vychází z posouzení rizik dodavatelského řetězce, které Akt o kritických surovinách EU ukládá velkým výrobcům strategických technologií každé tři roky. Všechno zůstává v tomto prohlížeči.");
+    set("#assess .sec-head p", "Zapište výrobky, které vyrábíte, a díly, ve kterých je těchto dvanáct surovin, odkud pocházejí a na kolik týdnů máte zásoby. Dostanete hodnocení rizika každého dílu, zátěžový test proti platným vývozním kontrolám a mapování, které můžete předložit vedení. Vychází z posouzení rizik dodavatelského řetězce, které Akt o kritických surovinách EU ukládá velkým výrobcům strategických technologií každé tři roky. Všechno zůstává v tomto prohlížeči.");
     set("#teams .sec-head .label", "Pro týmy");
     set("#tm-h", "Předložte to vedení.");
     set("#teams .sec-head p", "OreOrbit je zdarma. Výrobcům v obraně a kosmonautice, kteří potřebují odpověď, za kterou se dá ručit, nabízíme i přímou spolupráci s jejich týmem.");
@@ -866,9 +866,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (cta && !document.getElementById("cta-check")) {
       const a = document.createElement("a");
       a.id = "cta-check"; a.className = "btn"; a.href = "#check";
-      a.innerHTML = esc(T("Check your product in 60 seconds", "Prověřte svůj výrobek za 60 sekund")) + ' <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+      a.innerHTML = esc(T("Check your product in 60 seconds", "Prověřte svůj výrobek za 60 sekund"));
       cta.insertBefore(a, cta.firstChild);
-      if (ex) { ex.classList.add("ghost"); ex.childNodes[0].textContent = T("Explore the globe ", "Prozkoumat glóbus "); }
+      if (ex) { ex.classList.add("ghost"); ex.childNodes[0].textContent = T("Explore the globe", "Prozkoumat glóbus"); }
       if (as) { as.hidden = true; as.style.display = "none"; }
     }
     // 2. plain names for the sections
@@ -1111,7 +1111,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       teams.classList.add("wx-sec");
       const ask = (s) => "mailto:david@madali.cz?subject=" + encodeURIComponent(s);
       const MP = String((window.ATLAS_CONFIG || {}).monitoringPrice || "49").trim();   /* build 55: the price comes from config.js, never typed */
-      const card = (feat, name, price, sub, text, items, link, label) => `<article class="wx-card${feat ? " feat" : ""}">${feat ? `<span class="wx-badge"><i></i>${esc(T("Founding clients", "Zakládající klienti"))}</span>` : ""}<p class="wx-name">${esc(name)}</p><p class="wx-price">${price}</p><p class="wx-sub">${sub ? esc(sub) : "&nbsp;"}</p><div class="wx-text"><p>${esc(text)}</p>${items ? `<ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}</div><a class="wx-ask" href="${link}">${esc(label)} <span aria-hidden="true">→</span></a></article>`;
+      const card = (feat, name, price, sub, text, items, link, label) => `<article class="wx-card${feat ? " feat" : ""}">${feat ? `<span class="wx-badge"><i></i>${esc(T("Founding clients", "Zakládající klienti"))}</span>` : ""}<p class="wx-name">${esc(name)}</p><p class="wx-price">${price}</p><p class="wx-sub">${sub ? esc(sub) : "&nbsp;"}</p><div class="wx-text"><p>${esc(text)}</p>${items ? `<ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}</div><a class="wx-ask" href="${link}">${esc(label)}</a></article>`;
       const steps = [[T("Map", "Mapa"), T("We fill the register with your team, part by part.", "S vaším týmem vyplníme registr, díl po dílu.")],
                      [T("Test", "Test"), T("Every export control and chokepoint against your stock.", "Každá vývozní kontrola a úžina proti vašim zásobám.")],
                      [T("Check", "Kontrola"), T("An analyst verifies the sources and signs the report.", "Analytik ověří zdroje a podepíše zprávu.")],
@@ -1191,7 +1191,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         // the count reads "Today"/"Dnes" on the day itself, otherwise a number of days
         const dm = n.match(/\d+/), days = dm ? parseInt(dm[0], 10) : /today|dnes/i.test(n) ? 0 : null;
         if (days === null || !p) { if (a.innerHTML) a.innerHTML = ""; return; }
-        const html = `<i></i><span class="hn-k">${esc(T("Next deadline", "Nejbližší termín"))}</span><span class="hn-d">${esc(O.inDays(days))}</span><span class="hn-t">${esc(p.trim())}</span><span class="hn-a" aria-hidden="true">→</span>`;
+        const html = `<i></i><span class="hn-k">${esc(T("Next deadline", "Nejbližší termín"))}</span><span class="hn-d">${esc(O.inDays(days))}</span><span class="hn-t">${esc(p.trim())}</span>`;
         if (a.innerHTML !== html) a.innerHTML = html;
       };
       fill(); const mb = $i("mon-body"); if (mb) new MutationObserver(fill).observe(mb, { childList: true, subtree: true });
@@ -1284,7 +1284,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         `<div class="wk2-grid"><div class="wk2-dl">${nx ? `<p class="wk2-k">${esc(T("Next deadline", "Nejbližší termín"))}</p><p class="wk2-big">${esc(nx.cd || nx.d)}</p><a class="wk2-dlt" href="${esc(nx.href)}" target="_blank" rel="noopener">${esc(nx.t)}</a><p class="wk2-date">${esc(nx.d.trim())}</p>` +
           (later.length ? `<ul class="wk2-later">${later.map((x) => `<li><span>${esc(x.d.trim())}</span><a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.t)}</a></li>`).join("")}</ul>` : "") : ""}</div>` +
         `<div class="wk2-feed"><p class="wk2-k">${esc(T("What moved this week", "Co se tento týden změnilo"))}</p><ul>${feed.map((x, k) => `<li><span class="wk2-d">${dot(x.ms)}</span>${x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener"${x.en ? ' lang="en"' : ""}>${esc(x.t)}</a>` : `<button type="button" data-k="${k}"${x.en ? ' lang="en"' : ""}>${esc(x.t)}</button>`}<small>${esc(x.meta)}</small></li>`).join("") || `<li class="wk2-none">${esc(T("Nothing new for these minerals this week.", "Pro tyto suroviny tento týden nic nového."))}</li>`}</ul></div></div>` +
-        `<div class="wk2-foot"><button type="button" class="btn small" data-act="pack">${esc(T("Board pack · 7 slides", "Podklady pro vedení · 7 snímků"))}</button><a class="wk2-arch" href="p/briefs.html">${esc(T("All weekly briefs", "Všechny týdenní přehledy"))} →</a></div>`;
+        `<div class="wk2-foot"><button type="button" class="btn small" data-act="pack">${esc(T("Board pack · 7 slides", "Podklady pro vedení · 7 snímků"))}</button><a class="wk2-arch" href="p/briefs.html">${esc(T("All weekly briefs", "Všechny týdenní přehledy"))}</a></div>`;
       if (html !== sig || boxE.innerHTML.length < 20) { sig = html; boxE.innerHTML = html; }
       lastFeed = feed;
       const s2 = document.querySelector(".steps-band a:nth-child(2) small");
@@ -1433,8 +1433,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         form("monitoring", T("Start monitoring", "Spustit monitoring"), T("We'll use this address to contact you about monitoring.", "Tuto adresu použijeme, abychom vás kontaktovali kvůli monitoringu.")) + `</article>` +
         `<article class="wx-card wx-rev"><p class="wx-name">${esc(T("Readiness review", "Posouzení připravenosti"))}</p><p class="wx-price wx-price-t">${esc(T("For your board", "Pro vaše vedení"))}</p><p class="wx-sub">${esc(T("CRMA Article 24 · two to three weeks", "Článek 24 CRMA · dva až tři týdny"))}</p>` +
         `<div class="wx-text"><p>${esc(T("One product line, its parts, suppliers, origins and stock, tested against every export control and chokepoint. Signed by an analyst.", "Jedna produktová řada, její díly, dodavatelé, původ a zásoby, prověřené proti každé vývozní kontrole a úžině. Podepsané analytikem."))}</p>` +
-        `<ul><li>${esc(T("Your parts-list register", "Registr vašich dílů"))}</li><li>${esc(T("Stress tests against real export controls", "Zátěžové testy proti skutečným vývozním kontrolám"))}</li><li>${esc(T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"))}</li><li>${esc(T("Slides for your board", "Podklady pro vedení"))}</li></ul></div>` +
-        `<a class="btn wx-call" href="#wx-band">${esc(T("Book a 30-minute intro call", "Domluvit 30minutový hovor"))} →</a></article>`;
+        `<ul><li>${esc(T("Your parts-list register", "Registr vašich dílů"))}</li><li>${esc(T("Stress tests against current export controls", "Zátěžové testy proti platným vývozním kontrolám"))}</li><li>${esc(T("The rules that decide who can supply you", "Pravidla, která rozhodují, kdo vám smí dodávat"))}</li><li>${esc(T("Slides for your board", "Podklady pro vedení"))}</li></ul></div>` +
+        `<a class="btn wx-call" href="#wx-band">${esc(T("Book a 30-minute intro call", "Domluvit 30minutový hovor"))}</a></article>`;
       const bandEl = document.querySelector(".wx-band"); if (bandEl) bandEl.id = "wx-band";
       row.querySelector(".wx-call").addEventListener("click", () => { snd(); ooHit("act:review-call"); });
     }
@@ -1516,7 +1516,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const free = document.createElement("article"); free.className = "wx-card wx-free-card";
       free.innerHTML = `<p class="wx-name">${esc(T("Free", "Zdarma"))}</p><p class="wx-price">${CS ? "0 €" : "€0"}</p><p class="wx-sub">${esc(T("Open to everyone · no login", "Pro každého · bez přihlášení"))}</p>` +
         `<div class="wx-text"><p>${esc(T("Explore the atlas and see what your product depends on.", "Prozkoumejte atlas a zjistěte, na čem váš výrobek závisí."))}</p><ul><li>${esc(T("The interactive atlas and the quick check", "Interaktivní atlas a rychlá kontrola"))}</li><li>${esc(T("This week's headlines", "Zprávy tohoto týdne"))}</li><li>${esc(T("With your email: the Monday brief and all live data", "S e-mailem: pondělní přehled a všechna živá data"))}</li></ul></div>` +
-        `<a class="wx-ask" href="#monday">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))} <span aria-hidden="true">→</span></a>`;
+        `<a class="wx-ask" href="#monday">${esc(T("Get the free Monday brief", "Pondělní přehled zdarma"))}</a>`;
       row.insertBefore(free, row.firstChild);
       row.classList.remove("wx-two"); row.classList.add("wx-three");
       if (mon) {
@@ -1526,7 +1526,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       if (rev) { const call = rev.querySelector(".wx-call"); if (call) { call.href = BOOK; if (ext) { call.target = "_blank"; call.rel = "noopener"; } } }
       document.querySelectorAll(".wx-steps, .wx-vat").forEach((e) => e.remove());
       const bandBtn = document.querySelector(".wx-btns .btn:not(.ghost)"); if (bandBtn) { bandBtn.href = BOOK; bandBtn.textContent = T("Book a 30-minute intro call", "Domluvit 30minutový hovor"); if (ext) { bandBtn.target = "_blank"; bandBtn.rel = "noopener"; } }
-      const th = document.querySelector("#teams .sec-head h2"); if (th) th.innerHTML = esc(T("Start free.", "Začněte zdarma.")) + "<br><b>" + esc(T("Get alerted. Get ready.", "Buďte upozorněni. Buďte připraveni.")) + "</b>";
+      const th = document.querySelector("#teams .sec-head h2"); if (th) th.innerHTML = esc(T("Start free,", "Začněte zdarma,")) + "<br><b>" + esc(T("then add alerts or a review.", "pak přidejte upozornění nebo posouzení.")) + "</b>";
       const tp = document.querySelector("#teams .sec-head p"); if (tp) tp.textContent = T("Three levels: the free atlas, monitoring for your minerals, and a readiness review for your board.", "Tři úrovně: atlas zdarma, monitoring vašich surovin a posouzení připravenosti pro vaše vedení.");
       const tl = document.querySelector("#teams .sec-head .label"); if (tl) tl.textContent = T("Plans", "Úrovně");
       const fr = document.querySelector(".wx-free"); if (fr) fr.remove();
@@ -1637,7 +1637,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       trs.querySelectorAll(".dd-tabs").forEach((e) => e.remove());
       const p = trs.querySelector(".sec-head p");
       if (p) p.textContent = T("Every figure comes from public data, satellite imagery or verified news, and shows its date. Licensed data are credited on the legal page.", "Každé číslo pochází z veřejných dat, satelitních snímků nebo ověřených zpráv a uvádí své datum. Licencovaná data uvádíme na právní stránce.");
-      if (p && !trs.querySelector(".tr-legal")) { const a = document.createElement("a"); a.className = "tr-legal"; a.href = "p/legal.html"; a.textContent = T("Data credits and terms", "Zdroje dat a podmínky") + " →"; p.after(a); }
+      if (p && !trs.querySelector(".tr-legal")) { const a = document.createElement("a"); a.className = "tr-legal"; a.href = "p/legal.html"; a.textContent = T("Data credits and terms", "Zdroje dat a podmínky"); p.after(a); }
     }
     /* the Sections menu: no "Present" entry */
     const menu = $i("sec-list");
@@ -1648,7 +1648,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (old && !document.querySelector(".wk3")) {
       const w = document.createElement("div"); w.className = "wk3";
       w.innerHTML = `<div class="wk3-l"><p class="wk3-k"><i></i>${esc(T("The Monday brief", "Pondělní přehled"))}</p><p class="wk3-h">${esc(T("Get this every Monday,", "Dostávejte to každé pondělí,"))} <b>${esc(T("free.", "zdarma."))}</b></p><p class="wk3-m">${esc(T("For: ", "Suroviny: "))}<span class="wk2-sub-m"></span></p></div>` +
-        `<div class="wk3-r">${form("brief", T("Subscribe", "Odebírat"), T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))}<p class="wk3-d">${esc(T("Monitoring goes further: a same-day alert when something changes for your minerals.", "Monitoring jde dál: upozornění ještě v den, kdy se u vašich surovin něco změní."))} <a href="#teams">${esc(T("See plans", "Úrovně"))} →</a></p></div>`;
+        `<div class="wk3-r">${form("brief", T("Subscribe", "Odebírat"), T("We'll send the Monday brief to this address. Unsubscribe any time.", "Na tuto adresu vám budeme posílat pondělní přehled. Odhlásit se můžete kdykoli."))}<p class="wk3-d">${esc(T("Monitoring goes further: a same-day alert when something changes for your minerals.", "Monitoring jde dál: upozornění ještě v den, kdy se u vašich surovin něco změní."))} <a href="#teams">${esc(T("See plans", "Úrovně"))}</a></p></div>`;
       old.replaceWith(w);
       const upd = () => { const pk = $i("mon-pick"); const n = pk ? [...pk.querySelectorAll('.chip2[data-my][aria-pressed="true"]')].map((b) => b.textContent.trim()) : []; const sp = w.querySelector(".wk2-sub-m"); if (sp) sp.textContent = n.length ? n.join(", ") : T("all twelve minerals", "všech dvanáct surovin"); };
       upd(); const pk = $i("mon-pick"); if (pk) watchPick(upd);
@@ -1721,7 +1721,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const set = (sel, html) => { const e = document.querySelector(sel); if (e) e.innerHTML = html; };
       set(".hero-copy h1", "Zjistěte, na čem<br><b>závisí váš výrobek.</b>");
       set("#monday .sec-head h2", "Co se tento týden<br><b>děje.</b>");
-      set("#teams .sec-head h2", "Začněte zdarma.<br><b>Buďte o krok napřed.</b>");
+      set("#teams .sec-head h2", "Začněte zdarma,<br><b>pak přidejte upozornění nebo posouzení.</b>");
       set("#signals .sec-head p", "Sedm průběžně aktualizovaných ukazatelů z otevřených dat a družic. Kliknutím zobrazíte plná data.");
       const st = document.querySelectorAll(".steps-band .inner a");
       const S = [["Prověřte svůj výrobek", "Za minutu zjistíte, na čem závisí"], ["Co se tento týden děje", null], ["Upozornění na vaše suroviny", "Monitoring e-mailem"]];
@@ -1794,7 +1794,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 79"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 80"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1818,10 +1818,10 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       head("check", T("Quick check", "Rychlá kontrola"), T("What does your product<br><b>depend on?</b>", "Na čem váš výrobek<br><b>závisí?</b>"), T("Pick what you make. See which minerals it needs, who controls them and what could hit it next.", "Vyberte, co vyrábíte. Uvidíte, které suroviny potřebujete, kdo je ovládá a co vás může zasáhnout."));
       head("monday", T("This week", "Tento týden"), T("What's moving<br><b>this week.</b>", "Co se tento týden<br><b>děje.</b>"), null);
       head("signals", T("Live evidence", "Živá data"), T("What the open data<br><b>says now.</b>", "Co říkají otevřená data<br><b>právě teď.</b>"), T("Seven live signals from open data and satellites. Open any of them for the full data.", "Sedm průběžně aktualizovaných ukazatelů z otevřených dat a družic. Kliknutím zobrazíte plná data."));
-      head("teams", T("Plans", "Ceník"), T("Start free.<br><b>Get alerted. Get ready.</b>", "Začněte zdarma.<br><b>Buďte o krok napřed.</b>"), T("Three levels: the free atlas, monitoring for your minerals, and a readiness review for your board.", "Tři úrovně: atlas zdarma, monitoring vašich surovin a posouzení připravenosti pro vaše vedení."));
+      head("teams", T("Plans", "Ceník"), T("Start free,<br><b>then add alerts or a review.</b>", "Začněte zdarma,<br><b>pak přidejte upozornění nebo posouzení.</b>"), T("Three levels: the free atlas, monitoring for your minerals, and a readiness review for your board.", "Tři úrovně: atlas zdarma, monitoring vašich surovin a posouzení připravenosti pro vaše vedení."));
       head("trust", T("Data & method", "Data a metoda"), T("How we <b>know.</b>", "Jak to <b>víme.</b>"), T("Every figure comes from public data, satellite imagery or verified news, and shows its date. Licensed data are credited on the legal page.", "Každé číslo pochází z veřejných dat, družicových snímků nebo ověřených zpráv a u každého je uvedeno datum. Licencovaná data uvádíme na právní stránce."));
       pin(q(".wk3-h"), CS ? "Každé pondělí do e-mailu, <b>zdarma.</b>" : "Get this every Monday, <b>free.</b>");
-      const d = q(".wk3-d"); if (d) pin(d, CS ? 'Chcete o změnách vědět hned? Monitoring vás upozorní ještě týž den. <a href="#teams">Ceník →</a>' : 'Want to know the same day? Monitoring alerts you when something changes for your minerals. <a href="#teams">See plans →</a>');
+      const d = q(".wk3-d"); if (d) pin(d, CS ? 'Chcete o změnách vědět hned? Monitoring vás upozorní ještě týž den. <a href="#teams">Ceník</a>' : 'Want to know the same day? Monitoring alerts you when something changes for your minerals. <a href="#teams">See plans</a>');
       if (CS) {
         const TT = [[/dovoz|import/i, "Dovoz do EU: odkud pochází"], [/lod|ship/i, "Lodní doprava úžinami"], [/konflikt|conflict/i, "Konflikty u dodavatelských řetězců"], [/poptáv|demand/i, "Poptávka evropské obrany"], [/výzkum|research/i, "Výzkum náhrad"], [/tepl|heat/i, "Provoz závodů z družic"], [/síř|sulph/i, "Oxid siřičitý nad hutěmi"]];
         qa(".sig-tile b").forEach((b) => { const hit = TT.find(([re]) => re.test(b.textContent)); if (hit) pin(b, esc(hit[1])); });
@@ -1845,7 +1845,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 79 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 80 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -1862,7 +1862,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
   function v37() {
     /* the ship layer in Czech */
     const sh = document.querySelector("#lyr-ships small");
-    if (sh && CS) { const t = "Skutečné hlášení lodí ve 3D, posunuté podle kurzu a rychlosti"; sh.setAttribute("data-notr", ""); sh.textContent = t; new MutationObserver(() => { if (sh.textContent !== t) sh.textContent = t; }).observe(sh, { childList: true, characterData: true, subtree: true }); }
+    if (sh && CS) { const t = "Hlášení lodí ve 3D, posunuté podle kurzu a rychlosti"; sh.setAttribute("data-notr", ""); sh.textContent = t; new MutationObserver(() => { if (sh.textContent !== t) sh.textContent = t; }).observe(sh, { childList: true, characterData: true, subtree: true }); }
     /* monitoring: "Watch: …" belongs to the column, so the three plan buttons stay on one line */
     const col = document.querySelector(".pl3-b"), forL = document.querySelector(".pl3-y .mon-for"), pick = document.querySelector(".pl3-y .wk3-pick");
     if (col && forL) { col.appendChild(forL); if (pick) col.appendChild(pick); }
@@ -1877,7 +1877,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (row && !document.querySelector(".pl3-guar")) {
       const g = document.createElement("div"); g.className = "pl3-guar";
       g.innerHTML = `<p><b>${esc(T("Money-back guarantee.", "Záruka vrácení peněz."))}</b> ${esc(T("Not seeing the value? Ask within the first month and we refund you in full.", "Nebude vám k užitku? Napište nám během prvního měsíce a vrátíme vám celou částku."))}</p>` +
-        `<p class="pl3-man">${esc(T("Already a client?", "Už jste klient?"))} <a href="manage.php">${esc(T("Manage or cancel your subscription", "Spravovat nebo zrušit předplatné"))} →</a></p>`;
+        `<p class="pl3-man">${esc(T("Already a client?", "Už jste klient?"))} <a href="manage.php">${esc(T("Manage or cancel your subscription", "Spravovat nebo zrušit předplatné"))}</a></p>`;
       row.after(g);
     }
     /* v44: minerals beyond the tracked ones, from an allow-list (data/other-minerals.json, the same file go-pay.php

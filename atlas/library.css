@@ -94,7 +94,7 @@ ul.idx .pc em{font-style:normal;font-weight:400;font-size:13px;color:var(--faint
 .faq h3{font-size:18px;margin:24px 0 6px}.faq h3:first-of-type{margin-top:8px}
 .monthnav{line-height:2}.monthnav a{white-space:nowrap}
 .guides{margin:8px 0 28px}
-ul.brief li{padding:6px 0 6px 14px;border-left:3px solid var(--c,#3ddc97);margin:8px 0}
+ul.brief li{padding:6px 0;border-bottom:1px solid rgba(236,238,233,.1);margin:0}
 .figs.hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .figs.hero dt{font-size:clamp(40px,6vw,64px)}
 ul.key{margin-top:22px}
