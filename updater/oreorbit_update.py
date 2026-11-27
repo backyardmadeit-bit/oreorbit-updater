@@ -2905,11 +2905,21 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
     # deadlines
     if mydl:
         body += _mhead("Termíny" if cs else "Deadlines") + "".join(_mrow(_dl_row(d, mins, cs)) for d in mydl[:5])
-    # what moved
+    # this week: the free brief's points, so a paying client gets one Monday email, not the brief and the edition
+    pts = [x for x in (latest.get("points") or []) if _mins_ok(x.get("materials"), mins)][:8]
+    if pts:
+        body += _mhead("Tento týden" if cs else "This week")
+        for x in pts:
+            ch = _chips(x.get("materials"), mins)
+            src = (" " + _link(x["url"], x.get("source") or ("Zdroj" if cs else "Source"))) if str(x.get("url", "")).startswith("https://") else ""
+            body += _mrow((ch + "<br>" if ch else "") + ("EN · " if cs and x.get("text_cs") in (None, "", x.get("text")) else "") + _esc((cs and x.get("text_cs")) or x.get("text")) + src)
+    seen_u = {x.get("url") for x in pts if x.get("url")}
+    # what moved (news already shown under This week is not repeated)
     since = (TODAY - dt.timedelta(days=7)).isoformat()
-    moved = [n for n in news if str(n.get("date") or n.get("addedAt") or "") >= since and n.get("materials") and _mins_ok(n.get("materials"), mins)][:8]
-    body += _mhead("Co se změnilo za týden" if cs else "What moved this week")
-    body += "".join(_news_row(n, mins, cs) for n in moved) if moved else _mrow(_esc("Tento týden žádné nové zprávy k vašim surovinám." if cs else "No new reports on your minerals this week."))
+    moved = [n for n in news if str(n.get("date") or n.get("addedAt") or "") >= since and n.get("materials") and _mins_ok(n.get("materials"), mins) and n.get("url") not in seen_u][:8]
+    if moved or not pts:
+        body += _mhead("Co se změnilo za týden" if cs else "What moved this week")
+        body += "".join(_news_row(n, mins, cs) for n in moved) if moved else _mrow(_esc("Tento týden žádné nové zprávy k vašim surovinám." if cs else "No new reports on your minerals this week."))
     # sites and rivers, only when something is unusual
     if mine_ev:
         body += _mhead("Vaše lokality" if cs else "Your sites") + "".join(_mrow(_chip(v["m"]) + " " + _esc(v["cs" if cs else "en"])) for v in mine_ev[:8])
@@ -3064,7 +3074,8 @@ def send_mail():
         ser = []
     ref = current("data/reference.json") or {}
     if latest and latest.get("week") and latest["week"] != state.get("brief_week") and TODAY.weekday() in (0, 1, 2):
-        for sb in [x for x in subs if x.get("plan") == "brief"]:
+        # a paying client gets the brief's points inside the paid Monday edition (2a), so no free brief on top
+        for sb in [x for x in subs if x.get("plan") == "brief" and (x.get("email") or "").lower() not in active]:
             subj, html = _mail_free(sb, latest, dls, ser, ref, unsub(sb))
             out.append((sb["email"], subj, html))
         state["brief_week"] = latest["week"]
