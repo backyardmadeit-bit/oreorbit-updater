@@ -7385,8 +7385,7 @@ function v14AskLines() {
   ["exposure", "Exposure", "Expozice", "From mine to missile, and your own parts list", "exposure parts bill of materials bom system chain"],
   ["scenarios", "Stress test", "Zátěžový test", "Supply stops, the Red Sea and the Strait of Malacca", "stress test scenario what if red sea malacca capacity imports"],
   ["chokepoints", "2030 targets", "Cíle 2030", "The gap to the EU's 2030 benchmarks", "2030 gap recycling strategic projects benchmark target"],
-  ["signals", "Signals", "Signály", "Heat at plants, sulphur dioxide, China's exports", "signals heat so2 sulphur exports comtrade"],
-  ["health", "Data health", "Stav dat", "Which feeds are fresh, late or failing", "data health feeds status fresh stale failing sources"]
+  ["signals", "Signals", "Signály", "Heat at plants, sulphur dioxide, China's exports", "signals heat so2 sulphur exports comtrade"]
 ].forEach(([id, en, cs, sub, key]) => SEARCH_INDEX.push({ kind: "Section", title: T(en, cs), sub, ic: "§", key: `${en} ${cs} ${key}`, go: () => setTimeout(() => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" }); }, 60) }));
 SEARCH_INDEX.push({ kind: "Live", title: T("Cape against Suez", "Mys proti Suezu"), sub: T("Ships a day this week, IMF PortWatch", "Lodí denně tento týden, IMF PortWatch"), ic: "◌", key: "cape suez ships traffic red sea portwatch week", go: () => selectChoke("suez") });
 
