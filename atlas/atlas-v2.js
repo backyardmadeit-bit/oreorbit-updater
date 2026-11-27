@@ -979,11 +979,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     window.ooShowTab = () => {};
     // 3. deadlines stay on their own (rules), 4. work with us, then one data-and-method block
     const teams = $i("teams");
-    const TR = { method: "method", health: "health" };
+    const TR = { method: "method" };
     const tr = block("trust", T("Data and method", "Data a metoda"), T("How we know.", "Jak to víme."),
       T("Where every figure comes from, what it can and cannot tell you, and how fresh each source is.", "Odkud každé číslo pochází, co z něj lze a nelze vyčíst a jak čerstvý je každý zdroj."),
-      [["method", T("Method", "Metoda")], ["health", T("Data health", "Stav dat")]], "tr-head");
-    if (teams) { teams.after(tr); place(tr, ["method", "health"], "tr-part"); }
+      [["method", T("Method", "Metoda")]], "tr-head");
+    if (teams) { teams.after(tr); place(tr, ["method"], "tr-part"); }
     let trCur = null;
     const showTR = (t, user) => {
       trCur = (trCur === t && user) ? null : t;   // a second click on the open tab folds it again
@@ -995,7 +995,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     tr.querySelectorAll(".dd-tabs button").forEach((b) => b.addEventListener("click", () => showTR(b.dataset.t, true)));
     Object.values(TR).forEach((x) => { const el = $i(x); if (el) el.classList.add("tr-off"); });
     // links into the parts open the right tab
-    const MAP = { method: "method", health: "health" };
+    const MAP = { method: "method" };
     const route = (id) => { const r = MAP[id]; if (r && trCur !== r) showTR(r); };
     document.addEventListener("click", (ev) => { const a = ev.target.closest && ev.target.closest('a[href^="#"]'); if (a) route(a.getAttribute("href").slice(1)); }, true);
     route(location.hash.slice(1));
@@ -1630,8 +1630,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (bb) { bb.href = BOOK; bb.textContent = T("Pick a date", "Vybrat termín"); if (ext) { bb.target = "_blank"; bb.rel = "noopener"; } }
     /* headings: shorter, tighter */
     const tr = document.querySelector("#trust .sec-head h2"); if (tr) tr.innerHTML = esc(T("How we", "Jak to")) + " <b>" + esc(T("know.", "víme.")) + "</b>";
-    /* the method stays short; the detailed know-how and the data-health panel are not public */
-    ["method", "health"].forEach((id) => { const s = $i(id); if (s) { s.hidden = true; s.style.display = "none"; } });
+    /* the method stays short and hidden; credits live on the legal page */
+    ["method"].forEach((id) => { const s = $i(id); if (s) { s.hidden = true; s.style.display = "none"; } });
     const trs = $i("trust");
     if (trs) {
       trs.querySelectorAll(".dd-tabs").forEach((e) => e.remove());
@@ -1794,7 +1794,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 80"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 81"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1845,7 +1845,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 80 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 81 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

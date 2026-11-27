@@ -362,7 +362,7 @@ def site_page(s, ref, live, today):
         cap = "Sentinel-2 true colour, %s, about %s km across." % (day(im.get("nowDate")), im.get("spanKm") or 7)
         if ch.get("lostHa") is not None and ch.get("from"):
             cap += " Vegetation lost since %s: about %d ha." % (day(ch["from"]), ch["lostHa"])
-        body.append('<figure class="sat"><img src="../%s" alt="Satellite picture of %s" width="700" height="700" loading="lazy">%s<figcaption>%s Copernicus Sentinel-2 data via Microsoft Planetary Computer.</figcaption></figure>' % (
+        body.append('<figure class="sat"><img src="../%s" alt="Satellite picture of %s" width="700" height="700" loading="lazy">%s<figcaption>%s Contains modified Copernicus Sentinel-2 data.</figcaption></figure>' % (
             e(im["now"]), e(s["name"]), ('<img class="ov" src="../%s" alt="" width="700" height="700" loading="lazy">' % e(ch["file"])) if ch.get("file") else "", e(cap)))
     sig = []
     if hs:
@@ -457,7 +457,8 @@ def legal_page(cfg, today):
     mail = cfg.get("contactEmail") or "david@madali.cz"
     src = [("Copernicus Sentinel-1, -2 and -5P data", "European Union, Copernicus programme; free, full and open access with attribution."),
            ("Landsat 8 and 9", "U.S. Geological Survey; public domain."),
-           ("NASA FIRMS, GIBS and Worldview imagery", "NASA Earth Science Data and Information System; open data with attribution."),
+           ("NASA FIRMS, VIIRS, Blue Marble and Black Marble imagery", "NASA Earth Science Data and Information System; open data with attribution."),
+           ("NASA EMIT", "NASA Jet Propulsion Laboratory; public domain."),
            ("Copernicus DEM GLO-30", "European Space Agency and Airbus; free use with attribution."),
            ("USGS Mineral Commodity Summaries and earthquake feed", "U.S. Geological Survey; public domain."),
            ("IEA Global Critical Minerals Outlook", "International Energy Agency; figures quoted with attribution."),
@@ -467,6 +468,11 @@ def legal_page(cfg, today):
            ("GDACS", "Global Disaster Alert and Coordination System (European Commission and United Nations)."),
            ("IMF PortWatch", "International Monetary Fund and University of Oxford."),
            ("FRED", "Federal Reserve Bank of St. Louis, with the IMF as the source of commodity prices."),
+           ("WRI Aqueduct 4.0", "World Resources Institute; CC BY 4.0."),
+           ("Global Forest Change", "Hansen/UMD/Google/USGS/NASA; CC BY 4.0."),
+           ("CelesTrak orbit data", "CelesTrak; public orbital elements."),
+           ("AIS ship positions", "AISStream.io."),
+           ("Research counts", "Semantic Scholar; ODC-BY."),
            ]
     body = """<h1>Imprint, privacy and data licences</h1>
 <section><h2>Operator</h2><p>%(who)s. Contact: <a href="mailto:%(mail)s">%(mail)s</a>.</p></section>
