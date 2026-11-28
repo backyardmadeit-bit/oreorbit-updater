@@ -21,11 +21,11 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (!CS) return;
     const set = (sel, txt) => { const el = $(sel); if (el) el.textContent = txt; };
     set("#assess .sec-head .label", "Posouzení");
-    set("#as-h", "Váš dodavatelský řetězec, posouzený.");
+    set("#as-h", "Prověřte svůj dodavatelský řetězec.");
     set("#assess .sec-head p", "Zapište výrobky, které vyrábíte, a díly, ve kterých je těchto dvanáct surovin, odkud pocházejí a na kolik týdnů máte zásoby. Dostanete hodnocení rizika každého dílu, zátěžový test proti platným vývozním kontrolám a mapování, které můžete předložit vedení. Vychází z posouzení rizik dodavatelského řetězce, které Akt o kritických surovinách EU ukládá velkým výrobcům strategických technologií každé tři roky. Všechno zůstává v tomto prohlížeči.");
     set("#teams .sec-head .label", "Pro týmy");
     set("#tm-h", "Předložte to vedení.");
-    set("#teams .sec-head p", "OreOrbit je zdarma. Výrobcům v obraně a kosmonautice, kteří potřebují odpověď, za kterou se dá ručit, nabízíme i přímou spolupráci s jejich týmem.");
+    set("#teams .sec-head p", "OreOrbit je zdarma. Výrobcům v obraně a kosmonautice, kteří potřebují odpověď, kterou obhájí před vedením, nabízíme i přímou spolupráci s jejich týmem.");
     set("#cta-assess", "Posoudit dodavatelský řetězec");
     set("#oo-priv", "Registr posouzení zůstává jen v tomto prohlížeči a nikam se neposílá.");
     const hp = $("#hero-copy p");
@@ -33,7 +33,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     document.querySelectorAll('.foot-links a[href="#assess"]').forEach((a) => { a.textContent = "Posouzení"; });
     document.querySelectorAll('.foot-links a[href="#teams"]').forEach((a) => { a.textContent = "Pro týmy"; });
     const cl = $(".changelog li span");
-    if (cl && /^Version 15/.test(cl.textContent)) cl.textContent = "Verze 15. Váš dodavatelský řetězec, posouzený: registr výrobků, dílů, původu a zásob s hodnocením rizika každého dílu, zátěžový test, který ukáže, které díly dojdou a kdy, mapování podle surovin s aktivitou lokalit viděnou z oběžné dráhy a zpráva ke stažení nebo tisku. Vše zůstává ve vašem prohlížeči. Na glóbu: osvětlené 3D modely dolů, závodů, výroben magnetů a družic, ostřejší mapy Země na noteboocích, jemnější oblačnost a stejně podrobné lodě na všech obchodních trasách. Nově sekce pro týmy.";
+    if (cl && /^Version 15/.test(cl.textContent)) cl.textContent = "Verze 15. Prověrka dodavatelského řetězce: registr výrobků, dílů, původu a zásob s hodnocením rizika každého dílu, zátěžový test, který ukáže, které díly dojdou a kdy, mapování podle surovin s aktivitou lokalit viděnou z oběžné dráhy a zpráva ke stažení nebo tisku. Vše zůstává ve vašem prohlížeči. Na glóbu: osvětlené 3D modely dolů, závodů, výroben magnetů a družic, ostřejší mapy Země na noteboocích, jemnější oblačnost a stejně podrobné lodě na všech obchodních trasách. Nově sekce pro týmy.";
   }
 
   /* ---------- recognising materials in a part description ---------- */
@@ -196,7 +196,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       pts += 1;
       if (dd !== null && dd <= 45 && rag.dl) why.push(T(`Deadline ${O.inDays(dd)}: ${rag.dl.title}`, `Termín ${O.inDays(dd)}: ${rag.dl.title_cs || rag.dl.title}`));
       else if (rag.news) why.push(T(`${rag.news} ${rag.news === 1 ? "story" : "stories"} about it this week`, `${rag.news} ${plural(rag.news, "", "", "zpráva", "zprávy", "zpráv")} tento týden`));
-      else why.push(T("A live hazard or armed conflict near one of its sites", "Živá hrozba nebo ozbrojený konflikt u některé z lokalit"));
+      else why.push(T("A live hazard or armed conflict near one of its sites", "Aktuální hrozba nebo ozbrojený konflikt u některé z lokalit"));
     }
     return { m, w, rag, pts, why };
   }
@@ -273,9 +273,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     return `<ol class="as-risks">${rated.map(({ it, r }) => `<li class="lv-${r.level}">
       <div class="as-rh">${lvBadge(r)}<span class="as-tn">${esc(it.part || T("Unnamed part", "Díl bez názvu"))}</span><span class="as-tp">${esc(it.prog)}</span><span class="as-rm">${it.mats.map((m) => chip(m, false)).join("")}</span></div>
       <ul class="as-why">${r.why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>
-      ${r.mats.length > 1 ? `<p class="srcs">${T("Rated on its most exposed material", "Hodnoceno podle nejexponovanější suroviny")}: ${esc(O.mName(r.top.m))}. ${T("Others", "Další")}: ${r.mats.slice(1).map((x) => `${esc(O.mName(x.m))} ${x.pts}/9`).join(", ")}</p>` : ""}
+      ${r.mats.length > 1 ? `<p class="srcs">${T("Rated on its most exposed material", "Hodnoceno podle nejrizikovější suroviny")}: ${esc(O.mName(r.top.m))}. ${T("Others", "Další")}: ${r.mats.slice(1).map((x) => `${esc(O.mName(x.m))} ${x.pts}/9`).join(", ")}</p>` : ""}
     </li>`).join("")}</ol>
-    <p class="srcs">${T("Score out of 9, from the part's most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or not knowing the origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or not recorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more, medium 3 to 5. A rule of thumb to rank your list, not a forecast.", "Skóre z 9 podle nejexponovanější suroviny dílu: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo aktivní výstraha u lokality (1). Vysoké je 6 a víc, střední 3 až 5. Pravidlo pro seřazení seznamu, ne předpověď.")}</p>`;
+    <p class="srcs">${T("Score out of 9, from the part's most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or not knowing the origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or not recorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more, medium 3 to 5. A rule of thumb to rank your list, not a forecast.", "Skóre z 9 podle nejrizikovější suroviny dílu: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo aktivní výstraha u lokality (1). Vysoké je 6 a víc, střední 3 až 5. Pravidlo pro seřazení seznamu, ne předpověď.")}</p>`;
   }
 
   function stressHtml() {
@@ -329,7 +329,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         <div class="as-chain">${chain.map(([k, x, note]) => `<div class="${x && x.pct > 65 ? "over" : ""}"><span class="label">${esc(O.stageTxt(k))}</span>${x ? `<b>${esc(O.pctTxt(x))}</b><span>${esc(O.ctry(x.who))}</span>` : `<span class="muted">${esc(note ? O.trStr(note) : T("No public figure", "Bez veřejného údaje"))}</span>`}</div>`).join("")}</div>
         ${sites.length ? `<div class="label as-sl">${T("Sites on the atlas, seen from orbit", "Lokality v atlasu, viděné z oběžné dráhy")}</div>
         <ul class="as-sites">${sites.map((s) => { const a = act(s.id); return `<li><button type="button" class="as-site" data-site="${esc(s.id)}"><span class="as-tn">${esc(s.name)}</span><span class="as-tp">${esc(O.ctry(s.country))} · ${esc(O.trStr(s.stage))}${O.ONLINE[s.id] ? ` · ${T("online", "v provozu")} ${esc(O.trStr(O.ONLINE[s.id]))}` : ""}</span></button>
-          <span class="as-sig">${a.h7 !== null ? `<span title="${esc(T("Days with furnace-hot pixels within 6 km (VIIRS), last 7 and 30 days", "Dny s tepelnou anomálií do 6 km (VIIRS), posledních 7 a 30 dní"))}" class="${a.h7 ? "on" : ""}">${T("heat", "teplo")} ${a.h7}/7 · ${a.h30}/30</span>` : ""}${a.so2 !== null ? `<span title="${esc(T(`Days with SO₂ above 2 DU within 50 km (${so2Sat()})`, `Dny s SO₂ nad 2 DU do 50 km (${so2Sat()})`))}" class="${a.so2 ? "on" : ""}">SO₂ ${a.so2}/${a.so2n}</span>` : ""}${a.clear ? `<span title="${esc(T("Latest clear Sentinel-2 image", "Poslední jasný snímek Sentinel-2"))}">${T("clear", "jasno")} ${esc(O.fmtDay(a.clear))}</span>` : ""}</span></li>`; }).join("")}</ul>` : ""}
+          <span class="as-sig">${a.h7 !== null ? `<span title="${esc(T("Days with furnace-hot pixels within 6 km (VIIRS), last 7 and 30 days", "Dny s tepelnou anomálií do 6 km (VIIRS), posledních 7 a 30 dní"))}" class="${a.h7 ? "on" : ""}">${T("heat", "teplo")} ${a.h7}/7 · ${a.h30}/30</span>` : ""}${a.so2 !== null ? `<span title="${esc(T(`Days with SO₂ above 2 DU within 50 km (${so2Sat()})`, `Dny s SO₂ nad 2 DU do 50 km (${so2Sat()})`))}" class="${a.so2 ? "on" : ""}">SO₂ ${a.so2}/${a.so2n}</span>` : ""}${a.clear ? `<span title="${esc(T("Latest clear Sentinel-2 image", "Poslední snímek Sentinelu-2 bez mraků"))}">${T("clear", "bez mraků")} ${esc(O.fmtDay(a.clear))}</span>` : ""}</span></li>`; }).join("")}</ul>` : ""}
         <div class="label as-sl">${T("Options to consider", "Možnosti k posouzení")}</div>
         <ul class="as-opt">
           ${sp ? `<li>${sp.n ? T(`${sp.n} EU strategic projects`, `${sp.n} strategických projektů EU`) : T("EU strategic projects", "Strategické projekty EU")}${sp.named ? `: ${esc(sp.named.join(", "))}` : ""}</li>` : `<li>${T("No EU strategic project listed yet", "Zatím bez strategického projektu EU")}</li>`}
@@ -422,7 +422,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       <h2>${e(T("4. Options to consider", "4. Možnosti k posouzení"))}</h2>
       <ul>${ms.map((m) => { const sp = O.EU_SP[m], rr = O.EOL_RIR[m], dl = O.deadlinesFor(m)[0]; const bits = []; if (sp) bits.push(sp.n ? T(`${sp.n} EU strategic projects`, `${sp.n} strategických projektů EU`) + (sp.named ? `: ${sp.named.join(", ")}` : "") : T("EU strategic projects", "Strategické projekty EU") + (sp.named ? `: ${sp.named.join(", ")}` : "")); if (rr) bits.push(T(`recycling meets ${rr.txt || rr.v + "%"} of EU demand`, `recyklace pokrývá ${rr.txt || rr.v + " %"} poptávky EU`)); if (dl) bits.push(T(`next deadline ${O.fmtDay(dl.date)}: ${dl.title}`, `nejbližší termín ${O.fmtDay(dl.date)}: ${dl.title_cs || dl.title}`)); return `<li><b>${e(O.mName(m))}</b>: ${e(bits.join("; ") || "–")}</li>`; }).join("")}</ul>
       <h2>${e(T("Method and limits", "Metoda a omezení"))}</h2>
-      <p class="small">${e(T("Each part is scored out of 9 on its most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or an unknown origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or unrecorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more. The register was entered by the organisation named above and was not checked by OreOrbit. Public data only; not legal advice. Article 24 of Regulation (EU) 2024/1252 and its pending amendments set the formal requirements for the companies they cover.", "Každý díl má skóre z 9 podle nejexponovanější suroviny: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo aktivní výstraha u lokality (1). Vysoké je 6 a víc. Registr zadala výše uvedená organizace a OreOrbit ho neověřoval. Jen veřejná data; nejde o právní radu. Formální požadavky pro dotčené firmy stanoví článek 24 nařízení (EU) 2024/1252 a jeho připravované změny."))}</p>
+      <p class="small">${e(T("Each part is scored out of 9 on its most exposed material: concentration at the most concentrated stage (up to 3), buying from that dominant country (2) or an unknown origin (1), no second source (1), stock under 8 weeks (2) or under 26 weeks or unrecorded (1), and a deadline within 45 days, a story this week or a live hazard near a site (1). High is 6 or more. The register was entered by the organisation named above and was not checked by OreOrbit. Public data only; not legal advice. Article 24 of Regulation (EU) 2024/1252 and its pending amendments set the formal requirements for the companies they cover.", "Každý díl má skóre z 9 podle nejrizikovější suroviny: koncentrace v nejkoncentrovanější fázi (až 3), nákup přímo z dominantní země (2) nebo neznámý původ (1), bez druhého zdroje (1), zásoby pod 8 týdnů (2) nebo pod 26 týdnů či neuvedené (1) a termín do 45 dnů, zpráva tento týden nebo aktivní výstraha u lokality (1). Vysoké je 6 a víc. Registr zadala výše uvedená organizace a OreOrbit ho neověřoval. Jen veřejná data; nejde o právní radu. Formální požadavky pro dotčené firmy stanoví článek 24 nařízení (EU) 2024/1252 a jeho připravované změny."))}</p>
       <p class="small">${e(T("Generated", "Vytvořeno"))} ${e(now.toISOString().slice(0, 16).replace("T", " "))} UTC · bohemiadefense.com/atlas</p>
     </body></html>`;
   }
@@ -452,7 +452,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
         if (k === "report") { try { await O.save(`oreorbit-assessment-${O.todayIso()}.html`, new Blob([reportHtml()], { type: "text/html;charset=utf-8" })); O.toast(T("Assessment saved", "Posouzení uloženo")); } catch (err) { if (!err || err.code !== "declined") O.toast(T("The download did not start.", "Stahování se nespustilo.")); } return; }
         if (k === "print") {
           const f = document.createElement("iframe"); f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0"; f.setAttribute("aria-hidden", "true");
-          f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (err) { O.toast(T("Printing is blocked here; download the assessment instead.", "Tisk je zde blokovaný; stáhněte si posouzení.")); } setTimeout(() => f.remove(), 60000); };
+          f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (err) { O.toast(T("Printing is blocked here; download the assessment instead.", "Tisk tady není povolený; stáhněte si posouzení.")); } setTimeout(() => f.remove(), 60000); };
           f.srcdoc = reportHtml(); document.body.appendChild(f); return;
         }
         if (k === "globe") { const ms = regMats(); O.showParts(ms.map((m) => ({ m, role: reg.items.filter((it) => it.mats.includes(m)).map((it) => it.part).slice(0, 3).join("; ") })), T("Your register", "Váš registr")); return; }
@@ -587,9 +587,9 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     if (!before || document.getElementById("check")) return;
     const P = [
       ["drones", T("Drones", "Drony"), { ree: T("motor magnets", "magnety motorů"), li: T("battery cells", "bateriové články"), gr: T("battery anodes", "anody baterií"), co: T("battery cathodes", "katody baterií"), ni: T("battery cathodes", "katody baterií"), ga: T("radio links (GaN)", "rádiová spojení (GaN)"), ge: T("thermal camera lenses", "čočky termokamer") , mn: T("battery cathodes", "katody baterií") }],
-      ["ammo", T("Ammunition and guided munitions", "Munice a řízená munice"), { sb: T("primers and hardened lead", "zápalky a tvrzené olovo"), w: T("penetrators and fragmentation", "penetrátory a střepinové účinky"), ree: T("fin actuators of guided rounds", "akční členy kormidel řízené munice"), ga: T("seekers and fuzes (GaN, GaAs)", "hlavice navádění a zapalovače (GaN, GaAs)") , mg: T("decoy flares and tracers", "klamné cíle a svítící náboje"), mn: [T("steel shells and casings", "ocelové granáty a nábojnice"), "mine", "260200"] }],
+      ["ammo", T("Ammunition and guided munitions", "Munice a řízená munice"), { sb: T("primers and hardened lead", "zápalky a tvrzené olovo"), w: T("penetrators and fragmentation", "penetrátory a střepiny"), ree: T("fin actuators of guided rounds", "akční členy kormidel řízené munice"), ga: T("seekers and fuzes (GaN, GaAs)", "naváděcí hlavice a zapalovače (GaN, GaAs)") , mg: T("decoy flares and tracers", "klamné cíle a svítící náboje"), mn: [T("steel shells and casings", "ocelové granáty a nábojnice"), "mine", "260200"] }],
       ["optics", T("Optics and thermal imaging", "Optika a termovize"), { ge: T("infrared lenses and windows", "infračervené čočky a okna"), ga: T("detectors (GaAs, InGaAs)", "detektory (GaAs, InGaAs)"), ree: [T("laser rangefinders (Nd:YAG)", "laserové dálkoměry (Nd:YAG)"), "refine"], sb: T("infrared detectors (InSb)", "infračervené detektory (InSb)") }],
-      ["radar", T("Radar and electronics", "Radary a elektronika"), { ga: T("GaN power amplifiers", "výkonové zesilovače GaN"), ge: T("high-frequency chips", "vysokofrekvenční čipy"), ree: T("magnets and microwave garnets", "magnety a mikrovlnné granáty") }],
+      ["radar", T("Radar and electronics", "Radary a elektronika"), { ga: T("GaN power amplifiers", "výkonové zesilovače GaN"), ge: T("high-frequency chips", "vysokofrekvenční čipy"), ree: T("magnets and microwave garnets", "magnety a mikrovlnné ferity (YIG)") }],
       ["vehicles", T("Armoured vehicles", "Obrněná vozidla"), { ti: T("armour and structures", "pancéřování a konstrukce"), w: T("penetrators and tooling", "penetrátory a nástroje"), ni: T("armour steel", "pancéřová ocel"), ree: T("electric drives and turrets", "elektrické pohony a věže") , mn: [T("armour steel", "pancéřová ocel"), "mine", "260200"], mg: T("light alloy parts", "díly z lehkých slitin") }],
       ["aero", T("Aircraft and space", "Letectví a kosmonautika"), { ti: T("airframes and engines", "draky a motory"), ni: T("engine superalloys", "superslitiny motorů"), co: T("engine superalloys", "superslitiny motorů"), ree: T("actuators and motors", "akční členy a motory"), ga: T("solar cells (GaAs)", "solární články (GaAs)"), ge: T("solar-cell substrates", "podložky solárních článků") , mg: T("titanium metal (Kroll process) and light alloys", "výroba titanu (Krollův proces) a lehké slitiny") }],
       ["batteries", T("Batteries and energy storage", "Baterie a úložiště energie"), { li: T("cells", "články"), co: T("cathodes", "katody"), ni: T("cathodes", "katody"), gr: T("anodes", "anody") , mn: T("NMC and LMFP cathodes", "katody NMC a LMFP") }],
@@ -1173,7 +1173,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const H = { check: [T("What does your product", "Na čem váš výrobek"), T("depend on?", "závisí?")],
                 monday: [T("What's moving", "Co se tento týden"), T("this week.", "mění.")],
                 signals: [T("What the open data", "Co říkají otevřená data"), T("says now.", "právě teď.")],
-                assess: [T("Your supply chain,", "Váš dodavatelský řetězec,"), T("assessed.", "posouzený.")],
+                assess: [T("Your supply chain,", "Prověřte svůj"), T("assessed.", "dodavatelský řetězec.")],
                 rules: [T("The rules that decide", "Pravidla, která rozhodují,"), T("who can supply you.", "kdo vám smí dodávat.")],
                 trust: [T("How we", "Jak to"), T("know.", "víme.")],
                 scenarios: [T("Stress-test", "Zátěžový test"), T("the supply.", "dodávek.")] };
@@ -1786,7 +1786,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 84"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 85"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1836,7 +1836,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 84 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 85 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),

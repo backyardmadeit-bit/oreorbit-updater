@@ -552,7 +552,7 @@ INDEX_CHANGELOG = [("22 November 2026", "Version 4: magnesium and manganese join
                    ("November 2026", "Version 2: three months added up per mineral instead of a single month; top three suppliers per mineral."),
                    ("2026", "Version 1: a single month per mineral, equal weight across the ten index minerals.")]
 INDEX_CHANGELOG_CS = [("22. listopadu 2026", "Verze 4: do indexu přibyl hořčík a mangan, takže pokrývá všech dvanáct surovin, které OreOrbit sleduje. Celá řada od ledna 2022 je přepočítaná; průměr původních deseti zůstává jako kontrola."),
-                      ("22. listopadu 2026", "Čísla beze změny. Stránka nově říká, co index nezahrnuje, a upozorní na každý měsíc, kdy se verze se stejnými vahami, podle tun a vážená hodnotou pohnou proti loňsku opačným směrem."),
+                      ("22. listopadu 2026", "Čísla beze změny. Stránka nově říká, co index nezahrnuje, a upozorní na každý měsíc, kdy se verze se stejnými vahami, podle tun a vážená hodnotou pohnou meziročně opačným směrem."),
                       ("21. listopadu 2026", "Verze 3: širší koš produktů (u wolframu parawolframan amonný, karbid, prášek, oxidy a výrobky, tvářený titan, slitiny niklu), okno, které se prodlužuje ze tří až na dvanáct měsíců, dokud dovoz suroviny nedosáhne 10 mil. €, měsíční řada od ledna 2022, první zveřejněné hodnoty vedle revizí, kontrola podle tun a podle hodnoty, koncentrace dodavatelů a soubor CSV."),
                       ("listopad 2026", "Verze 2: tři měsíce sečtené pro každou surovinu místo jediného měsíce; tři největší dodavatelé každé suroviny."),
                       ("2026", "Verze 1: jediný měsíc pro každou surovinu, stejná váha pro deset surovin indexu.")]
@@ -955,7 +955,7 @@ def _disagree_txt(last, before, names, cs=False):
     if dr:
         nm = MAT_CS.get(dr[0], dr[0]).lower() if cs else (names.get(dr[0], dr[0]).lower() if dr[0] != "ree" else "rare earths")
         who = (" Pohyb indexu táhne hlavně %s, takže změnu nečtěte jako celkový trend." % nm) if cs else (" The move in the index comes mostly from %s, so do not read it as a general trend." % nm)
-    return (("Verze se proti loňsku rozcházejí ve směru (%s).%s" % (parts, who)) if cs
+    return (("Verze se meziročně rozcházejí ve směru (%s).%s" % (parts, who)) if cs
             else ("The versions disagree on the direction against a year earlier: %s.%s" % (parts, who)))
 
 
@@ -1359,10 +1359,10 @@ def dependency_page_cs(ref, live, today):
     trs = "".join(li(m, x, (yago or {}).get("per") or {}) for m, x in rows)
     thin_note = (" Když dovoz suroviny ze zemí mimo EU za tři měsíce nedosáhne %s, okno se prodlužuje po měsíci až na dvanáct měsíců (označeno), aby podílem nepohnula jediná dodávka." % _eur_txt(INDEX_MIN_EUR, cs=True)) if last.get("thin") else ""
     dr = _drivers_txt(last, yago, {}, cs=True)
-    drivers_p = ('<p class="small">Co index proti loňsku pohnulo: %s. Změna podílu každé suroviny dělená %s, takže se pohyby sčítají na změnu indexu.</p>' % (e(dr), _CS_W.get(last["n"], ("", str(last["n"])))[1])) if dr else ""
+    drivers_p = ('<p class="small">Co meziročně pohnulo indexem: %s. Změna podílu každé suroviny dělená %s, takže se pohyby sčítají na změnu indexu.</p>' % (e(dr), _CS_W.get(last["n"], ("", str(last["n"])))[1])) if dr else ""
     dg = _disagree_txt(last, yago, {}, cs=True)
     if dg:
-        drivers_p += '<p class="small"><b>%s</b> Viz <a href="#checks">jak je index robustní</a>.</p>' % e(dg)
+        drivers_p += '<p class="small"><b>%s</b> Viz <a href="#checks">jak spolehlivý je index</a>.</p>' % e(dg)
     rv = revision(live, last["month"])
     rev_p = ('<p class="small">Poprvé zveřejněno %s jako %d %%; od té doby upraveno podle novějších dat Eurostatu.</p>' % (e(day_cs(rv[1])), round(rv[0] * 100))) if rv else ""
     swx, p90 = _swing_stats(series)
@@ -1374,7 +1374,7 @@ def dependency_page_cs(ref, live, today):
         checks.append('<li>Původních deset surovin, bez hořčíku a manganu: %d %%.</li>' % round(last["ten_value"] * 100))
     m0 = int(series[0]["month"][5:7]) - 1
     checks.append('<li>Stabilita: od %s %s se index z měsíce na měsíc pohnul nejvýš o %s bodu, v devíti měsících z deseti o méně než %s bodu.</li>' % (MON_CS[m0], series[0]["month"][:4], f1(swx), f1(p90)))
-    robust = '<section id="checks"><h2>Jak je index robustní</h2><ul class="plain">%s</ul></section>' % "".join(checks)
+    robust = '<section id="checks"><h2>Jak spolehlivý je index</h2><ul class="plain">%s</ul></section>' % "".join(checks)
     conc = concentration(trade, last["month"])
     crows = _conc_rows(conc, last, {}, cs=True) if conc else ""
     conc_s = ('<section id="concentration"><h2>Jak koncentrované jsou dodávky</h2><table class="tbl"><tr><th>Surovina</th><th>Největší dodavatel</th><th>Tři největší</th><th>HHI</th><th>Čína a Rusko</th></tr>%s</table>'
@@ -1415,7 +1415,7 @@ def dependency_page_cs(ref, live, today):
 %(supply)s
 <section><h2>K citaci</h2><p class="cite-text">%(quote)s</p><button type="button" class="copy" data-copy="%(quote)s" data-label="Zkopírovat větu" data-done="Věta zkopírována" hidden>Zkopírovat větu</button><p class="small">Novináři a analytici mohou index citovat a graf dále použít s uvedením „Index závislosti OreOrbit (Bohemia Defense)“ a odkazem na tuto stránku.</p></section>
 %(faq)s
-<section id="method" class="method"><h2>Metodika a kontroly</h2><p class="small">Pro analytiky, kteří chtějí číslo ověřit: jak je robustní, jak koncentrované jsou dodávky, co nezahrnuje, jak vzniká a jak se měnil.</p>
+<section id="method" class="method"><h2>Metodika a kontroly</h2><p class="small">Pro analytiky, kteří chtějí číslo ověřit: jak je spolehlivé, jak koncentrované jsou dodávky, co nezahrnuje, jak vzniká a jak se měnil.</p>
 <!--method-->%(robust)s
 %(conc)s
 <section id="limits"><h2>Co index měří a co nezahrnuje</h2><ul class="plain">
@@ -1843,7 +1843,7 @@ def org_full(cs=False):
 
 
 WHO_CS = {"China": "Čína", "Indonesia": "Indonésie", "DR Congo": "DR Kongo", "South Africa": "Jihoafrická republika", "Australia": "Austrálie", "Chile": "Chile"}
-WHAT_CS = {"Sintered magnets": "výroby spékaných magnetů", "Titanium sponge": "výroby titanové houby", "Primary magnesium metal": "výroby primárního hořčíku",
+WHAT_CS = {"Sintered magnets": "výroby slinutých magnetů", "Titanium sponge": "výroby titanové houby", "Primary magnesium metal": "výroby primárního hořčíku",
            "Electrolytic manganese metal": "kapacit elektrolytického manganu", "Primary gallium": "výroby primárního galia", "Lithium chemicals": "výroby lithných chemikálií",
            "Refined cobalt": "rafinace kobaltu", "Battery-grade graphite": "výroby bateriového grafitu", "Separation and refining": "separace a rafinace"}
 STAGE_CS_GEN = {"mine": "těžby", "refine": "rafinace", "part": "výroby součástek"}
@@ -1905,7 +1905,7 @@ def faq_qas(ref, live, cfg, today, cs=False):
                   "Munice a pancéřování: wolfram pro průbojná jádra (%s), antimon pro zápalky a svítící střely (%s), mangan pro pancéřovou a dělostřeleckou ocel (%s) a hořčík pro infračervené klamné cíle a výrobu titanu (%s). Rakety a letadla: magnety ze vzácných zemin pro kormidla a akční členy navádění (%s), titan pro draky a motory (%s) a superslitiny kobaltu a niklu pro proudové motory (%s; %s). Senzory a elektronika: čipy z nitridu galia pro radary a elektronický boj (%s) a germaniová infračervená optika pro termovize a hlavice raket (%s). Baterie pro drony, vozidla a vojáky: lithium (%s) a grafitové anody (%s). V závorce je největší podíl jedné země v nejužší fázi dodávek." % (
                       T("w"), T("sb"), T("mn"), T("mg"), T("ree"), T("ti"), T("co"), T("ni"), T("ga"), T("ge"), T("li"), T("gr")), []))
         q.append(("monitoring", "Jak OreOrbit monitoruje úzká hrdla dodavatelských řetězců?",
-                  "OreOrbit sleduje %d dolů, rafinerií a továren na magnety a %s, po kterých se %s surovin dostává do Evropy. Každou lokalitu fotografují satelity každý týden: snímky Copernicus Sentinel-2, radar Sentinel-1, který vidí i přes mraky, a tepelné mapy Landsat. Každé tři hodiny automatická aktualizace kontroluje teplo v závodech, lodě v úžinách, zemětřesení a výstrahy před katastrofami u lokalit a ozbrojené konflikty u dodavatelského řetězce. Jednou měsíčně čte statistiky dovozu do EU (Eurostat Comext) pro každou surovinu a vede datovaný kalendář vývozních kontrol a regulačních termínů. Změna, například závod, který přestane hřát, nový termín nebo skok podílu Číny na dovozu, se objeví v atlasu a v pondělním přehledu; klienti monitoringu ji dostanou týž den." % (
+                  "OreOrbit sleduje %d dolů, rafinerií a továren na magnety a %s, po kterých se %s surovin dostává do Evropy. Každou lokalitu snímkují družice každý týden: snímky Copernicus Sentinel-2, radar Sentinel-1, který vidí i přes mraky, a tepelné mapy Landsat. Každé tři hodiny automatická aktualizace kontroluje teplo v závodech, lodě v úžinách, zemětřesení a výstrahy před katastrofami u lokalit a ozbrojené konflikty u dodavatelského řetězce. Jednou měsíčně čte statistiky dovozu do EU (Eurostat Comext) pro každou surovinu a vede datovaný kalendář vývozních kontrol a regulačních termínů. Změna, například závod, který přestane hřát, nový termín nebo skok podílu Číny na dovozu, se objeví v atlasu a v pondělním přehledu; klienti monitoringu ji dostanou týž den." % (
                       nsite, "%s obchodních tras" % w_cs(nroute), w_cs(c["minerals"]),), [("Otevřít atlas", "../?lang=cs"), ("O projektu", "about-cs.html")]))
         q.append(("uzka-mista", "Kde jsou úzká místa dopravy kritických surovin do Evropy?",
                   "Velká část těchto surovin se rafinuje v Číně a do Evropy pluje Malackým průlivem a pak Suezským průplavem a Bab al-Mandabem, což je nejkratší cesta, nebo kolem mysu Dobré naděje, když není Rudé moře bezpečné. Po začátku útoků na lodě klesl provoz v Suezském průplavu za dva měsíce o 42 %% (UNCTAD, leden 2024). Suroviny pro rafinace putují nejdřív opačně: konžský kobalt, jihoafrická a gabonská manganová ruda a indonéský nikl míří do čínských rafinerií, většina z nich Malackým průlivem. Hlavní alternativou podporovanou Západem je Lobitský koridor, 1 300 km dlouhá železnice z měděného pásu Konga a Zambie do angolského přístavu Lobito. OreOrbit sleduje %s a lodě v každé úžině." % (
