@@ -40,8 +40,8 @@
     <p>Čínská služba BBC News mě citovala jako analytika k&nbsp;bezpečnosti návštěvy tchajwanské viceprezidentky v&nbsp;Praze, červenec 2025. <a href="https://www.bbc.com/zhongwen/articles/cy8gjpe7xp8o/trad" rel="noopener">Číst článek</a></p>
   </div></div>
   <div class="dm-row"><h2>Zkušenosti</h2><ul>
-    <li><b>Ministerstvo zahraničních věcí ČR</b>Ekonomická diplomacie v&nbsp;kanceláři hlavního ekonoma: makroekonomické analýzy a&nbsp;podklady využité ministrem a&nbsp;obchodními delegacemi.</li>
-    <li><b>CzechTrade</b>Exportní poradenství; založil jsem neformální klastr Chytrá bezpečnost dvanácti firem z&nbsp;bezpečnostního průmyslu z&nbsp;ČR a&nbsp;Evropy.</li>
+    <li><b>Ministerstvo zahraničních věcí ČR</b>Ekonomická diplomacie v&nbsp;kanceláři hlavního ekonoma: makroekonomické analýzy a&nbsp;podklady pro ministra a&nbsp;obchodní delegace.</li>
+    <li><b>CzechTrade</b>Exportní poradenství; založil jsem neformální klastr Chytrá bezpečnost, který sdružuje dvanáct firem z&nbsp;bezpečnostního průmyslu z&nbsp;ČR a&nbsp;Evropy.</li>
     <li><b>Kurzy</b>EUSPA, Agentura EU pro kosmický program: kosmické technologie a&nbsp;budování kosmického byznysu. Kontrarozvědná příprava NATO (ADL 135). OSINT.</li>
   </ul></div>
   <div class="dm-row"><h2>Spolupráce</h2><div>

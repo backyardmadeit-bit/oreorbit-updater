@@ -2033,7 +2033,7 @@ def feed_brief(prev):
             d7, sid = hot[0]
             pts.append({"materials": [smat.get(sid)] if smat.get(sid) else [], "source": "NASA FIRMS", "url": "https://firms.modaps.eosdis.nasa.gov",
                         "text": "Heat at the plants: %d of %d sites showed furnace-hot pixels in the last 7 days, %s the most often (%d of 7 days)." % (len(hot), len(hs), names.get(sid, sid), d7),
-                        "text_cs": "Teplo v závodech: %d %s %d lokalit mělo za posledních 7 dní tepelnou anomálii, nejčastěji %s (%d ze 7 dní)." % (len(hot), _cs_z(len(hs)), len(hs), names.get(sid, sid), d7)})
+                        "text_cs": "Tepelné anomálie u závodů: %d %s %d lokalit mělo za posledních 7 dní tepelnou anomálii, nejčastěji %s (%d× za 7 dní)." % (len(hot), _cs_z(len(hs)), len(hs), names.get(sid, sid), d7)})
     # 3. sulphur dioxide
     so = current("live-data/live/so2.json") or {}
     wk = (TODAY - dt.timedelta(days=9)).isoformat()
@@ -2586,7 +2586,7 @@ def _site_events():
             elif last7 >= 2 and before == 0:
                 ev[sid + "|flare"] = {"sid": sid, "m": s.get("m"), "kind": "flare",
                                       "en": "%s: furnace-hot pixels on %d of the last 7 days, none in the %d days before. A start-up or a ramp-up." % (nm, last7, len(prev)),
-                                      "cs": "%s: tepelná anomálie v %d ze 7 posledních dní, předtím %d dní žádná. Najíždění, nebo zvýšení výroby." % (nm, last7, len(prev))}
+                                      "cs": "%s: tepelná anomálie %d× za posledních 7 dní, předtím %d dní žádná. Najíždění, nebo zvýšení výroby." % (nm, last7, len(prev))}
         ser = sorted((x.get("d"), x.get("near")) for x in ((so.get(sid) or {}).get("series") or [])
                      if x.get("d") and isinstance(x.get("near"), (int, float)))
         if len(ser) >= 2:

@@ -239,7 +239,7 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
             lead = T("Podíly Číny se u vašich surovin za posledních %s výrazně nezměnily." % win_txt, "China's shares for your minerals did not change much over the %s." % win_txt)
         ws.set_row(5, 36); ws.merge_range(5, 1, 5, 9, lead, h_lead)
         if DEP:
-            ws.write(6, 1, T("Podíl Číny jako v Dependency Indexu: klíčové produkty, okno %s (při malém objemu delší). Sloupce dovozu sčítají všechny sledované produkty za 3 měsíce do %s." % (win_txt, mlabel(last, True)),
+            ws.write(6, 1, T("Podíl Číny jako v Indexu závislosti: klíčové produkty, okno %s (při malém objemu delší). Sloupce dovozu sčítají všechny sledované produkty za 3 měsíce do %s." % (win_txt, mlabel(last, True)),
                              "China's share as in the Dependency Index: key products, window %s (longer where trade is thin). The import columns add up all tracked products, 3 months to %s." % (win_txt, mlabel(last))), lab)
         else:
             ws.write(6, 1, T("Okno: %s. Hodnota dovozu z celního původu mimo EU. Pruh ukazuje podíl Číny." % win_txt,
@@ -281,7 +281,7 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         ws.conditional_format(r0 + 1, 5, r - 1, 5, {"type": "data_bar", "bar_color": "#b9c2b5", "bar_solid": True, "min_type": "num", "min_value": 0,
                                                     "max_type": "num", "max_value": 1, "bar_no_border": True, "data_bar_2010": True})
         crow = r + 2
-        ws.write(crow, 1, T("Podíl Číny na dovozu do EU podle Dependency Indexu, po měsících", "China's share of EU imports in the Dependency Index, month by month") if DEP else
+        ws.write(crow, 1, T("Podíl Číny na dovozu do EU podle Indexu závislosti, po měsících", "China's share of EU imports in the Dependency Index, month by month") if DEP else
                  T("Podíl Číny na dovozu do EU, klouzavé tříměsíční okno", "China's share of EU imports, rolling 3-month window"), sec)
         for c in range(2, 10):
             ws.write(crow, c, "", sec)
@@ -308,7 +308,7 @@ def build(trade, hs_file, so_file, sites, mins, lang, week, csv_text, mat_name, 
         ws.merge_range(5, 1, 5, 9, T("Pro vaše suroviny zatím nemáme data o dovozu do EU. Satelitní signály u lokalit jsou na listu Lokality.",
                                      "We have no EU import data for your minerals yet. Satellite signals at the sites are on the Sites sheet."), h_lead)
     ws.write_url(nr, 1, "https://bohemiadefense.com/atlas/p/dependency-index%s.html" % ("-cs" if CS else ""), link,
-                 T("Dependency Index a metodika na webu", "Dependency Index and method on the web"))
+                 T("Index závislosti a metodika na webu", "Dependency Index and method on the web"))
     footer(ws, nr + 2)
     page(ws); ws.activate()
 
