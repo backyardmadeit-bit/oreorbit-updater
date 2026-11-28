@@ -1,5 +1,14 @@
 # WordPress (bohemiadefense.com)
 
+## 28. 11. 2026: tečková mapa zpět, zakladatel bez 450 000
+
+Úvodní stránka má zpět interaktivní tečkovou mapu (PR #67, vloženo a ověřeno živě 28. 11.). Stránky zakladatele bez věty o 450 000 zobrazení na LinkedInu.
+
+1. Stránka `david-madali` (EN): blok Vlastní HTML → nahradit celým `founder-en.txt` → Aktualizovat.
+2. Stránka `david-madali-cz` (CS): totéž s `founder-cs.txt`.
+3. W3 Total Cache → Purge All Caches.
+4. Zkontrolovat živé stránky (`wp_check.py check --only founder-en,founder-cs`).
+
 ## 27. 11. 2026: střídmější úvodní stránka
 
 Úvodní stránka bez úvodní animace, tečkové mapy, postupného zobrazování sekcí, pulzujících teček a září. Plány jsou řádky místo tří karet, bez čísel. Hero ukazuje jen 43 lokalit a 12 surovin (bez počítání). Nový nadpis plánů: „Start free, then add alerts or a review.“ / „Začněte zdarma, pak přidejte upozornění nebo posouzení.“
@@ -8,7 +17,7 @@
 2. Elementor, stránka 6312 (CS): totéž s `home-cs.html`.
 3. W3 Total Cache → Purge All Caches.
 4. Elementor → Nástroje → „Regenerovat soubory a data“.
-5. Zkontrolovat živou stránku EN i CS (nahoře žádná mapa, plány jako tři řádky).
+5. Zkontrolovat živou stránku EN i CS (plány jako tři řádky; mapa je od 28. 11. zpět).
 
 Stránky zakladatele (`founder-*.txt`) se nemění.
 

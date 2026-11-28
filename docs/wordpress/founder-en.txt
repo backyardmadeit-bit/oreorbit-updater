@@ -33,7 +33,7 @@
     <p>Europe's defence runs on twelve minerals, and for nine of them China controls at least one stage of the supply chain. Through Bohemia Defense I analyse Europe's defence industry, security and foreign policy. Through OreOrbit I map the mines, refineries, sea routes and chokepoints those materials depend on.</p>
   </div></div>
   <div class="dm-row"><h2>Projects</h2><ul>
-    <li><b>Bohemia Defense, since November 2024</b>Independent analysis of the European defence industry, NATO, Ukraine and security in Africa, published here and on LinkedIn, where posts reach up to 450,000 views.</li>
+    <li><b>Bohemia Defense, since November 2024</b>Independent analysis of the European defence industry, NATO, Ukraine and security in Africa published here and on LinkedIn.</li>
     <li><b><a href="https://bohemiadefense.com/atlas/">OreOrbit</a></b>A free, live atlas of the twelve critical raw materials behind European defence and space: satellite pictures of 43 sites, ships at the key chokepoints, a quick check of what any product depends on, and a weekly brief of what is moving.</li>
   </ul></div>
   <div class="dm-row"><h2>In the press</h2><div>
