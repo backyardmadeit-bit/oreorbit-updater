@@ -33,7 +33,7 @@
     <p>Obrana Evropy stojí na dvanácti surovinách a&nbsp;u&nbsp;devíti z&nbsp;nich ovládá Čína alespoň jednu fázi dodavatelského řetězce. V&nbsp;Bohemia Defense analyzuji evropský obranný průmysl, bezpečnost a&nbsp;zahraniční politiku. V&nbsp;OreOrbit mapuji doly, rafinerie, námořní trasy a&nbsp;úzká místa, na kterých tyto suroviny závisejí.</p>
   </div></div>
   <div class="dm-row"><h2>Projekty</h2><ul>
-    <li><b>Bohemia Defense, od listopadu 2024</b>Nezávislé analýzy evropského obranného průmyslu, NATO, Ukrajiny a&nbsp;bezpečnosti v&nbsp;Africe, publikované zde a&nbsp;na LinkedInu, kde příspěvky dosahují až 450&nbsp;000 zobrazení.</li>
+    <li><b>Bohemia Defense, od listopadu 2024</b>Nezávislé analýzy evropského obranného průmyslu, NATO, Ukrajiny a&nbsp;bezpečnosti v&nbsp;Africe publikované zde a&nbsp;na LinkedInu.</li>
     <li><b><a href="https://bohemiadefense.com/atlas/?lang=cs">OreOrbit</a></b>Bezplatný živý atlas dvanácti kritických surovin pro evropskou obranu a&nbsp;kosmonautiku: satelitní snímky 43 lokalit, lodě v&nbsp;klíčových úžinách, rychlá kontrola toho, na čem závisí jakýkoli výrobek, a&nbsp;týdenní přehled toho, co se mění.</li>
   </ul></div>
   <div class="dm-row"><h2>V médiích</h2><div>
