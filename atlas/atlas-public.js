@@ -1,5 +1,5 @@
 /* Public copy of Critical Minerals from Orbit.
-   The claude.ai version keeps its live data in an Artifact database. This copy reads the same
+   The private version keeps its live data in an Artifact database. This copy reads the same
    documents from JSON files next to the page (live-data/), which the scheduled update refreshes.
    Everything here is read-only: nothing a visitor does is sent anywhere. */
 (function () {
@@ -115,7 +115,7 @@
     }
   };
 
-  // Claude (Ask the atlas, reading parts lists) and comments exist only in the claude.ai version
+  // Claude (Ask the atlas, reading parts lists) and comments exist only in the private version
   window.claude = {
     use: function (name) { return Promise.resolve(name === "db" ? db : name === "downloads" ? downloads : null); }
   };

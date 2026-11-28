@@ -10,6 +10,8 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
 (function () {
   "use strict";
   const O = window.OO;
+  // build 85: "z Číny" via the genitive table; countries without one keep "ze země X"
+  const zGen = (c) => { const n = O.ctry(c), g = O.ctryGen ? O.ctryGen(c) : n; return g && g !== n ? "z\u00a0" + g : "ze země " + n; };
   if (!O) return;
   const CFG = window.ATLAS_CONFIG || {};
   const T = O.T, esc = O.esc, CS = O.LANG === "cs";
@@ -185,7 +187,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       pts += c;
       if (c) why.push(T(`${w.x.who} makes ${O.pctTxt(w.x)} of world ${O.stageWhat(w.k, w.x)} (${O.mName(m).toLowerCase()})`, `${O.mName(m)}, ${w.k === "mine" ? "těžba" : O.stageWhat(w.k, w.x)}: ${O.pctTxt(w.x)} ${O.inCtry(w.x.who)}`));
     }
-    if (w && it.country && it.country === w.x.who) { pts += 2; why.push(T(`You buy it from ${w.x.who}, the dominant country`, `Kupujete ji ze země ${O.ctry(w.x.who)}, která trh ovládá`)); }
+    if (w && it.country && it.country === w.x.who) { pts += 2; why.push(T(`You buy it from ${w.x.who}, the dominant country`, `Kupujete ji ${zGen(w.x.who)}, která trh ovládá`)); }
     else if (!it.country) { pts += 1; why.push(T("Origin not recorded", "Původ není uveden")); }
     if (!it.second) { pts += 1; why.push(T("No second source recorded", "Druhý zdroj není uveden")); }
     if (it.stock === null) { pts += 1; why.push(T("Stock cover not recorded", "Zásoby nejsou uvedeny")); }
@@ -288,7 +290,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const STAT = (r) => r.status === "short" ? T(`Runs out in week ${r.it.stock}, ${r.gap} weeks short`, `Dojde v ${r.it.stock}. týdnu, chybí ${r.gap} ${plural(r.gap, "", "", "týden", "týdny", "týdnů")}`)
       : r.status === "covered" ? T("Covered for the whole window", "Pokryto po celé období")
       : r.status === "unknown" ? T("Stock not recorded", "Zásoby nejsou uvedeny")
-      : T(`Check whether your supplier's own material comes from ${sc.who}`, `Ověřte, zda surovina vašeho dodavatele nepochází ze země ${O.ctry(sc.who)}`);
+      : T(`Check whether your supplier's own material comes from ${sc.who}`, `Ověřte, zda surovina vašeho dodavatele nepochází ${zGen(sc.who)}`);
     return `<div class="as-st">
       <div class="as-stc">
         <label><span class="label">${T("Disruption", "Výpadek")}</span><select id="as-scn">${O.SCENARIOS.map((s) => `<option value="${esc(s.id)}"${s.id === sc.id ? " selected" : ""}${ms.includes(s.m) ? "" : " disabled"}>${esc(O.trStr(s.title))}</option>`).join("")}</select></label>
