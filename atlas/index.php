@@ -207,6 +207,9 @@ try {
             '<p data-notr>The twelve critical minerals behind Europe\'s defence and space industry: who controls them, and what changes this week.</p>' => '<p data-notr>Dvanáct kritických surovin, na kterých stojí evropský obranný a&nbsp;kosmický průmysl: kdo je ovládá a&nbsp;co se tento týden mění.</p>',
             '>Check your product in 60 seconds <svg' => '>Prověřte svůj výrobek za 60 sekund <svg',
             '>Explore the globe <svg' => '>Prozkoumat glóbus <svg',
+            '>Check your product in 60 seconds</a>' => '>Prověřte svůj výrobek za 60 sekund</a>',
+            '>Explore the globe</button>' => '>Prozkoumat glóbus</button>',
+            '>Alerts for your minerals: Monitoring<' => '>Upozornění na vaše suroviny: Monitoring<',
             '>Assess your supply chain</a>' => '>Posoudit dodavatelský řetězec</a>',
             '>Take the tour · 6 stops</button>' => '>Prohlídka · 6 zastávek</button>',
         ];

@@ -1786,7 +1786,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 83"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 84"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1836,7 +1836,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 83 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 84 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
@@ -2266,6 +2266,60 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     apply();
   }
   try { simplifyPanel(); } catch (e) { /* the atlas works without it */ }
+
+  /* ---------- build 84: simpler phone page (up to 767 px). The CSS in index.html does the layout;
+     this fills the hero's Monitoring line and adds the "show more" buttons. Buttons are only added when
+     missing, so the check never reacts to its own writes. ---------- */
+  function v84() {
+    const mq = matchMedia("(max-width: 767px)");
+    const MP = String((window.ATLAS_CONFIG || {}).monitoringPrice || "49").trim();
+    const nb = (t) => CS ? t.replace(/(^|\s)([vkszaiouVKSZAIOU]) /g, "$1$2 ") : t;
+    const hm = document.querySelector(".hero-mon");
+    if (hm) {
+      const t = hm.querySelector(".hm-t"), pr = hm.querySelector(".hm-p");
+      if (t) t.textContent = nb(T("Alerts for your minerals: Monitoring", "Upozornění na vaše suroviny: Monitoring"));
+      if (pr) pr.textContent = CS ? ", " + MP + " € měsíčně" : ", €" + MP + " a month";
+    }
+    const ex = document.getElementById("exit-explore");
+    const exHTML = ex ? ex.innerHTML : "";
+    const label = () => {
+      if (!ex) return;
+      if (mq.matches) { ex.setAttribute("data-notr", ""); ex.innerHTML = exHTML.replace(/<\/svg>[^<]*/, "</svg>" + T("Close", "Zavřít") + "\n"); ex.setAttribute("aria-label", T("Close the globe", "Zavřít glóbus")); }
+    };
+    label();
+    if (mq.addEventListener) mq.addEventListener("change", label);
+    const btn = (cls, text) => { const b = document.createElement("button"); b.type = "button"; b.className = cls; b.setAttribute("data-notr", ""); b.textContent = text; return b; };
+    let qcAll = false;
+    const ensure = () => {
+      if (!mq.matches) return;
+      const out = document.querySelector(".qc-out"), rows = out && out.querySelector(".qc-rows");
+      if (rows) {
+        const n = rows.querySelectorAll(".qc-row").length;
+        if (qcAll && !out.classList.contains("qc-all")) out.classList.add("qc-all");
+        const old = out.querySelector(".qc-more");
+        const want = T("Show all " + n, "Zobrazit všech " + n);
+        if (n > 5 && (!old || old.textContent !== want)) { if (old) old.remove(); rows.after(btn("qc-more", want)); }
+        else if (n <= 5 && old) old.remove();
+      }
+      const mon = document.getElementById("monday"), grid = mon && mon.querySelector(".wk2-grid");
+      if (grid && !mon.querySelector(".wk-more")) grid.after(btn("wk-more", T("More news", "Další zprávy")));
+      const sig = document.getElementById("signals"), tiles = sig && sig.querySelector(".sig-tiles");
+      if (tiles && !sig.querySelector(".sig-more")) {
+        const n = tiles.querySelectorAll(".sig-tile").length;
+        if (n) tiles.before(btn("sig-more", T("Show all " + n, "Zobrazit vše (" + n + ")")));
+      }
+    };
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest(".qc-more, .wk-more, .sig-more");
+      if (!b) return;
+      if (b.classList.contains("qc-more")) { qcAll = true; const o = b.closest(".qc-out"); if (o) o.classList.add("qc-all"); }
+      else if (b.classList.contains("wk-more")) { const m = document.getElementById("monday"); if (m) m.classList.add("wk-all"); }
+      else { const g = document.getElementById("signals"); if (g) g.classList.add("sig-open"); }
+    });
+    ensure();
+    setInterval(ensure, 800);
+  }
+  try { v84(); } catch (e) { window.ooErrs && window.ooErrs.push("v84: " + e.message); }
 
   localiseStatic();
   load();
