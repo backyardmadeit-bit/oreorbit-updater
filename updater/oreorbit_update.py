@@ -2015,8 +2015,10 @@ def feed_brief(prev):
     dls = [d for d in deadlines_from_page() if d["date"] >= TODAY.isoformat()]
     if dls:
         d = dls[0]
-        mats_en = ", ".join(MAT_NAME[m][0] for m in d["materials"] if m in MAT_NAME) or "Deadline"
-        mats_cs = ", ".join(MAT_NAME[m][1] for m in d["materials"] if m in MAT_NAME) or "Termín"
+        # "Tungsten, rare earths": only the first name keeps its capital (audit 28 Nov 2026: "Wolfram, Vzácné zeminy")
+        _nm = lambda i: ", ".join(n if k == 0 else n[:1].lower() + n[1:] for k, n in enumerate(MAT_NAME[m][i] for m in d["materials"] if m in MAT_NAME))
+        mats_en = _nm(0) or "Deadline"
+        mats_cs = _nm(1) or "Termín"
         pts.append({"materials": d["materials"], "source": d["source"] or "OreOrbit calendar", "url": d["url"],
                     # only the date: the brief stays on the page (and in the archive) for a week, so "in 3 days" goes stale; the atlas counts the days itself
                     "text": "%s: %s on %s." % (mats_en, d["title"], day_txt(d["date"], False)),
@@ -2092,6 +2094,7 @@ def feed_brief(prev):
     week_news = [x for x in news if isinstance(x, dict) and str(x.get("date", "")) >= (TODAY - dt.timedelta(days=7)).isoformat()]
     for x in week_news[:3]:
         pts.append({"materials": x.get("materials") or [], "source": "%s, %s" % (x.get("source", ""), day_txt(x.get("date", TODAY.isoformat()), False)[:-5]),
+                    "source_cs": "%s, %s" % (x.get("source", ""), day_txt(x.get("date", TODAY.isoformat()), True)[:-5]),
                     "url": x.get("url", ""), "text": x.get("title", ""), "text_cs": x.get("title_cs") or x.get("title", "")})
     counts = {}
     for x in week_news:
@@ -2766,7 +2769,7 @@ def _mail_free(sb, latest, dls, ser, ref, unsub_url):
         body += _mhead("Tento týden" if cs else "This week")
         for x in pts:
             ch = _chips(x.get("materials"), mins)
-            src = (" " + _link(x["url"], x.get("source") or ("Zdroj" if cs else "Source"))) if str(x.get("url", "")).startswith("https://") else ""
+            src = (" " + _link(x["url"], (cs and x.get("source_cs")) or x.get("source") or ("Zdroj" if cs else "Source"))) if str(x.get("url", "")).startswith("https://") else ""
             body += _mrow((ch + "<br>" if ch else "") + ("EN · " if cs and x.get("text_cs") in (None, "", x.get("text")) else "") + _esc((cs and x.get("text_cs")) or x.get("text")) + src)
     last = ser[-1] if ser else None
     if last:
@@ -2911,7 +2914,7 @@ def _mail_paid(sb, latest, dls, ser, ref, news, sev, state, pbudget, unsub_url):
         body += _mhead("Tento týden" if cs else "This week")
         for x in pts:
             ch = _chips(x.get("materials"), mins)
-            src = (" " + _link(x["url"], x.get("source") or ("Zdroj" if cs else "Source"))) if str(x.get("url", "")).startswith("https://") else ""
+            src = (" " + _link(x["url"], (cs and x.get("source_cs")) or x.get("source") or ("Zdroj" if cs else "Source"))) if str(x.get("url", "")).startswith("https://") else ""
             body += _mrow((ch + "<br>" if ch else "") + ("EN · " if cs and x.get("text_cs") in (None, "", x.get("text")) else "") + _esc((cs and x.get("text_cs")) or x.get("text")) + src)
     seen_u = {x.get("url") for x in pts if x.get("url")}
     # what moved (news already shown under This week is not repeated)

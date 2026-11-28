@@ -10,6 +10,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
 (function () {
   "use strict";
   const O = window.OO;
+  // build 86: This week source line in Czech uses the Czech date (source_cs from the robot)
   // build 85: "z Číny" via the genitive table; countries without one keep "ze země X"
   const zGen = (c) => { const n = O.ctry(c), g = O.ctryGen ? O.ctryGen(c) : n; return g && g !== n ? "z\u00a0" + g : "ze země " + n; };
   if (!O) return;
@@ -1475,7 +1476,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       const items = [];
       /* first sentence only: a sentence ends at a period followed by a capital, so "15. listopadu" does not end one */
       const first = (s) => { s = String(s || "").replace(/\s+/g, " ").trim(); const k = s.search(/\.\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/); let o = k > 40 && k < 170 ? s.slice(0, k + 1) : s; if (o.length > 170) o = o.slice(0, o.lastIndexOf(" ", 165)) + "…"; return o; };
-      ((BRIEF && BRIEF.points) || []).forEach((p) => { const tx = first((CS && p.text_cs) || p.text || ""); if (tx) items.push({ t: tx, ms: p.materials || [], href: p.url || "", meta: p.source || "" }); });
+      ((BRIEF && BRIEF.points) || []).forEach((p) => { const tx = first((CS && p.text_cs) || p.text || ""); if (tx) items.push({ t: tx, ms: p.materials || [], href: p.url || "", meta: (CS && p.source_cs) || p.source || "" }); });
       const news = (O.NEWS || []).slice().sort((a, b) => String(b.addedAt || b.date).localeCompare(String(a.addedAt || a.date)));
       // build 63: an English headline on the Czech page says so ("EN · …") and carries lang="en"
       news.forEach((n) => { const tt = (CS && n.title_cs) || n.title, en = CS && !n.title_cs && (n.lang || "en") === "en";
@@ -1788,7 +1789,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 85"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 86"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1838,7 +1839,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 85 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 86 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
