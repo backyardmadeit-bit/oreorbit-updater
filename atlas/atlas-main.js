@@ -952,6 +952,9 @@ const LIVE = { orbits: null, hazards: null, conditions: null, scenes: null, pric
 /* small screens: lighter textures and fewer pixels */
 const SMALL = Math.min(screen.width || 9999, screen.height || 9999) < 820;
 /* v15.6: phones, data-saver browsers and ?lite get a lighter globe: lower resolution, no glow, 30 frames a second while idle */
+/* build 84: a phone-width page. There the globe on the page is a picture (the page scrolls under the finger)
+   and Explore opens it over the whole screen. */
+const PHONE = () => matchMedia("(max-width: 767px)").matches;
 const LITE = SMALL || /[?&]lite\b/.test(location.search) || !!(navigator.connection && navigator.connection.saveData);
 let ORBITS = [], ORBIT_BY_ID = {}, HZ = [], HZ_BY_ID = {};
 let NEWS = [], WATCH = [], META = null, BRIEFS = [], briefPick = null;
@@ -1801,7 +1804,9 @@ const globe = (function initGlobe() {
   const pointers = new Map();
   let drag = null, pinchStart = null, moved = 0;
   const degPerPx = () => 0.13 * (cam.dist - 0.97);
+  let tap = null;   /* build 84: a tap on the phone page's globe opens Explore; a swipe scrolls the page */
   canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" && !isExploring() && PHONE()) { tap = { x: e.clientX, y: e.clientY, t: performance.now() }; return; }
     if (e.pointerType === "mouse") canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 1) { drag = { x: e.clientX, y: e.clientY, t: performance.now() }; moved = 0; }
@@ -1830,6 +1835,12 @@ const globe = (function initGlobe() {
     if (e.pointerType === "mouse") hoverAt(e);
   });
   const endPointer = (e) => {
+    if (tap && !pointers.has(e.pointerId)) {
+      const ok = e.type === "pointerup" && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 10 && performance.now() - tap.t < 600;
+      tap = null;
+      if (ok) { enterExplore(); renderDrawer(); }
+      return;
+    }
     const wasClick = drag && moved < 6 && pointers.size === 1;
     const lastMove = drag ? drag.t : 0;
     pointers.delete(e.pointerId);
@@ -3811,8 +3822,15 @@ panelEl.addEventListener("click", (e) => {
 $("#panel-close").addEventListener("click", () => { clearSelection(); setFilter("all", false); });
 
 /* ================= actions ================= */
+/* build 84: on a phone the page keeps its place under the full-screen globe and comes back to it */
+let exploreY = null;
 function enterExplore() {
   if (isExploring()) return;
+  if (PHONE()) {
+    exploreY = window.scrollY;
+    const pl = document.getElementById("plate");
+    if (pl) document.documentElement.style.setProperty("--plate-h", pl.offsetHeight + "px");
+  }
   document.body.classList.add("exploring");
   onScroll();
   if (globe) { globe.relayout(); globe.applyVisibility(); }
@@ -3822,6 +3840,7 @@ function exitExplore() {
   clearSelection();
   filter = "all"; paintChips();
   document.body.classList.remove("exploring");
+  if (exploreY !== null) { const y = exploreY; exploreY = null; window.scrollTo(0, y); }
   onScroll();
   if (globe) { globe.applyVisibility(); globe.showSelected(); globe.highlightRoute(null); globe.relayout(); globe.home(); }
   renderDrawer();
@@ -3937,6 +3956,13 @@ document.addEventListener("click", (e) => {
   if (!layersPop.hidden && !e.target.closest(".layers-wrap")) { layersPop.hidden = true; layersBtn.setAttribute("aria-expanded", "false"); }
 });
 $("#exit-explore").addEventListener("click", exitExplore);
+/* build 84: on a phone, a link to a part of the page closes the full-screen globe first */
+document.addEventListener("click", (e) => {
+  if (!isExploring() || !PHONE()) return;
+  const a = e.target.closest('a[href^="#"]:not([href="#"]):not([href="#top"]):not([href="#tour"]), #nav-check');
+  if (!a || a.closest("#plate")) return;
+  exploreY = null; exitExplore();
+}, true);
 $("#cta-explore").addEventListener("click", () => { enterExplore(); renderDrawer(); });
 document.querySelector('.nav-links a[data-explore]').addEventListener("click", () => { enterExplore(); });
 
