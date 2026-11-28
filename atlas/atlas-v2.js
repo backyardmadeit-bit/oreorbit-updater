@@ -10,6 +10,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
 (function () {
   "use strict";
   const O = window.OO;
+  // build 87: shorter phone page (index.html CSS only: tighter sections, compact founder card and footer)
   // build 86: This week source line in Czech uses the Czech date (source_cs from the robot)
   // build 85: "z Číny" via the genitive table; countries without one keep "ze země X"
   const zGen = (c) => { const n = O.ctry(c), g = O.ctryGen ? O.ctryGen(c) : n; return g && g !== n ? "z\u00a0" + g : "ze země " + n; };
@@ -1789,7 +1790,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
       });
     }
     const foot = document.querySelector(".oo-foot, footer .foot-links");
-    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 86"; (document.querySelector("footer") || document.body).appendChild(s); }
+    if (foot && !document.querySelector(".oo-build")) { const s = document.createElement("span"); s.className = "oo-build"; s.textContent = "build 87"; (document.querySelector("footer") || document.body).appendChild(s); }
   }
   try { v30(); } catch (e) { /* the atlas works without it */ }
 
@@ -1839,7 +1840,7 @@ window.addEventListener("unhandledrejection", (e) => { window.ooErrs.push("promi
     const tick = () => {
       const pk = document.getElementById("mon-pick");
       const on = pk ? [...pk.querySelectorAll('.chip2[aria-pressed="true"]')].map((b) => b.dataset.my).join(",") : "no chips";
-      box.textContent = ["build 86 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
+      box.textContent = ["build 87 · " + (CS ? "cs" : "en") + " · " + location.pathname + location.search,
         "product: " + (window.ooProduct || "–") + " · sync: " + (typeof window.ooSetMinerals) + " · week: " + (typeof window.ooWeekData),
         "chips on: " + on,
         "caption: " + ((document.querySelector(".wk2-cap") || {}).textContent || "–").slice(0, 90),
