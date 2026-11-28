@@ -1777,8 +1777,9 @@ def china_controls_page(today):
           ("Nov 2025", "China pauses most of the October 2025 package until 10 November 2026, and suspends the US ban on gallium, germanium and antimony until 27 November 2026."),
           ("Sep 2026", "The wider US–China trade truce is extended to 10 January 2027; the announcement does not mention the rare-earth pause."),
           ("9 Nov 2026", "China extends the pause on the October 2025 package by two months, from 11 November 2026 to 10 January 2027."),
-          ("27 Nov 2026", "The suspension of the US ban on gallium, germanium and antimony is due to end."),
-          ("10 Jan 2027", "The extended pause on the October 2025 package is due to end, on the same day as the wider US–China trade truce.")]
+          ("24 Nov 2026", "China extends the suspension of its ban on gallium, germanium and antimony exports to the US by two months, to 27 January 2027."),
+          ("10 Jan 2027", "The extended pause on the October 2025 package is due to end, on the same day as the wider US–China trade truce."),
+          ("27 Jan 2027", "The extended suspension of the US ban on gallium, germanium and antimony is due to end.")]
     qas = [("What is China's 0.1% rule?",
             "A rule announced in October 2025 under which products made anywhere in the world that contain at least 0.1% Chinese-origin rare earths by value would need a Chinese export licence. It is paused until 10 January 2027."),
            ("Which minerals need a Chinese export licence today?",
